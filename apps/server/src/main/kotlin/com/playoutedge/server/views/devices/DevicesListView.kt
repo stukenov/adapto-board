@@ -1,12 +1,15 @@
 package com.playoutedge.server.views.devices
 
 import com.playoutedge.auth.AdminClaims
-import com.playoutedge.domain.enums.DeviceEnrollStatus
 import com.playoutedge.server.views.adminLayout
+import com.playoutedge.server.views.displayName
+import com.playoutedge.server.views.emptyState
+import com.playoutedge.server.views.pageHeader
+import com.playoutedge.server.views.statCard
 import kotlinx.html.*
 
 /**
- * Devices list view.
+ * Devices list view with improved UX.
  */
 fun HTML.devicesListView(
     session: AdminClaims,
@@ -15,20 +18,38 @@ fun HTML.devicesListView(
     filters: DeviceFilters,
     channels: List<ChannelOption>
 ) {
-    adminLayout(title = "Devices", userName = "Admin") {
-        div("page-header") {
-            h1("page-title") { +"Devices" }
+    adminLayout(title = "Devices", userName = session.displayName, currentPath = "/admin/devices") {
+        pageHeader(
+            title = "Devices",
+            subtitle = "Manage your display fleet"
+        ) {
             a(href = "/admin/devices/enroll", classes = "btn btn-primary") {
-                +"Generate Enroll Code"
+                +"+ Add Device"
             }
         }
 
         // Stats cards
-        div("dashboard-grid mb-4") {
-            statCard("Total", stats.total.toString(), "gray")
-            statCard("Online", stats.online.toString(), "success")
-            statCard("Offline", stats.offline.toString(), "danger")
-            statCard("Pending", stats.pending.toString(), "warning")
+        div("stats-grid mb-4") {
+            div("stat-card") {
+                div("stat-icon icon-primary") { +"📺" }
+                span("stat-label") { +"Total" }
+                span("stat-value") { +"${stats.total}" }
+            }
+            div("stat-card") {
+                div("stat-icon icon-success") { +"✓" }
+                span("stat-label") { +"Online" }
+                span("stat-value text-success") { +"${stats.online}" }
+            }
+            div("stat-card") {
+                div("stat-icon icon-danger") { +"!" }
+                span("stat-label") { +"Offline" }
+                span("stat-value text-danger") { +"${stats.offline}" }
+            }
+            div("stat-card") {
+                div("stat-icon icon-warning") { +"⏳" }
+                span("stat-label") { +"Pending" }
+                span("stat-value text-warning") { +"${stats.pending}" }
+            }
         }
 
         // Filters
@@ -42,7 +63,7 @@ fun HTML.devicesListView(
                             option {
                                 value = ""
                                 if (filters.status == null) selected = true
-                                +"All"
+                                +"All Statuses"
                             }
                             option {
                                 value = "online"
@@ -78,12 +99,19 @@ fun HTML.devicesListView(
                         label { +"Search" }
                         input(type = InputType.text, classes = "form-control") {
                             name = "search"
-                            placeholder = "Device name..."
+                            placeholder = "Search devices..."
                             value = filters.search ?: ""
                         }
                     }
-                    button(type = ButtonType.submit, classes = "btn btn-secondary") {
-                        +"Filter"
+                    div("filter-actions") {
+                        button(type = ButtonType.submit, classes = "btn btn-secondary") {
+                            +"Apply"
+                        }
+                        if (filters.hasActiveFilters()) {
+                            a(href = "/admin/devices", classes = "btn btn-ghost") {
+                                +"Clear"
+                            }
+                        }
                     }
                 }
             }
@@ -92,29 +120,33 @@ fun HTML.devicesListView(
         // Devices table
         div("card") {
             if (devices.isEmpty()) {
-                div("empty-state") {
-                    p("empty-state-title") { +"No devices found" }
-                    p("empty-state-text") { +"Generate an enroll code to add devices." }
-                    a(href = "/admin/devices/enroll", classes = "btn btn-primary") {
-                        +"Generate Enroll Code"
-                    }
-                }
+                emptyState(
+                    icon = "📺",
+                    title = "No devices found",
+                    description = if (filters.hasActiveFilters())
+                        "Try adjusting your filters or add a new device."
+                    else
+                        "Generate an enrollment code to add your first device.",
+                    actionHref = "/admin/devices/enroll",
+                    actionLabel = "Add Device"
+                )
             } else {
                 table("table") {
                     thead {
                         tr {
-                            th { +"Name" }
+                            th { +"Device" }
                             th { +"Status" }
                             th { +"Channel" }
                             th { +"App Version" }
                             th { +"Last Seen" }
+                            th { }
                         }
                     }
                     tbody {
                         devices.forEach { device ->
                             tr {
                                 td {
-                                    a(href = "/admin/devices/${device.id}") {
+                                    a(href = "/admin/devices/${device.id}", classes = "font-medium") {
                                         +device.name
                                     }
                                 }
@@ -126,13 +158,26 @@ fun HTML.devicesListView(
                                     }
                                 }
                                 td {
-                                    device.channelName?.let { +it } ?: span("text-muted") { +"—" }
+                                    device.channelName?.let {
+                                        span("font-medium") { +it }
+                                    } ?: span("text-muted") { +"Not assigned" }
                                 }
                                 td {
-                                    device.appVersion?.let { +it } ?: span("text-muted") { +"—" }
+                                    device.appVersion?.let {
+                                        span("badge badge-gray badge-plain") { +it }
+                                    } ?: span("text-muted") { +"—" }
                                 }
                                 td {
-                                    device.lastSeen?.let { +it.toString() } ?: span("text-muted") { +"Never" }
+                                    device.lastSeen?.let {
+                                        span("text-muted") { +formatDateTime(it) }
+                                    } ?: span("text-muted") { +"Never" }
+                                }
+                                td {
+                                    div("table-actions") {
+                                        a(href = "/admin/devices/${device.id}", classes = "btn btn-secondary btn-sm") {
+                                            +"View"
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -143,12 +188,9 @@ fun HTML.devicesListView(
     }
 }
 
-/**
- * Stat card component.
- */
-fun FlowContent.statCard(label: String, value: String, variant: String) {
-    div("stat-card") {
-        span("stat-label") { +label }
-        span("stat-value text-$variant") { +value }
-    }
+private fun formatDateTime(dateTime: Any): String {
+    return dateTime.toString().replace("T", " ").substringBeforeLast(":")
 }
+
+fun DeviceFilters.hasActiveFilters(): Boolean =
+    status != null || channelId != null || !search.isNullOrBlank()

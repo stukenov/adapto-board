@@ -3,10 +3,13 @@ package com.playoutedge.server.views.channels
 import com.playoutedge.auth.AdminClaims
 import com.playoutedge.domain.enums.ChannelStatus
 import com.playoutedge.server.views.adminLayout
+import com.playoutedge.server.views.displayName
+import com.playoutedge.server.views.emptyState
+import com.playoutedge.server.views.pageHeader
 import kotlinx.html.*
 
 /**
- * Channel detail view.
+ * Channel detail view with improved layout.
  */
 fun HTML.channelDetailView(
     session: AdminClaims,
@@ -14,77 +17,78 @@ fun HTML.channelDetailView(
     scheduleItems: List<ScheduleItemView>,
     devices: List<DeviceListItem>
 ) {
-    adminLayout(title = channel.name, userName = "Admin") {
-        // Header
-        div("page-header") {
-            div {
-                a(href = "/admin/channels", classes = "link") { +"← Back to Channels" }
-                h1("page-title") { +channel.name }
+    adminLayout(title = channel.name, userName = session.displayName, currentPath = "/admin/channels") {
+        // Page header with breadcrumb
+        pageHeader(
+            title = channel.name,
+            backHref = "/admin/channels",
+            backLabel = "Back to Channels"
+        ) {
+            span("badge badge-${channelStatusBadge(channel.status)} mr-2") {
+                +channel.status.name.lowercase()
             }
-            div("header-actions") {
-                span("badge badge-${channelStatusBadge(channel.status)} mr-2") {
-                    +channel.status.name.lowercase()
+            a(href = "/admin/channels/${channel.id}/edit", classes = "btn btn-secondary") {
+                +"Edit Channel"
+            }
+            form(action = "/admin/channels/${channel.id}/publish", method = FormMethod.post, classes = "inline") {
+                button(type = ButtonType.submit, classes = "btn btn-primary") {
+                    +"Publish"
                 }
             }
         }
 
         // Stats row
-        div("dashboard-grid mb-4") {
+        div("stats-grid mb-4") {
             // Devices card
-            div("card") {
-                div("card-header") {
-                    h3 { +"Devices" }
+            div("stat-card") {
+                val onlineCount = devices.count { it.isOnline }
+                div("stat-icon icon-success") { +"📺" }
+                span("stat-label") { +"Devices" }
+                span("stat-value") {
+                    +"$onlineCount"
+                    span("text-muted font-normal text-lg") { +" / ${devices.size}" }
                 }
-                div("card-body") {
-                    val onlineCount = devices.count { it.isOnline }
-                    div("stat-row") {
-                        div("stat") {
-                            span("stat-value") { +"$onlineCount" }
-                            span("stat-label") { +"Online" }
-                        }
-                        div("stat") {
-                            span("stat-value") { +"${devices.size}" }
-                            span("stat-label") { +"Total" }
-                        }
-                    }
+                if (devices.isNotEmpty()) {
+                    span("text-sm text-muted") { +"$onlineCount online" }
                 }
             }
 
-            // Schedule card
-            div("card") {
-                div("card-header") {
-                    h3 { +"Schedule" }
-                }
-                div("card-body") {
-                    div("stat-row") {
-                        div("stat") {
-                            span("stat-value") { +"${scheduleItems.size}" }
-                            span("stat-label") { +"Items" }
-                        }
-                    }
-                }
+            // Schedule items card
+            div("stat-card") {
+                div("stat-icon icon-primary") { +"📋" }
+                span("stat-label") { +"Schedule" }
+                span("stat-value") { +"${scheduleItems.size}" }
+                span("text-sm text-muted") { +"items" }
+            }
+
+            // Duration card
+            div("stat-card") {
+                div("stat-icon icon-info") { +"⏱" }
+                span("stat-label") { +"Total Duration" }
+                span("stat-value") { +calculateTotalDuration(scheduleItems) }
             }
         }
 
         // Schedule section
         div("card mb-4") {
             div("card-header") {
-                h3 { +"Schedule Items" }
+                h3 { +"Schedule" }
                 a(href = "/admin/channels/${channel.id}/schedule", classes = "btn btn-secondary btn-sm") {
                     +"Edit Schedule"
                 }
             }
-            div("card-body") {
-                if (scheduleItems.isEmpty()) {
-                    div("empty-state") {
-                        p { +"No schedule items" }
-                        a(href = "/admin/channels/${channel.id}/schedule", classes = "btn btn-primary") {
-                            +"Add Items"
-                        }
-                    }
-                } else {
-                    scheduleTable(scheduleItems)
+            if (scheduleItems.isEmpty()) {
+                div("card-body") {
+                    emptyState(
+                        icon = "📋",
+                        title = "No schedule items",
+                        description = "Add videos or images to this channel's schedule.",
+                        actionHref = "/admin/channels/${channel.id}/schedule",
+                        actionLabel = "Add Items"
+                    )
                 }
+            } else {
+                scheduleTable(scheduleItems, channel.id)
             }
         }
 
@@ -92,15 +96,22 @@ fun HTML.channelDetailView(
         div("card") {
             div("card-header") {
                 h3 { +"Assigned Devices" }
-            }
-            div("card-body") {
-                if (devices.isEmpty()) {
-                    div("empty-state") {
-                        p { +"No devices assigned to this channel" }
-                    }
-                } else {
-                    deviceTable(devices)
+                a(href = "/admin/devices?channel=${channel.id}", classes = "btn btn-secondary btn-sm") {
+                    +"Manage"
                 }
+            }
+            if (devices.isEmpty()) {
+                div("card-body") {
+                    emptyState(
+                        icon = "📺",
+                        title = "No devices assigned",
+                        description = "Assign devices to this channel to start playback.",
+                        actionHref = "/admin/devices/enroll",
+                        actionLabel = "Add Device"
+                    )
+                }
+            } else {
+                deviceTable(devices)
             }
         }
     }
@@ -109,27 +120,37 @@ fun HTML.channelDetailView(
 /**
  * Schedule table component.
  */
-fun FlowContent.scheduleTable(items: List<ScheduleItemView>) {
+fun FlowContent.scheduleTable(items: List<ScheduleItemView>, channelId: Any) {
     table("table") {
         thead {
             tr {
                 th { +"#" }
                 th { +"Asset" }
+                th { +"Type" }
+                th { +"Duration" }
                 th { +"Time Window" }
             }
         }
         tbody {
-            items.forEach { item ->
+            items.forEachIndexed { index, item ->
                 tr {
-                    td { +"${item.sortOrder}" }
                     td {
-                        a(href = "/admin/assets/${item.assetId}") {
+                        span("badge badge-gray badge-plain") { +"${index + 1}" }
+                    }
+                    td {
+                        a(href = "/admin/assets/${item.assetId}", classes = "font-medium") {
                             +item.assetName
                         }
                     }
                     td {
+                        span("badge badge-gray badge-plain") { +"#${item.sortOrder}" }
+                    }
+                    td {
+                        span("text-muted") { +"—" }
+                    }
+                    td {
                         if (item.timeStart != null || item.timeEnd != null) {
-                            +"${item.timeStart ?: "00:00"} - ${item.timeEnd ?: "23:59"}"
+                            +"${item.timeStart ?: "00:00"} – ${item.timeEnd ?: "23:59"}"
                         } else {
                             span("text-muted") { +"All day" }
                         }
@@ -141,13 +162,13 @@ fun FlowContent.scheduleTable(items: List<ScheduleItemView>) {
 }
 
 /**
- * Device table component.
+ * Device table component for channel detail.
  */
 fun FlowContent.deviceTable(devices: List<DeviceListItem>) {
     table("table") {
         thead {
             tr {
-                th { +"Name" }
+                th { +"Device" }
                 th { +"Status" }
                 th { +"Last Seen" }
             }
@@ -156,7 +177,7 @@ fun FlowContent.deviceTable(devices: List<DeviceListItem>) {
             devices.forEach { device ->
                 tr {
                     td {
-                        a(href = "/admin/devices/${device.id}") {
+                        a(href = "/admin/devices/${device.id}", classes = "font-medium") {
                             +device.name
                         }
                     }
@@ -168,7 +189,9 @@ fun FlowContent.deviceTable(devices: List<DeviceListItem>) {
                         }
                     }
                     td {
-                        device.lastSeen?.let { +it.toString() } ?: span("text-muted") { +"Never" }
+                        device.lastSeen?.let {
+                            span("text-muted") { +it.toString().replace("T", " ").substringBeforeLast(":") }
+                        } ?: span("text-muted") { +"Never" }
                     }
                 }
             }
@@ -179,4 +202,9 @@ fun FlowContent.deviceTable(devices: List<DeviceListItem>) {
 private fun channelStatusBadge(status: ChannelStatus): String = when (status) {
     ChannelStatus.ACTIVE -> "success"
     ChannelStatus.PAUSED -> "warning"
+}
+
+private fun calculateTotalDuration(items: List<ScheduleItemView>): String {
+    // Duration not available in the model
+    return if (items.isEmpty()) "—" else "${items.size} items"
 }

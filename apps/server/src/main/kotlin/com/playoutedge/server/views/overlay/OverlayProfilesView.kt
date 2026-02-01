@@ -2,33 +2,44 @@ package com.playoutedge.server.views.overlay
 
 import com.playoutedge.auth.AdminClaims
 import com.playoutedge.server.views.adminLayout
+import com.playoutedge.server.views.alertBox
+import com.playoutedge.server.views.displayName
+import com.playoutedge.server.views.emptyState
+import com.playoutedge.server.views.pageHeader
 import kotlinx.html.*
 
 /**
- * Overlay profiles list view.
+ * Overlay profiles list view with improved UX.
  */
 fun HTML.overlayProfilesListView(
     session: AdminClaims,
     profiles: List<OverlayProfileItem>
 ) {
-    adminLayout(title = "Overlay Profiles", userName = "Admin") {
-        div("page-header") {
-            h1("page-title") { +"Overlay Profiles" }
+    adminLayout(title = "Overlay Profiles", userName = session.displayName, currentPath = "/admin/overlay") {
+        pageHeader(
+            title = "Overlay Profiles",
+            subtitle = "Manage dynamic content templates for your displays"
+        ) {
             a(href = "/admin/overlay/profiles/new", classes = "btn btn-primary") {
-                +"New Profile"
+                +"+ New Profile"
             }
+        }
+
+        // Navigation tabs
+        div("tabs mb-4") {
+            a(href = "/admin/overlay/profiles", classes = "tab active") { +"Profiles" }
+            a(href = "/admin/overlay/bindings", classes = "tab") { +"Bindings" }
         }
 
         div("card") {
             if (profiles.isEmpty()) {
-                div("empty-state") {
-                    div("empty-state-icon") { +"🎨" }
-                    p("empty-state-title") { +"No overlay profiles" }
-                    p("empty-state-text") { +"Create your first overlay profile to add dynamic content to your channels." }
-                    a(href = "/admin/overlay/profiles/new", classes = "btn btn-primary") {
-                        +"Create Profile"
-                    }
-                }
+                emptyState(
+                    icon = "🎨",
+                    title = "No overlay profiles",
+                    description = "Create your first overlay profile to add dynamic content like tickers, tables, and KPIs to your channels.",
+                    actionHref = "/admin/overlay/profiles/new",
+                    actionLabel = "Create Profile"
+                )
             } else {
                 table("table") {
                     thead {
@@ -37,33 +48,49 @@ fun HTML.overlayProfilesListView(
                             th { +"Widget Types" }
                             th { +"Bindings" }
                             th { +"Created" }
-                            th { +"Actions" }
+                            th { }
                         }
                     }
                     tbody {
                         profiles.forEach { profile ->
                             tr {
                                 td {
-                                    a(href = "/admin/overlay/profiles/${profile.id}") {
+                                    a(href = "/admin/overlay/profiles/${profile.id}", classes = "font-medium") {
                                         +profile.name
                                     }
                                 }
                                 td {
                                     if (profile.widgetTypes.isEmpty()) {
-                                        span("text-muted") { +"—" }
+                                        span("text-muted") { +"No widgets" }
                                     } else {
-                                        profile.widgetTypes.forEach { type ->
-                                            span("badge badge-gray mr-1") { +type }
+                                        profile.widgetTypes.take(3).forEach { type ->
+                                            span("badge badge-gray badge-plain mr-1") { +type }
+                                        }
+                                        if (profile.widgetTypes.size > 3) {
+                                            span("text-muted text-sm") { +"+${profile.widgetTypes.size - 3}" }
                                         }
                                     }
                                 }
                                 td {
-                                    span("badge badge-info") { +"${profile.bindingsCount}" }
+                                    if (profile.bindingsCount > 0) {
+                                        span("badge badge-info badge-plain") { +"${profile.bindingsCount}" }
+                                    } else {
+                                        span("text-muted") { +"—" }
+                                    }
                                 }
-                                td { +profile.createdAt.toString().substringBefore("T") }
                                 td {
-                                    a(href = "/admin/overlay/profiles/${profile.id}/edit", classes = "btn btn-sm btn-secondary") {
-                                        +"Edit"
+                                    span("text-muted") {
+                                        +profile.createdAt.toString().substringBefore("T")
+                                    }
+                                }
+                                td {
+                                    div("table-actions") {
+                                        a(href = "/admin/overlay/profiles/${profile.id}", classes = "btn btn-secondary btn-sm") {
+                                            +"View"
+                                        }
+                                        a(href = "/admin/overlay/profiles/${profile.id}/edit", classes = "btn btn-ghost btn-sm") {
+                                            +"Edit"
+                                        }
                                     }
                                 }
                             }
@@ -76,57 +103,77 @@ fun HTML.overlayProfilesListView(
 }
 
 /**
- * New overlay profile form.
+ * New overlay profile form with improved UX.
  */
 fun HTML.newOverlayProfileView(
     session: AdminClaims,
     error: String? = null
 ) {
-    adminLayout(title = "New Overlay Profile", userName = "Admin") {
-        div("page-header") {
-            div {
-                a(href = "/admin/overlay/profiles", classes = "link") { +"← Back to Profiles" }
-                h1("page-title") { +"New Overlay Profile" }
-            }
-        }
+    adminLayout(title = "New Overlay Profile", userName = session.displayName, currentPath = "/admin/overlay") {
+        pageHeader(
+            title = "New Overlay Profile",
+            subtitle = "Create a template for dynamic content",
+            backHref = "/admin/overlay/profiles",
+            backLabel = "Back to Profiles"
+        )
 
         div("card") {
             div("card-body") {
                 if (error != null) {
-                    div("alert alert-danger") { +error }
+                    alertBox(error, "error")
                 }
 
                 form(action = "/admin/overlay/profiles", method = FormMethod.post) {
                     div("form-group") {
-                        label { +"Profile Name" }
+                        label {
+                            htmlFor = "name"
+                            +"Profile Name"
+                        }
                         input(type = InputType.text, classes = "form-control") {
+                            id = "name"
                             name = "name"
                             required = true
-                            placeholder = "e.g., Main Ticker"
+                            placeholder = "e.g., Main Ticker, Queue Display"
+                        }
+                        small("form-helper") {
+                            +"Choose a descriptive name for this overlay profile."
                         }
                     }
 
                     div("form-group") {
-                        label { +"Template" }
+                        label {
+                            htmlFor = "template"
+                            +"Template"
+                        }
                         select("form-control") {
+                            id = "template"
                             name = "template"
                             OverlayTemplate.entries.forEach { template ->
                                 option {
                                     value = template.name
-                                    +"${template.displayName} - ${template.description}"
+                                    +"${template.displayName} — ${template.description}"
                                 }
                             }
+                        }
+                        small("form-helper") {
+                            +"Start with a pre-built template or customize from scratch."
                         }
                     }
 
                     div("form-group") {
-                        label { +"Definition JSON (optional)" }
+                        label {
+                            htmlFor = "definitionJson"
+                            +"Definition JSON"
+                        }
                         textArea(classes = "form-control") {
+                            id = "definitionJson"
                             name = "definitionJson"
                             rows = "10"
                             placeholder = """{"widgets": []}"""
                         }
-                        small("text-muted") { +"Leave empty to use template defaults" }
+                        small("form-helper") {
+                            +"Leave empty to use template defaults. Advanced users can customize the JSON directly."
+                        }
                     }
 
                     div("form-actions") {
@@ -144,35 +191,35 @@ fun HTML.newOverlayProfileView(
 }
 
 /**
- * Overlay profile detail view.
+ * Overlay profile detail view with improved layout.
  */
 fun HTML.overlayProfileDetailView(
     session: AdminClaims,
     profile: OverlayProfileDetail,
     bindings: List<OverlayBindingItem>
 ) {
-    adminLayout(title = profile.name, userName = "Admin") {
-        div("page-header") {
-            div {
-                a(href = "/admin/overlay/profiles", classes = "link") { +"← Back to Profiles" }
-                h1("page-title") { +profile.name }
+    adminLayout(title = profile.name, userName = session.displayName, currentPath = "/admin/overlay") {
+        pageHeader(
+            title = profile.name,
+            backHref = "/admin/overlay/profiles",
+            backLabel = "Back to Profiles"
+        ) {
+            a(href = "/admin/overlay/profiles/${profile.id}/edit", classes = "btn btn-secondary") {
+                +"Edit"
             }
-            div("btn-group") {
-                a(href = "/admin/overlay/profiles/${profile.id}/edit", classes = "btn btn-secondary") {
-                    +"Edit"
-                }
-                form(action = "/admin/overlay/profiles/${profile.id}/delete", method = FormMethod.post, classes = "inline") {
-                    button(type = ButtonType.submit, classes = "btn btn-danger") {
-                        attributes["onclick"] = "return confirm('Delete this profile?')"
-                        +"Delete"
-                    }
+            form(action = "/admin/overlay/profiles/${profile.id}/delete", method = FormMethod.post, classes = "inline") {
+                button(type = ButtonType.submit, classes = "btn btn-danger") {
+                    attributes["onclick"] = "return confirm('Delete this profile? This will also remove all bindings.')"
+                    +"Delete"
                 }
             }
         }
 
         // Profile definition
         div("card mb-4") {
-            div("card-header") { +"Definition" }
+            div("card-header") {
+                h3 { +"Definition" }
+            }
             div("card-body") {
                 pre("code-block") {
                     +profile.definitionJson
@@ -183,11 +230,20 @@ fun HTML.overlayProfileDetailView(
         // Bindings using this profile
         div("card") {
             div("card-header") {
-                +"Channel Bindings"
+                h3 { +"Channel Bindings" }
+                if (bindings.isNotEmpty()) {
+                    span("badge badge-gray badge-plain") { +"${bindings.size}" }
+                }
             }
             if (bindings.isEmpty()) {
                 div("card-body") {
-                    p("text-muted") { +"No channels are using this profile yet." }
+                    emptyState(
+                        icon = "🔗",
+                        title = "No bindings yet",
+                        description = "Connect this profile to a channel to start displaying dynamic content.",
+                        actionHref = "/admin/overlay/bindings/new?profile=${profile.id}",
+                        actionLabel = "Create Binding"
+                    )
                 }
             } else {
                 table("table") {
@@ -202,12 +258,12 @@ fun HTML.overlayProfileDetailView(
                         bindings.forEach { binding ->
                             tr {
                                 td {
-                                    a(href = "/admin/channels/${binding.channelId}") {
+                                    a(href = "/admin/channels/${binding.channelId}", classes = "font-medium") {
                                         +binding.channelName
                                     }
                                 }
                                 td {
-                                    span("badge badge-gray") {
+                                    span("badge badge-gray badge-plain") {
                                         +binding.sourceType.name.replace("_", " ")
                                     }
                                 }
@@ -226,31 +282,35 @@ fun HTML.overlayProfileDetailView(
 }
 
 /**
- * Edit overlay profile view.
+ * Edit overlay profile view with improved UX.
  */
 fun HTML.editOverlayProfileView(
     session: AdminClaims,
     profile: OverlayProfileDetail,
     error: String? = null
 ) {
-    adminLayout(title = "Edit ${profile.name}", userName = "Admin") {
-        div("page-header") {
-            div {
-                a(href = "/admin/overlay/profiles/${profile.id}", classes = "link") { +"← Back to Profile" }
-                h1("page-title") { +"Edit Profile" }
-            }
-        }
+    adminLayout(title = "Edit ${profile.name}", userName = session.displayName, currentPath = "/admin/overlay") {
+        pageHeader(
+            title = "Edit Profile",
+            subtitle = profile.name,
+            backHref = "/admin/overlay/profiles/${profile.id}",
+            backLabel = "Back to Profile"
+        )
 
         div("card") {
             div("card-body") {
                 if (error != null) {
-                    div("alert alert-danger") { +error }
+                    alertBox(error, "error")
                 }
 
                 form(action = "/admin/overlay/profiles/${profile.id}", method = FormMethod.post) {
                     div("form-group") {
-                        label { +"Profile Name" }
+                        label {
+                            htmlFor = "name"
+                            +"Profile Name"
+                        }
                         input(type = InputType.text, classes = "form-control") {
+                            id = "name"
                             name = "name"
                             required = true
                             value = profile.name
@@ -258,8 +318,12 @@ fun HTML.editOverlayProfileView(
                     }
 
                     div("form-group") {
-                        label { +"Definition JSON" }
+                        label {
+                            htmlFor = "definitionJson"
+                            +"Definition JSON"
+                        }
                         textArea(classes = "form-control") {
+                            id = "definitionJson"
                             name = "definitionJson"
                             rows = "15"
                             +profile.definitionJson

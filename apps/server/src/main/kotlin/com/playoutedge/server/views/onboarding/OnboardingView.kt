@@ -2,20 +2,25 @@ package com.playoutedge.server.views.onboarding
 
 import com.playoutedge.auth.AdminClaims
 import com.playoutedge.server.views.adminLayout
+import com.playoutedge.server.views.alertBox
+import com.playoutedge.server.views.displayName
+import com.playoutedge.server.views.pageHeader
 import com.playoutedge.server.views.settings.TIMEZONES
 import kotlinx.html.*
 
 /**
- * Onboarding wizard main view.
+ * Onboarding wizard main view with improved UX.
  */
 fun HTML.onboardingWizardView(
     session: AdminClaims,
     state: WizardState
 ) {
-    adminLayout(title = "Getting Started", userName = "Admin") {
-        div("page-header") {
-            h1("page-title") { +"Getting Started" }
-            a(href = "/admin", classes = "link") { +"Skip for now →" }
+    adminLayout(title = "Getting Started", userName = session.displayName, currentPath = "/admin/onboarding") {
+        pageHeader(
+            title = "Getting Started",
+            subtitle = "Set up your Playout Edge system in a few simple steps"
+        ) {
+            a(href = "/admin", classes = "btn btn-ghost") { +"Skip for now" }
         }
 
         // Progress bar
@@ -30,7 +35,13 @@ fun HTML.onboardingWizardView(
                             else -> ""
                         }
                         div("wizard-step $stepClass") {
-                            div("step-number") { +"${step.order}" }
+                            div("step-number") {
+                                if (step in state.completedSteps) {
+                                    +"✓"
+                                } else {
+                                    +"${step.order}"
+                                }
+                            }
                             div("step-title") { +step.title }
                         }
                     }
@@ -39,6 +50,9 @@ fun HTML.onboardingWizardView(
                     div("progress-bar") {
                         style = "width: ${state.progress}%"
                     }
+                }
+                div("progress-label mt-2") {
+                    span("text-muted") { +"${state.progress}% complete" }
                 }
             }
         }
@@ -58,53 +72,73 @@ fun HTML.onboardingWizardView(
 private fun MAIN.tenantSettingsStep(session: AdminClaims) {
     div("card") {
         div("card-header") {
-            h2 { +"Step 1: Organization Settings" }
+            div("step-indicator") {
+                span("step-badge") { +"Step 1" }
+                h2 { +"Organization Settings" }
+            }
         }
         div("card-body") {
-            p { +"Let's set up your basic organization settings." }
+            p("lead") { +"Let's set up your basic organization settings." }
 
             form(action = "/admin/onboarding/step/tenant-settings", method = FormMethod.post) {
                 div("form-group") {
-                    label { +"Organization Name" }
-                    input(type = InputType.text, classes = "form-control") {
+                    label {
+                        htmlFor = "name"
+                        +"Organization Name"
+                    }
+                    input(type = InputType.text, classes = "form-control form-control-lg") {
+                        id = "name"
                         name = "name"
                         placeholder = "Your Company Name"
                         required = true
                     }
                 }
 
-                div("form-group") {
-                    label { +"Timezone" }
-                    select("form-control") {
-                        name = "timezone"
-                        TIMEZONES.forEach { tz ->
-                            option {
-                                value = tz
-                                if (tz == "UTC") selected = true
-                                +tz
+                div("form-row") {
+                    div("form-group col-6") {
+                        label {
+                            htmlFor = "timezone"
+                            +"Timezone"
+                        }
+                        select("form-control") {
+                            id = "timezone"
+                            name = "timezone"
+                            TIMEZONES.forEach { tz ->
+                                option {
+                                    value = tz
+                                    if (tz == "UTC") selected = true
+                                    +tz
+                                }
                             }
                         }
+                        small("form-helper") { +"Used for scheduling and reporting." }
                     }
-                    small("text-muted") { +"Used for scheduling and reporting" }
-                }
 
-                div("form-group") {
-                    label { +"Offline Threshold (minutes)" }
-                    input(type = InputType.number, classes = "form-control") {
-                        name = "offlineThreshold"
-                        value = "5"
-                        min = "2"
-                        max = "10"
+                    div("form-group col-6") {
+                        label {
+                            htmlFor = "offlineThreshold"
+                            +"Offline Threshold"
+                        }
+                        div("input-group") {
+                            input(type = InputType.number, classes = "form-control") {
+                                id = "offlineThreshold"
+                                name = "offlineThreshold"
+                                value = "5"
+                                min = "2"
+                                max = "10"
+                            }
+                            span("input-group-text") { +"minutes" }
+                        }
+                        small("form-helper") { +"Time before a device is marked offline." }
                     }
-                    small("text-muted") { +"Time before a device is marked offline" }
                 }
 
                 div("form-actions") {
-                    button(type = ButtonType.submit, classes = "btn btn-primary") {
+                    button(type = ButtonType.submit, classes = "btn btn-primary btn-lg") {
                         +"Continue"
                     }
-                    a(href = "/admin/onboarding/skip/tenant-settings", classes = "btn btn-secondary") {
-                        +"Skip"
+                    a(href = "/admin/onboarding/skip/tenant-settings", classes = "btn btn-ghost") {
+                        +"Skip this step"
                     }
                 }
             }
@@ -115,84 +149,113 @@ private fun MAIN.tenantSettingsStep(session: AdminClaims) {
 private fun MAIN.contentPoliciesStep() {
     div("card") {
         div("card-header") {
-            h2 { +"Step 2: Content Policies" }
+            div("step-indicator") {
+                span("step-badge") { +"Step 2" }
+                h2 { +"Content Policies" }
+            }
         }
         div("card-body") {
-            p { +"Define what media formats are allowed. These are the recommended defaults." }
+            p("lead") { +"Define what media formats are allowed. These are the recommended defaults." }
 
             form(action = "/admin/onboarding/step/content-policies", method = FormMethod.post) {
-                div("form-group") {
-                    label { +"Allowed Video Codecs" }
-                    AVAILABLE_CODECS.forEach { codec ->
-                        div("checkbox") {
-                            label {
-                                input(type = InputType.checkBox) {
-                                    name = "codecs"
-                                    value = codec
-                                    if (codec in listOf("H.264", "H.265")) checked = true
+                div("form-row") {
+                    div("form-group col-6") {
+                        label { +"Allowed Video Codecs" }
+                        div("checkbox-group") {
+                            AVAILABLE_CODECS.forEach { codec ->
+                                div("checkbox") {
+                                    label {
+                                        input(type = InputType.checkBox) {
+                                            name = "codecs"
+                                            value = codec
+                                            if (codec in listOf("H.264", "H.265")) checked = true
+                                        }
+                                        +" $codec"
+                                    }
                                 }
-                                +" $codec"
                             }
                         }
                     }
-                }
 
-                div("form-group") {
-                    label { +"Allowed Containers" }
-                    AVAILABLE_CONTAINERS.forEach { container ->
-                        div("checkbox") {
-                            label {
-                                input(type = InputType.checkBox) {
-                                    name = "containers"
-                                    value = container
-                                    if (container in listOf("MP4", "MOV", "MKV")) checked = true
+                    div("form-group col-6") {
+                        label { +"Allowed Containers" }
+                        div("checkbox-group") {
+                            AVAILABLE_CONTAINERS.forEach { container ->
+                                div("checkbox") {
+                                    label {
+                                        input(type = InputType.checkBox) {
+                                            name = "containers"
+                                            value = container
+                                            if (container in listOf("MP4", "MOV", "MKV")) checked = true
+                                        }
+                                        +" $container"
+                                    }
                                 }
-                                +" $container"
                             }
                         }
                     }
                 }
 
-                div("form-group") {
-                    label { +"Maximum Bitrate (Mbps)" }
-                    input(type = InputType.number, classes = "form-control") {
-                        name = "maxBitrate"
-                        value = "50"
-                        min = "10"
-                        max = "100"
+                div("form-row") {
+                    div("form-group col-4") {
+                        label {
+                            htmlFor = "maxBitrate"
+                            +"Maximum Bitrate"
+                        }
+                        div("input-group") {
+                            input(type = InputType.number, classes = "form-control") {
+                                id = "maxBitrate"
+                                name = "maxBitrate"
+                                value = "50"
+                                min = "10"
+                                max = "100"
+                            }
+                            span("input-group-text") { +"Mbps" }
+                        }
                     }
-                }
 
-                div("form-group") {
-                    label { +"Maximum Resolution" }
-                    select("form-control") {
-                        name = "maxResolution"
-                        AVAILABLE_RESOLUTIONS.forEach { res ->
-                            option {
-                                value = res
-                                if (res == "4K") selected = true
-                                +res
+                    div("form-group col-4") {
+                        label {
+                            htmlFor = "maxResolution"
+                            +"Maximum Resolution"
+                        }
+                        select("form-control") {
+                            id = "maxResolution"
+                            name = "maxResolution"
+                            AVAILABLE_RESOLUTIONS.forEach { res ->
+                                option {
+                                    value = res
+                                    if (res == "4K") selected = true
+                                    +res
+                                }
                             }
                         }
                     }
-                }
 
-                div("form-group") {
-                    label { +"Maximum File Size (MB)" }
-                    input(type = InputType.number, classes = "form-control") {
-                        name = "maxFileSize"
-                        value = "500"
-                        min = "50"
-                        max = "2000"
+                    div("form-group col-4") {
+                        label {
+                            htmlFor = "maxFileSize"
+                            +"Maximum File Size"
+                        }
+                        div("input-group") {
+                            input(type = InputType.number, classes = "form-control") {
+                                id = "maxFileSize"
+                                name = "maxFileSize"
+                                value = "500"
+                                min = "50"
+                                max = "2000"
+                            }
+                            span("input-group-text") { +"MB" }
+                        }
                     }
                 }
 
                 div("form-actions") {
-                    button(type = ButtonType.submit, classes = "btn btn-primary") {
+                    button(type = ButtonType.submit, classes = "btn btn-primary btn-lg") {
                         +"Continue"
                     }
-                    a(href = "/admin/onboarding/skip/content-policies", classes = "btn btn-secondary") {
-                        +"Skip"
+                    a(href = "/admin/onboarding/skip/content-policies", classes = "btn btn-ghost") {
+                        +"Skip this step"
                     }
                 }
             }
@@ -203,39 +266,60 @@ private fun MAIN.contentPoliciesStep() {
 private fun MAIN.firstAssetStep() {
     div("card") {
         div("card-header") {
-            h2 { +"Step 3: Upload Your First Content" }
+            div("step-indicator") {
+                span("step-badge") { +"Step 3" }
+                h2 { +"Upload Your First Content" }
+            }
         }
         div("card-body") {
-            p { +"Upload a video or image to get started. You can use one of our sample files." }
+            p("lead") { +"Upload a video or image to get started. You can use one of our sample files." }
 
-            div("upload-zone mb-4") {
-                form(action = "/admin/onboarding/step/first-asset", method = FormMethod.post, encType = FormEncType.multipartFormData) {
-                    div("form-group") {
-                        label { +"Choose a file" }
-                        input(type = InputType.file, classes = "form-control") {
-                            name = "file"
-                            accept = "video/*,image/*"
+            form(action = "/admin/onboarding/step/first-asset", method = FormMethod.post, encType = FormEncType.multipartFormData) {
+                div("upload-zone mb-4") {
+                    div("upload-zone-content") {
+                        div("upload-icon") { +"📁" }
+                        div("form-group") {
+                            label {
+                                htmlFor = "file"
+                                +"Choose a file"
+                            }
+                            input(type = InputType.file, classes = "form-control") {
+                                id = "file"
+                                name = "file"
+                                accept = "video/*,image/*"
+                            }
                         }
-                    }
-
-                    div("form-group") {
-                        label { +"Or use a sample" }
-                        select("form-control") {
-                            name = "sample"
-                            option { value = ""; +"Choose a sample..." }
-                            option { value = "demo-video"; +"Demo Video (30s, 1080p)" }
-                            option { value = "demo-image"; +"Demo Image (1920x1080)" }
-                        }
-                    }
-
-                    button(type = ButtonType.submit, classes = "btn btn-primary") {
-                        +"Upload & Continue"
+                        p("text-muted") { +"Supported: MP4, MOV, MKV, JPG, PNG" }
                     }
                 }
-            }
 
-            a(href = "/admin/onboarding/skip/first-asset", classes = "link") {
-                +"Skip for now"
+                div("divider") {
+                    span { +"or" }
+                }
+
+                div("form-group") {
+                    label {
+                        htmlFor = "sample"
+                        +"Use a sample file"
+                    }
+                    select("form-control") {
+                        id = "sample"
+                        name = "sample"
+                        option { value = ""; +"Choose a sample..." }
+                        option { value = "demo-video"; +"Demo Video (30 seconds, 1080p)" }
+                        option { value = "demo-image"; +"Demo Image (1920x1080)" }
+                    }
+                    small("form-helper") { +"Perfect for testing your setup." }
+                }
+
+                div("form-actions") {
+                    button(type = ButtonType.submit, classes = "btn btn-primary btn-lg") {
+                        +"Upload & Continue"
+                    }
+                    a(href = "/admin/onboarding/skip/first-asset", classes = "btn btn-ghost") {
+                        +"Skip this step"
+                    }
+                }
             }
         }
     }
@@ -244,23 +328,31 @@ private fun MAIN.firstAssetStep() {
 private fun MAIN.firstChannelStep(state: WizardState) {
     div("card") {
         div("card-header") {
-            h2 { +"Step 4: Create Your First Channel" }
+            div("step-indicator") {
+                span("step-badge") { +"Step 4" }
+                h2 { +"Create Your First Channel" }
+            }
         }
         div("card-body") {
-            p { +"A channel is a playlist that plays on your displays. Let's create one." }
+            p("lead") { +"A channel is a playlist that plays on your displays. Let's create one." }
 
             form(action = "/admin/onboarding/step/first-channel", method = FormMethod.post) {
                 div("form-group") {
-                    label { +"Channel Name" }
-                    input(type = InputType.text, classes = "form-control") {
+                    label {
+                        htmlFor = "name"
+                        +"Channel Name"
+                    }
+                    input(type = InputType.text, classes = "form-control form-control-lg") {
+                        id = "name"
                         name = "name"
-                        placeholder = "e.g., Lobby Display"
+                        placeholder = "e.g., Lobby Display, Conference Room A"
                         required = true
                     }
+                    small("form-helper") { +"Choose a descriptive name for your channel." }
                 }
 
                 if (state.createdAssetId != null) {
-                    div("form-group") {
+                    div("info-box mb-4") {
                         div("checkbox") {
                             label {
                                 input(type = InputType.checkBox) {
@@ -270,15 +362,16 @@ private fun MAIN.firstChannelStep(state: WizardState) {
                                 +" Add the uploaded asset to this channel"
                             }
                         }
+                        small("form-helper") { +"The content you uploaded will be added to the channel's schedule." }
                     }
                 }
 
                 div("form-actions") {
-                    button(type = ButtonType.submit, classes = "btn btn-primary") {
+                    button(type = ButtonType.submit, classes = "btn btn-primary btn-lg") {
                         +"Create Channel"
                     }
-                    a(href = "/admin/onboarding/skip/first-channel", classes = "btn btn-secondary") {
-                        +"Skip"
+                    a(href = "/admin/onboarding/skip/first-channel", classes = "btn btn-ghost") {
+                        +"Skip this step"
                     }
                 }
             }
@@ -289,40 +382,60 @@ private fun MAIN.firstChannelStep(state: WizardState) {
 private fun MAIN.firstDeviceStep(state: WizardState) {
     div("card") {
         div("card-header") {
-            h2 { +"Step 5: Connect Your First Device" }
+            div("step-indicator") {
+                span("step-badge") { +"Step 5" }
+                h2 { +"Connect Your First Device" }
+            }
         }
         div("card-body") {
-            p { +"Install the Playout Edge app on your Android TV device and enter this code:" }
+            p("lead") { +"Install the Playout Edge app on your Android TV device and enter this code:" }
 
             if (state.enrollCode != null) {
                 div("enroll-code-display mb-4") {
-                    div("code-box") {
+                    div("code-box code-box-lg") {
                         +state.enrollCode
                     }
-                    p("text-muted mt-2") { +"This code expires in 15 minutes" }
+                    div("code-info mt-2") {
+                        span("badge badge-warning") { +"Expires in 15 minutes" }
+                    }
                 }
 
-                div("qr-code mb-4") {
-                    // Would show QR code here
-                    div("qr-placeholder") {
-                        +"[QR Code]"
+                div("qr-code-container mb-4") {
+                    div("qr-code") {
+                        // Would show QR code here
+                        div("qr-placeholder") {
+                            +"[QR Code]"
+                        }
                     }
+                    p("text-muted text-center") { +"Scan with your device camera" }
                 }
             }
 
-            div("instructions mb-4") {
-                h4 { +"Instructions" }
-                ol {
-                    li { +"On your Android TV, open the Playout Edge app" }
-                    li { +"Select 'Enroll Device'" }
-                    li { +"Enter the code above or scan the QR code" }
-                    li { +"The device will automatically connect" }
+            div("instructions-card mb-4") {
+                h4 { +"Setup Instructions" }
+                ol("instructions-list") {
+                    li {
+                        span("instruction-number") { +"1" }
+                        span("instruction-text") { +"On your Android TV, open the Playout Edge app" }
+                    }
+                    li {
+                        span("instruction-number") { +"2" }
+                        span("instruction-text") { +"Select 'Enroll Device'" }
+                    }
+                    li {
+                        span("instruction-number") { +"3" }
+                        span("instruction-text") { +"Enter the code above or scan the QR code" }
+                    }
+                    li {
+                        span("instruction-number") { +"4" }
+                        span("instruction-text") { +"The device will automatically connect" }
+                    }
                 }
             }
 
             form(action = "/admin/onboarding/step/first-device", method = FormMethod.post) {
                 if (state.createdChannelId != null) {
-                    div("form-group") {
+                    div("info-box mb-4") {
                         div("checkbox") {
                             label {
                                 input(type = InputType.checkBox) {
@@ -332,16 +445,17 @@ private fun MAIN.firstDeviceStep(state: WizardState) {
                                 +" Automatically bind device to the created channel"
                             }
                         }
+                        small("form-helper") { +"The device will start playing your channel's content immediately after enrollment." }
                     }
                 }
 
                 div("form-actions") {
                     if (state.enrollCode == null) {
-                        button(type = ButtonType.submit, classes = "btn btn-primary") {
+                        button(type = ButtonType.submit, classes = "btn btn-primary btn-lg") {
                             +"Generate Enroll Code"
                         }
                     } else {
-                        button(type = ButtonType.submit, classes = "btn btn-primary") {
+                        button(type = ButtonType.submit, classes = "btn btn-primary btn-lg") {
                             name = "action"
                             value = "check"
                             +"Check Connection"
@@ -352,8 +466,8 @@ private fun MAIN.firstDeviceStep(state: WizardState) {
                             +"Generate New Code"
                         }
                     }
-                    a(href = "/admin/onboarding/skip/first-device", classes = "btn btn-secondary") {
-                        +"Skip"
+                    a(href = "/admin/onboarding/skip/first-device", classes = "btn btn-ghost") {
+                        +"Skip this step"
                     }
                 }
             }
@@ -364,37 +478,52 @@ private fun MAIN.firstDeviceStep(state: WizardState) {
 private fun MAIN.verifyStep(state: WizardState) {
     div("card") {
         div("card-header") {
-            h2 { +"Step 6: Verify Setup" }
+            div("step-indicator") {
+                span("step-badge") { +"Step 6" }
+                h2 { +"Verify Setup" }
+            }
         }
         div("card-body") {
             if (state.isComplete) {
-                div("success-state mb-4") {
+                div("success-banner mb-4") {
                     div("success-icon") { +"🎉" }
                     h3 { +"Congratulations!" }
-                    p { +"Your Playout Edge setup is complete. Your content should now be playing on your device." }
+                    p("lead") { +"Your Playout Edge setup is complete. Your content should now be playing on your device." }
                 }
             } else {
-                div("info-state mb-4") {
-                    p { +"You've skipped some steps. You can complete them later from the respective sections." }
-                }
+                alertBox("You've skipped some steps. You can complete them later from the respective sections.", "info")
             }
 
-            div("checklist") {
+            div("checklist-card") {
                 h4 { +"Setup Checklist" }
                 ul("checklist-items") {
                     WizardStep.entries.filter { it != WizardStep.VERIFY }.forEach { step ->
-                        li(if (step in state.completedSteps) "completed" else if (step in state.skippedSteps) "skipped" else "") {
+                        val statusClass = when {
+                            step in state.completedSteps -> "completed"
+                            step in state.skippedSteps -> "skipped"
+                            else -> "pending"
+                        }
+                        li(statusClass) {
                             span("check-icon") {
-                                +if (step in state.completedSteps) "✓" else if (step in state.skippedSteps) "—" else "○"
+                                +when {
+                                    step in state.completedSteps -> "✓"
+                                    step in state.skippedSteps -> "—"
+                                    else -> "○"
+                                }
                             }
-                            +step.title
+                            span("step-title") { +step.title }
+                            if (step in state.completedSteps) {
+                                span("status-badge badge badge-success badge-plain") { +"Done" }
+                            } else if (step in state.skippedSteps) {
+                                span("status-badge badge badge-gray badge-plain") { +"Skipped" }
+                            }
                         }
                     }
                 }
             }
 
             div("form-actions mt-4") {
-                a(href = "/admin", classes = "btn btn-primary") {
+                a(href = "/admin", classes = "btn btn-primary btn-lg") {
                     +"Go to Dashboard"
                 }
                 if (!state.isComplete) {
@@ -411,10 +540,10 @@ private fun MAIN.verifyStep(state: WizardState) {
 }
 
 /**
- * Onboarding complete celebration.
+ * Onboarding complete celebration with improved UX.
  */
 fun HTML.onboardingCompleteView(session: AdminClaims) {
-    adminLayout(title = "Setup Complete", userName = "Admin") {
+    adminLayout(title = "Setup Complete", userName = session.displayName, currentPath = "/admin/onboarding") {
         div("celebration-container") {
             div("celebration-icon") { +"🎉" }
             h1 { +"You're All Set!" }
@@ -422,38 +551,53 @@ fun HTML.onboardingCompleteView(session: AdminClaims) {
 
             div("stats-grid mt-4 mb-4") {
                 div("stat-card") {
-                    div("stat-value") { +"1" }
-                    div("stat-label") { +"Asset Uploaded" }
+                    div("stat-icon") { +"🎬" }
+                    div("stat-content") {
+                        div("stat-value") { +"1" }
+                        div("stat-label") { +"Asset Uploaded" }
+                    }
                 }
                 div("stat-card") {
-                    div("stat-value") { +"1" }
-                    div("stat-label") { +"Channel Created" }
+                    div("stat-icon") { +"📺" }
+                    div("stat-content") {
+                        div("stat-value") { +"1" }
+                        div("stat-label") { +"Channel Created" }
+                    }
                 }
                 div("stat-card") {
-                    div("stat-value") { +"1" }
-                    div("stat-label") { +"Device Connected" }
+                    div("stat-icon") { +"📱" }
+                    div("stat-content") {
+                        div("stat-value") { +"1" }
+                        div("stat-label") { +"Device Connected" }
+                    }
                 }
             }
 
             div("next-steps card") {
-                div("card-header") { +"What's Next?" }
+                div("card-header") {
+                    h3 { +"What's Next?" }
+                }
                 div("card-body") {
-                    ul {
-                        li {
-                            a(href = "/admin/assets") { +"Upload more content" }
-                            +" to build your media library"
+                    div("next-steps-grid") {
+                        a(href = "/admin/assets", classes = "next-step-item") {
+                            span("next-step-icon") { +"📁" }
+                            span("next-step-title") { +"Upload more content" }
+                            span("next-step-description") { +"Build your media library" }
                         }
-                        li {
-                            a(href = "/admin/channels") { +"Create schedules" }
-                            +" to automate playback"
+                        a(href = "/admin/channels", classes = "next-step-item") {
+                            span("next-step-icon") { +"📅" }
+                            span("next-step-title") { +"Create schedules" }
+                            span("next-step-description") { +"Automate playback" }
                         }
-                        li {
-                            a(href = "/admin/devices") { +"Add more devices" }
-                            +" to expand your network"
+                        a(href = "/admin/devices", classes = "next-step-item") {
+                            span("next-step-icon") { +"📺" }
+                            span("next-step-title") { +"Add more devices" }
+                            span("next-step-description") { +"Expand your network" }
                         }
-                        li {
-                            a(href = "/admin/overlay") { +"Set up overlays" }
-                            +" for dynamic content"
+                        a(href = "/admin/overlay", classes = "next-step-item") {
+                            span("next-step-icon") { +"🎨" }
+                            span("next-step-title") { +"Set up overlays" }
+                            span("next-step-description") { +"Dynamic content" }
                         }
                     }
                 }

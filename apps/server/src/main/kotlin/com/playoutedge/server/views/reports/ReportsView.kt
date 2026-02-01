@@ -3,19 +3,24 @@ package com.playoutedge.server.views.reports
 import com.playoutedge.auth.AdminClaims
 import com.playoutedge.domain.enums.AsrunEventType
 import com.playoutedge.server.views.adminLayout
+import com.playoutedge.server.views.displayName
+import com.playoutedge.server.views.emptyState
+import com.playoutedge.server.views.pageHeader
+import com.playoutedge.server.views.statCard
 import kotlinx.html.*
 
 /**
- * Reports main page with tabs.
+ * Reports main page with tabs and improved UX.
  */
 fun HTML.reportsMainView(
     session: AdminClaims,
     activeTab: String = "asrun"
 ) {
-    adminLayout(title = "Reports", userName = "Admin") {
-        div("page-header") {
-            h1("page-title") { +"Reports" }
-        }
+    adminLayout(title = "Reports", userName = session.displayName, currentPath = "/admin/reports") {
+        pageHeader(
+            title = "Reports",
+            subtitle = "Analyze playback data and system activity"
+        )
 
         // Tabs
         div("tabs mb-4") {
@@ -30,7 +35,7 @@ fun HTML.reportsMainView(
 }
 
 /**
- * As-run reports view.
+ * As-run reports view with improved UX.
  */
 fun HTML.asrunReportsView(
     session: AdminClaims,
@@ -40,13 +45,13 @@ fun HTML.asrunReportsView(
     devices: List<DeviceFilterOption>,
     channels: List<ChannelFilterOption>
 ) {
-    adminLayout(title = "As-Run Reports", userName = "Admin") {
-        div("page-header") {
-            h1("page-title") { +"As-Run Reports" }
-            div("btn-group") {
-                a(href = "/admin/reports/asrun/export?${buildFilterParams(filters)}", classes = "btn btn-secondary") {
-                    +"Export CSV"
-                }
+    adminLayout(title = "As-Run Reports", userName = session.displayName, currentPath = "/admin/reports") {
+        pageHeader(
+            title = "As-Run Reports",
+            subtitle = "Track what content played and when"
+        ) {
+            a(href = "/admin/reports/asrun/export?${buildFilterParams(filters)}", classes = "btn btn-secondary") {
+                +"Export CSV"
             }
         }
 
@@ -59,16 +64,25 @@ fun HTML.asrunReportsView(
         // Summary cards
         div("stats-grid mb-4") {
             div("stat-card") {
-                div("stat-value") { +"${summary.totalEvents}" }
-                div("stat-label") { +"Total Events" }
+                div("stat-icon") { +"📊" }
+                div("stat-content") {
+                    div("stat-value") { +"${summary.totalEvents}" }
+                    div("stat-label") { +"Total Events" }
+                }
             }
             div("stat-card") {
-                div("stat-value") { +"${summary.uniqueAssets}" }
-                div("stat-label") { +"Unique Assets" }
+                div("stat-icon") { +"🎬" }
+                div("stat-content") {
+                    div("stat-value") { +"${summary.uniqueAssets}" }
+                    div("stat-label") { +"Unique Assets" }
+                }
             }
             div("stat-card") {
-                div("stat-value") { +summary.totalPlayTime }
-                div("stat-label") { +"Total Play Time" }
+                div("stat-icon") { +"⏱" }
+                div("stat-content") {
+                    div("stat-value") { +summary.totalPlayTime }
+                    div("stat-label") { +"Total Play Time" }
+                }
             }
         }
 
@@ -82,6 +96,7 @@ fun HTML.asrunReportsView(
                             name = "deviceId"
                             option {
                                 value = ""
+                                if (filters.deviceId == null) selected = true
                                 +"All Devices"
                             }
                             devices.forEach { device ->
@@ -99,6 +114,7 @@ fun HTML.asrunReportsView(
                             name = "channelId"
                             option {
                                 value = ""
+                                if (filters.channelId == null) selected = true
                                 +"All Channels"
                             }
                             channels.forEach { channel ->
@@ -116,6 +132,7 @@ fun HTML.asrunReportsView(
                             name = "eventType"
                             option {
                                 value = ""
+                                if (filters.eventType == null) selected = true
                                 +"All Events"
                             }
                             AsrunEventType.entries.forEach { type ->
@@ -141,8 +158,15 @@ fun HTML.asrunReportsView(
                             value = filters.toDate ?: ""
                         }
                     }
-                    button(type = ButtonType.submit, classes = "btn btn-secondary") {
-                        +"Filter"
+                    div("filter-actions") {
+                        button(type = ButtonType.submit, classes = "btn btn-secondary") {
+                            +"Apply"
+                        }
+                        if (filters.hasActiveFilters()) {
+                            a(href = "/admin/reports/asrun", classes = "btn btn-ghost") {
+                                +"Clear"
+                            }
+                        }
                     }
                 }
             }
@@ -151,11 +175,14 @@ fun HTML.asrunReportsView(
         // Events table
         div("card") {
             if (events.isEmpty()) {
-                div("empty-state") {
-                    div("empty-state-icon") { +"📊" }
-                    p("empty-state-title") { +"No events found" }
-                    p("empty-state-text") { +"Playback events will appear here once devices start playing content." }
-                }
+                emptyState(
+                    icon = "📊",
+                    title = "No events found",
+                    description = if (filters.hasActiveFilters())
+                        "Try adjusting your filters to see more results."
+                    else
+                        "Playback events will appear here once devices start playing content."
+                )
             } else {
                 table("table") {
                     thead {
@@ -170,9 +197,13 @@ fun HTML.asrunReportsView(
                     tbody {
                         events.forEach { event ->
                             tr {
-                                td { +event.at.toString() }
                                 td {
-                                    a(href = "/admin/devices/${event.deviceId}") {
+                                    span("text-muted") {
+                                        +event.at.toString().replace("T", " ").substringBeforeLast(":")
+                                    }
+                                }
+                                td {
+                                    a(href = "/admin/devices/${event.deviceId}", classes = "font-medium") {
                                         +event.deviceName
                                     }
                                 }
@@ -201,7 +232,10 @@ fun HTML.asrunReportsView(
         // Asset breakdown
         if (summary.byAsset.isNotEmpty()) {
             div("card mt-4") {
-                div("card-header") { +"Playback by Asset" }
+                div("card-header") {
+                    h3 { +"Playback by Asset" }
+                    span("badge badge-gray badge-plain") { +"${summary.byAsset.size}" }
+                }
                 table("table") {
                     thead {
                         tr {
@@ -213,11 +247,13 @@ fun HTML.asrunReportsView(
                         summary.byAsset.forEach { asset ->
                             tr {
                                 td {
-                                    a(href = "/admin/assets/${asset.assetId}") {
+                                    a(href = "/admin/assets/${asset.assetId}", classes = "font-medium") {
                                         +asset.assetName
                                     }
                                 }
-                                td { +"${asset.playCount}" }
+                                td {
+                                    span("badge badge-info badge-plain") { +"${asset.playCount}" }
+                                }
                             }
                         }
                     }
@@ -227,21 +263,24 @@ fun HTML.asrunReportsView(
     }
 }
 
+fun AsrunFiltersView.hasActiveFilters(): Boolean =
+    deviceId != null || channelId != null || eventType != null || !fromDate.isNullOrBlank() || !toDate.isNullOrBlank()
+
 /**
- * Audit log view.
+ * Audit log view with improved UX.
  */
 fun HTML.auditLogView(
     session: AdminClaims,
     logs: List<AuditLogItem>,
     filters: AuditLogFilters
 ) {
-    adminLayout(title = "Audit Log", userName = "Admin") {
-        div("page-header") {
-            h1("page-title") { +"Audit Log" }
-            div("btn-group") {
-                a(href = "/admin/reports/audit/export?${buildAuditFilterParams(filters)}", classes = "btn btn-secondary") {
-                    +"Export CSV"
-                }
+    adminLayout(title = "Audit Log", userName = session.displayName, currentPath = "/admin/reports") {
+        pageHeader(
+            title = "Audit Log",
+            subtitle = "Track all changes and system activity"
+        ) {
+            a(href = "/admin/reports/audit/export?${buildAuditFilterParams(filters)}", classes = "btn btn-secondary") {
+                +"Export CSV"
             }
         }
 
@@ -261,7 +300,8 @@ fun HTML.auditLogView(
                             name = "entityType"
                             option {
                                 value = ""
-                                +"All"
+                                if (filters.entityType == null) selected = true
+                                +"All Types"
                             }
                             ENTITY_TYPES.forEach { type ->
                                 option {
@@ -278,7 +318,8 @@ fun HTML.auditLogView(
                             name = "action"
                             option {
                                 value = ""
-                                +"All"
+                                if (filters.action == null) selected = true
+                                +"All Actions"
                             }
                             ACTION_TYPES.forEach { action ->
                                 option {
@@ -303,8 +344,15 @@ fun HTML.auditLogView(
                             value = filters.toDate ?: ""
                         }
                     }
-                    button(type = ButtonType.submit, classes = "btn btn-secondary") {
-                        +"Filter"
+                    div("filter-actions") {
+                        button(type = ButtonType.submit, classes = "btn btn-secondary") {
+                            +"Apply"
+                        }
+                        if (filters.hasActiveFilters()) {
+                            a(href = "/admin/reports/audit", classes = "btn btn-ghost") {
+                                +"Clear"
+                            }
+                        }
                     }
                 }
             }
@@ -313,11 +361,14 @@ fun HTML.auditLogView(
         // Audit log table
         div("card") {
             if (logs.isEmpty()) {
-                div("empty-state") {
-                    div("empty-state-icon") { +"📝" }
-                    p("empty-state-title") { +"No audit entries" }
-                    p("empty-state-text") { +"System activity will be logged here." }
-                }
+                emptyState(
+                    icon = "📝",
+                    title = "No audit entries",
+                    description = if (filters.hasActiveFilters())
+                        "Try adjusting your filters to see more results."
+                    else
+                        "System activity will be logged here as changes are made."
+                )
             } else {
                 table("table") {
                     thead {
@@ -332,10 +383,16 @@ fun HTML.auditLogView(
                     tbody {
                         logs.forEach { log ->
                             tr {
-                                td { +log.createdAt.toString() }
                                 td {
-                                    log.actorName?.let { +it } ?: span("text-muted") { +"System" }
-                                    small("text-muted") { +" (${log.actorType})" }
+                                    span("text-muted") {
+                                        +log.createdAt.toString().replace("T", " ").substringBeforeLast(":")
+                                    }
+                                }
+                                td {
+                                    log.actorName?.let {
+                                        span("font-medium") { +it }
+                                    } ?: span("text-muted") { +"System" }
+                                    small("text-muted ml-1") { +"(${log.actorType})" }
                                 }
                                 td {
                                     span("badge badge-${actionBadge(log.action)}") {
@@ -343,12 +400,12 @@ fun HTML.auditLogView(
                                     }
                                 }
                                 td {
-                                    +"${log.entityType} "
-                                    small("text-muted") { +log.entityId.toString().take(8) }
+                                    span("badge badge-gray badge-plain") { +log.entityType }
+                                    code("text-muted ml-1") { +log.entityId.toString().take(8) }
                                 }
                                 td {
                                     if (log.hasDiff) {
-                                        a(href = "/admin/reports/audit/${log.id}/diff", classes = "link") {
+                                        a(href = "/admin/reports/audit/${log.id}/diff", classes = "btn btn-ghost btn-sm") {
                                             +"View changes"
                                         }
                                     } else {
@@ -363,6 +420,9 @@ fun HTML.auditLogView(
         }
     }
 }
+
+fun AuditLogFilters.hasActiveFilters(): Boolean =
+    entityType != null || action != null || !fromDate.isNullOrBlank() || !toDate.isNullOrBlank()
 
 private fun eventTypeBadge(type: AsrunEventType): String = when (type) {
     AsrunEventType.PLAY_START -> "success"

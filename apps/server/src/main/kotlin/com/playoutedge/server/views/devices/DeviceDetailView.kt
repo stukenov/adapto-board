@@ -2,34 +2,33 @@ package com.playoutedge.server.views.devices
 
 import com.playoutedge.auth.AdminClaims
 import com.playoutedge.server.views.adminLayout
+import com.playoutedge.server.views.displayName
+import com.playoutedge.server.views.pageHeader
 import kotlinx.html.*
 
 /**
- * Device detail view.
+ * Device detail view with improved layout.
  */
 fun HTML.deviceDetailView(
     session: AdminClaims,
     device: DeviceDetailModel,
     channels: List<ChannelOption>
 ) {
-    adminLayout(title = device.name, userName = "Admin") {
-        // Header
-        div("page-header") {
-            div {
-                a(href = "/admin/devices", classes = "link") { +"← Back to Devices" }
-                h1("page-title") { +device.name }
-            }
-            div("header-actions") {
-                if (device.isOnline) {
-                    span("badge badge-success") { +"online" }
-                } else {
-                    span("badge badge-gray") { +"offline" }
-                }
+    adminLayout(title = device.name, userName = session.displayName, currentPath = "/admin/devices") {
+        pageHeader(
+            title = device.name,
+            backHref = "/admin/devices",
+            backLabel = "Back to Devices"
+        ) {
+            if (device.isOnline) {
+                span("badge badge-success badge-lg") { +"Online" }
+            } else {
+                span("badge badge-gray badge-lg") { +"Offline" }
             }
         }
 
         // Info cards
-        div("dashboard-grid mb-4") {
+        div("stats-grid mb-4") {
             // Status card
             div("card") {
                 div("card-header") {
@@ -46,7 +45,9 @@ fun HTML.deviceDetailView(
 
                         dt { +"Last Seen" }
                         dd {
-                            device.lastSeen?.let { +it.toString() } ?: span("text-muted") { +"Never" }
+                            device.lastSeen?.let {
+                                +it.toString().replace("T", " ").substringBeforeLast(":")
+                            } ?: span("text-muted") { +"Never" }
                         }
                     }
                 }
@@ -55,47 +56,23 @@ fun HTML.deviceDetailView(
             // Channel card
             div("card") {
                 div("card-header") {
-                    h3 { +"Channel" }
+                    h3 { +"Channel Assignment" }
                 }
                 div("card-body") {
                     if (device.channelId != null) {
-                        a(href = "/admin/channels/${device.channelId}") {
-                            +(device.channelName ?: "Unknown")
+                        div("mb-3") {
+                            span("text-muted text-sm") { +"Currently assigned to:" }
+                            div("mt-1") {
+                                a(href = "/admin/channels/${device.channelId}", classes = "font-medium text-lg") {
+                                    +(device.channelName ?: "Unknown")
+                                }
+                            }
                         }
                     } else {
-                        span("text-muted") { +"Not assigned" }
+                        p("text-muted mb-3") { +"Not assigned to any channel" }
                     }
-                }
-            }
 
-            // System info card
-            div("card") {
-                div("card-header") {
-                    h3 { +"System Info" }
-                }
-                div("card-body") {
-                    dl("info-list") {
-                        dt { +"App Version" }
-                        dd { +(device.appVersion ?: "—") }
-
-                        dt { +"Android Version" }
-                        dd { +(device.androidVersion ?: "—") }
-
-                        dt { +"Model" }
-                        dd { +(device.androidModel ?: "—") }
-                    }
-                }
-            }
-        }
-
-        // Actions section
-        div("card mb-4") {
-            div("card-header") {
-                h3 { +"Actions" }
-            }
-            div("card-body") {
-                div("quick-actions") {
-                    // Assign channel form
+                    // Assign form
                     form(action = "/admin/devices/${device.id}/assign", method = FormMethod.post, classes = "inline-form") {
                         select("form-control") {
                             name = "channelId"
@@ -113,17 +90,40 @@ fun HTML.deviceDetailView(
                             }
                         }
                         button(type = ButtonType.submit, classes = "btn btn-primary") {
-                            +"Assign Channel"
+                            +"Update"
                         }
+                    }
+                }
+            }
+
+            // System info card
+            div("card") {
+                div("card-header") {
+                    h3 { +"System Info" }
+                }
+                div("card-body") {
+                    dl("info-list") {
+                        dt { +"App Version" }
+                        dd {
+                            device.appVersion?.let {
+                                span("badge badge-gray badge-plain") { +it }
+                            } ?: span("text-muted") { +"—" }
+                        }
+
+                        dt { +"Android Version" }
+                        dd { +(device.androidVersion ?: "—") }
+
+                        dt { +"Device Model" }
+                        dd { +(device.androidModel ?: "—") }
                     }
                 }
             }
         }
 
-        // Device info
+        // Device details
         div("card") {
             div("card-header") {
-                h3 { +"Details" }
+                h3 { +"Device Details" }
             }
             div("card-body") {
                 dl("info-list") {
@@ -132,8 +132,8 @@ fun HTML.deviceDetailView(
                         code { +device.id.toString() }
                     }
 
-                    dt { +"Created" }
-                    dd { +device.createdAt.toString() }
+                    dt { +"Enrolled At" }
+                    dd { +device.createdAt.toString().replace("T", " ").substringBeforeLast(":") }
                 }
             }
         }
