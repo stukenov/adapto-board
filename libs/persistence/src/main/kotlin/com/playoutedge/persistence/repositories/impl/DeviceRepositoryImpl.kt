@@ -6,6 +6,7 @@ import com.playoutedge.persistence.entities.DeviceEntity
 import com.playoutedge.persistence.repositories.DeviceRepository
 import com.playoutedge.persistence.repositories.UpdateDeviceRequest
 import com.playoutedge.persistence.tables.Devices
+import kotlinx.datetime.Clock
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.util.UUID
@@ -47,6 +48,17 @@ class DeviceRepositoryImpl : DeviceRepository {
             update.displayName?.let { entity.displayName = it }
             update.assignedChannelId?.let { entity.assignedChannelId = it }
             update.enrollStatus?.let { entity.enrollStatus = it }
+            entity
+        }
+
+    override suspend fun updateHeartbeat(tenantId: TenantId, deviceId: UUID, appVersion: String?): DeviceEntity? =
+        newSuspendedTransaction {
+            val entity = DeviceEntity.find {
+                (Devices.id eq deviceId) and (Devices.tenantId eq tenantId.value)
+            }.firstOrNull() ?: return@newSuspendedTransaction null
+
+            entity.lastSeenAt = Clock.System.now()
+            appVersion?.let { entity.appVersion = it }
             entity
         }
 

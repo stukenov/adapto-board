@@ -21,6 +21,8 @@ object Assets : UUIDTable("assets") {
     val fileSizeBytes = long("file_size_bytes").nullable()
     val createdBy = reference("created_by", Users, onDelete = ReferenceOption.SET_NULL).nullable()
     val createdAt = timestamp("created_at")
+    val archivedAt = timestamp("archived_at").nullable()
+    val rejectionReason = text("rejection_reason").nullable()
 }
 
 object AssetVersions : UUIDTable("asset_versions") {

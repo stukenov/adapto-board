@@ -11,6 +11,7 @@ interface DeviceRepository {
     suspend fun findByStatus(tenantId: TenantId, status: DeviceEnrollStatus): List<DeviceEntity>
     suspend fun findByChannel(tenantId: TenantId, channelId: UUID): List<DeviceEntity>
     suspend fun update(tenantId: TenantId, deviceId: UUID, update: UpdateDeviceRequest): DeviceEntity?
+    suspend fun updateHeartbeat(tenantId: TenantId, deviceId: UUID, appVersion: String?): DeviceEntity?
     suspend fun delete(tenantId: TenantId, deviceId: UUID): Boolean
     suspend fun getEnrolledCount(tenantId: TenantId): Long
 }

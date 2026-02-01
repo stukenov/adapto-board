@@ -23,6 +23,8 @@ class AssetEntity(id: EntityID<UUID>) : UUIDEntity(id) {
     var fileSizeBytes by Assets.fileSizeBytes
     var createdBy by UserEntity optionalReferencedOn Assets.createdBy
     var createdAt by Assets.createdAt
+    var archivedAt by Assets.archivedAt
+    var rejectionReason by Assets.rejectionReason
 
     val versions by AssetVersionEntity referrersOn AssetVersions.assetId
 }

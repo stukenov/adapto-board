@@ -16,6 +16,11 @@ class TenantEntity(id: EntityID<UUID>) : UUIDEntity(id) {
 
     var name by Tenants.name
     var status by Tenants.status
+    var supportTier by Tenants.supportTier
+    var releaseRing by Tenants.releaseRing
+    var maintenanceMode by Tenants.maintenanceMode
+    var maintenanceReason by Tenants.maintenanceReason
+    var maintenanceUntil by Tenants.maintenanceUntil
     var createdAt by Tenants.createdAt
 
     val users by UserEntity referrersOn Users.tenantId

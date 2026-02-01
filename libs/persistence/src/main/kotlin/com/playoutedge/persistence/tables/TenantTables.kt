@@ -1,5 +1,7 @@
 package com.playoutedge.persistence.tables
 
+import com.playoutedge.domain.enums.ReleaseRing
+import com.playoutedge.domain.enums.SupportTier
 import com.playoutedge.domain.enums.TenantStatus
 import com.playoutedge.domain.enums.UserRole
 import com.playoutedge.domain.enums.UserStatus
@@ -11,6 +13,11 @@ import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
 object Tenants : UUIDTable("tenants") {
     val name = varchar("name", 255)
     val status = enumerationByName<TenantStatus>("status", 20)
+    val supportTier = enumerationByName<SupportTier>("support_tier", 20).default(SupportTier.BASIC)
+    val releaseRing = enumerationByName<ReleaseRing>("release_ring", 20).default(ReleaseRing.STABLE)
+    val maintenanceMode = bool("maintenance_mode").default(false)
+    val maintenanceReason = text("maintenance_reason").nullable()
+    val maintenanceUntil = timestamp("maintenance_until").nullable()
     val createdAt = timestamp("created_at")
 }
 

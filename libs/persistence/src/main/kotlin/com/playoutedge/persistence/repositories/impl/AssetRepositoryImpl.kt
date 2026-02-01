@@ -1,10 +1,10 @@
 package com.playoutedge.persistence.repositories.impl
 
 import com.playoutedge.domain.enums.AssetStatus
-import com.playoutedge.domain.enums.AssetType
 import com.playoutedge.domain.tenant.TenantId
 import com.playoutedge.persistence.entities.AssetEntity
 import com.playoutedge.persistence.entities.TenantEntity
+import com.playoutedge.persistence.entities.UserEntity
 import com.playoutedge.persistence.repositories.AssetRepository
 import com.playoutedge.persistence.repositories.CreateAssetRequest
 import com.playoutedge.persistence.repositories.UpdateAssetRequest
@@ -28,6 +28,15 @@ class AssetRepositoryImpl : AssetRepository {
             AssetEntity.find { Assets.tenantId eq tenantId.value }.toList()
         }
 
+    override suspend fun findAllActive(tenantId: TenantId): List<AssetEntity> =
+        newSuspendedTransaction {
+            AssetEntity.find {
+                (Assets.tenantId eq tenantId.value) and
+                (Assets.status neq AssetStatus.ARCHIVED) and
+                (Assets.archivedAt.isNull())
+            }.toList()
+        }
+
     override suspend fun findByStatus(tenantId: TenantId, status: AssetStatus): List<AssetEntity> =
         newSuspendedTransaction {
             AssetEntity.find {
@@ -39,12 +48,17 @@ class AssetRepositoryImpl : AssetRepository {
         newSuspendedTransaction {
             AssetEntity.new {
                 tenant = TenantEntity[tenantId.value]
-                name = asset.filename
-                type = AssetType.VIDEO // Determine from mimeType in real impl
-                status = AssetStatus.PROCESSING
+                type = asset.type
+                name = asset.name
+                status = AssetStatus.UPLOADING
                 mimeType = asset.mimeType
-                fileSizeBytes = asset.sizeBytes
-                storageKey = asset.storageUrl
+                storageKey = asset.storageKey
+                fileSizeBytes = asset.fileSizeBytes
+                checksumSha256 = asset.checksumSha256
+                durationMs = asset.durationMs
+                width = asset.width
+                height = asset.height
+                createdBy = asset.createdBy?.let { UserEntity[it] }
                 createdAt = Clock.System.now()
             }
         }
@@ -55,8 +69,25 @@ class AssetRepositoryImpl : AssetRepository {
                 (Assets.id eq assetId) and (Assets.tenantId eq tenantId.value)
             }.firstOrNull() ?: return@newSuspendedTransaction null
 
-            update.filename?.let { entity.name = it }
+            update.name?.let { entity.name = it }
             update.status?.let { entity.status = it }
+            update.checksumSha256?.let { entity.checksumSha256 = it }
+            update.fileSizeBytes?.let { entity.fileSizeBytes = it }
+            update.durationMs?.let { entity.durationMs = it }
+            update.width?.let { entity.width = it }
+            update.height?.let { entity.height = it }
+            update.rejectionReason?.let { entity.rejectionReason = it }
+            entity
+        }
+
+    override suspend fun archive(tenantId: TenantId, assetId: UUID): AssetEntity? =
+        newSuspendedTransaction {
+            val entity = AssetEntity.find {
+                (Assets.id eq assetId) and (Assets.tenantId eq tenantId.value)
+            }.firstOrNull() ?: return@newSuspendedTransaction null
+
+            entity.status = AssetStatus.ARCHIVED
+            entity.archivedAt = Clock.System.now()
             entity
         }
 
@@ -72,7 +103,9 @@ class AssetRepositoryImpl : AssetRepository {
 
     override suspend fun getTotalStorageBytes(tenantId: TenantId): Long =
         newSuspendedTransaction {
-            AssetEntity.find { Assets.tenantId eq tenantId.value }
-                .sumOf { it.fileSizeBytes ?: 0L }
+            AssetEntity.find {
+                (Assets.tenantId eq tenantId.value) and
+                (Assets.status neq AssetStatus.ARCHIVED)
+            }.sumOf { it.fileSizeBytes ?: 0L }
         }
 }

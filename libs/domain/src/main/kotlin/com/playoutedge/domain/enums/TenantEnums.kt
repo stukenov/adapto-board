@@ -5,3 +5,15 @@ enum class TenantStatus {
     SUSPENDED,
     MAINTENANCE
 }
+
+enum class SupportTier {
+    BASIC,
+    PREMIUM,
+    ENTERPRISE
+}
+
+enum class ReleaseRing {
+    STABLE,
+    CANARY,
+    BETA
+}

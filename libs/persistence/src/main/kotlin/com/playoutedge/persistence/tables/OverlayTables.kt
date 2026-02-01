@@ -39,3 +39,12 @@ object OverlayStates : UUIDTable("overlay_states") {
         uniqueIndex("uq_overlay_states_tenant_channel", tenantId, channelId)
     }
 }
+
+object WebhookLogs : UUIDTable("webhook_logs") {
+    val bindingId = reference("binding_id", OverlayBindings, onDelete = ReferenceOption.CASCADE)
+    val statusCode = integer("status_code")
+    val latencyMs = integer("latency_ms")
+    val payloadSize = integer("payload_size")
+    val error = text("error").nullable()
+    val createdAt = timestamp("created_at")
+}

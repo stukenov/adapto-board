@@ -3,6 +3,7 @@ package com.playoutedge.persistence.entities
 import com.playoutedge.persistence.tables.OverlayBindings
 import com.playoutedge.persistence.tables.OverlayProfiles
 import com.playoutedge.persistence.tables.OverlayStates
+import com.playoutedge.persistence.tables.WebhookLogs
 import org.jetbrains.exposed.dao.UUIDEntity
 import org.jetbrains.exposed.dao.UUIDEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -38,4 +39,15 @@ class OverlayStateEntity(id: EntityID<UUID>) : UUIDEntity(id) {
     var stateJson by OverlayStates.stateJson
     var version by OverlayStates.version
     var updatedAt by OverlayStates.updatedAt
+}
+
+class WebhookLogEntity(id: EntityID<UUID>) : UUIDEntity(id) {
+    companion object : UUIDEntityClass<WebhookLogEntity>(WebhookLogs)
+
+    var binding by OverlayBindingEntity referencedOn WebhookLogs.bindingId
+    var statusCode by WebhookLogs.statusCode
+    var latencyMs by WebhookLogs.latencyMs
+    var payloadSize by WebhookLogs.payloadSize
+    var error by WebhookLogs.error
+    var createdAt by WebhookLogs.createdAt
 }

@@ -6,6 +6,7 @@ enum class BindingStatus {
 }
 
 enum class OverlaySourceType {
+    MANUAL,
     REST_PULL,
     WEBHOOK
 }

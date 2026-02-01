@@ -3,6 +3,7 @@ package com.playoutedge.persistence.entities
 import com.playoutedge.persistence.tables.DeviceGroups
 import com.playoutedge.persistence.tables.Devices
 import com.playoutedge.persistence.tables.EnrollCodes
+import com.playoutedge.persistence.tables.DeviceActions
 import org.jetbrains.exposed.dao.UUIDEntity
 import org.jetbrains.exposed.dao.UUIDEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -44,4 +45,18 @@ class EnrollCodeEntity(id: EntityID<UUID>) : UUIDEntity(id) {
     var usedByDevice by DeviceEntity optionalReferencedOn EnrollCodes.usedByDeviceId
     var createdBy by UserEntity optionalReferencedOn EnrollCodes.createdBy
     var createdAt by EnrollCodes.createdAt
+}
+
+class DeviceActionEntity(id: EntityID<UUID>) : UUIDEntity(id) {
+    companion object : UUIDEntityClass<DeviceActionEntity>(DeviceActions)
+
+    var tenant by TenantEntity referencedOn DeviceActions.tenantId
+    var device by DeviceEntity referencedOn DeviceActions.deviceId
+    var action by DeviceActions.action
+    var status by DeviceActions.status
+    var paramsJson by DeviceActions.paramsJson
+    var createdBy by UserEntity optionalReferencedOn DeviceActions.createdBy
+    var createdAt by DeviceActions.createdAt
+    var ackAt by DeviceActions.ackAt
+    var expiresAt by DeviceActions.expiresAt
 }
