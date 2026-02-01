@@ -2,6 +2,8 @@
 
 Цель: дать готовый набор месседжей, упаковки и маркетинговых материалов, которые можно “внедрить” в кейсы (ICP-A/B) и использовать в продажах/пилотах без додумываний.
 
+Этот документ — про **сообщения и офферы**. Про “как дешево и быстро делать маркетинг” см. `docs/43-lean-marketing-playbook.md`.
+
 Ограничения продукта v1 (фиксируем везде):
 - Admin UI: **только web**
 - Endpoints: **только Android TV**
@@ -29,6 +31,14 @@ Playout Edge — корпоративная платформа для Android TV
 ### 2.1 One-liner
 
 “Управляйте Android TV экранами централизованно и показывайте realtime-данные поверх видео — с аудитом и эксплуатацией, как в enterprise.”
+
+### 2.1.1 5-секундный питч (для первого контакта)
+
+“Мы помогаем компаниям с Android TV экранами: быстро публиковать контент и показывать данные (очереди/KPI) поверх видео — при этом IT видит статусы устройств и аудит изменений.”
+
+### 2.1.2 Питч на 30 секунд (для discovery/созвона)
+
+“Playout Edge — корпоративная платформа для Android TV: web‑админка для каналов и расписаний, offline‑first плеер (кэш+fallback), realtime overlays через SSE и эксплуатация (fleet + audit/as‑run). Мы продаём пилот на 2–4 недели с KPI: time‑to‑publish, uptime, online rate и overlay latency/adoption.”
 
 ### 2.2 3 ключевые ценности (value pillars)
 
@@ -66,6 +76,15 @@ Playout Edge — корпоративная платформа для Android TV
 
 ## 3) Сайт (готовая структура и черновая копия текста)
 
+Важно: **главная страница не должна пытаться продать всем**. Делайте 2 ICP‑страницы с разными акцентами:
+- `/corp-comms` (ICP‑A) — publish, контроль, эксплуатация, комплаенс.
+- `/queue-kpi` (ICP‑B) — data‑layer (очереди/KPI), простая интеграция, устойчивость.
+
+Public docs, которые нужно линковать с сайта (снижают friction и ускоряют IT):
+- supported media spec: `docs/40-public-supported-media-spec.md`
+- Android TV requirements: `docs/41-public-android-tv-device-requirements.md`
+- network requirements: `docs/42-public-network-requirements.md`
+
 ### 3.1 Hero
 
 Заголовок:
@@ -77,6 +96,16 @@ Playout Edge — корпоративная платформа для Android TV
 CTA:
 - “Запросить демо”
 - “Запустить пилот”
+
+### 3.1.1 Hero варианты под ICP (для A/B)
+
+ICP‑A (корп коммуникации):
+- H1: “Обновляйте корпоративные экраны за минуты — с контролем и аудитом.”
+- Sub: “Web‑админка + offline‑first Android TV плеер + статусы устройств + audit/as‑run. Пилот за 2–4 недели.”
+
+ICP‑B (очереди/табло/KPI):
+- H1: “Очереди и KPI на экранах — в realtime, поверх видео.”
+- Sub: “Overlay (SSE) + устойчивый Android TV плеер (кэш+fallback). Manual mode и 1 источник данных в пилоте.”
 
 ### 3.2 Блок “Кому подходит”
 
@@ -159,3 +188,19 @@ CTA:
 - мультиплатформенные плееры
 - сложный редактор шаблонов
 - кастомные интеграции без оценки/контракта
+
+---
+
+## 7) “Low-cost trust assets” (что сделать без бюджета)
+
+Цель: повысить конверсию без дорогих кампаний.
+
+P0:
+- **2-мин видео**: “publish → экран + overlay update + fleet status” (запись экрана + камера телефона на ТВ).
+- **Security overview** (страница на сайте) + ссылка на `docs/29-procurement-security-compliance-pack.md`.
+- **Public docs** (медиа/устройства/сеть): `docs/40-…`, `docs/41-…`, `docs/42-…`.
+- **Архитектурная схема** (из `docs/02-target-architecture.md`) в формате 1 картинки.
+
+P1 (после 1–2 пилотов):
+- 1 кейс-стади (шаблон в `docs/20-collateral-templates.md`) с цифрами KPI пилота.
+- 3 “скриншота правды”: devices dashboard, publish tracker, overlay editor.

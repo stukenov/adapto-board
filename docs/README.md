@@ -47,6 +47,7 @@
 41. `docs/40-public-supported-media-spec.md` — public docs: поддерживаемые форматы медиа и рекомендации для пилота.
 42. `docs/41-public-android-tv-device-requirements.md` — public docs: требования к Android TV и чек-лист пилота (whitelist/MDM/kiosk).
 43. `docs/42-public-network-requirements.md` — public docs: требования к сети/прокси/allowlist и сетевой чек-лист.
+44. `docs/43-lean-marketing-playbook.md` — lean marketing: как делать лидоген и пилоты без бюджета (outbound, партнёры, контент, эксперименты).
 
 ## Принцип “меньше систем”
 

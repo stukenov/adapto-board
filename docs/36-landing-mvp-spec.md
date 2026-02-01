@@ -16,6 +16,8 @@
 
 Минимальный набор:
 1) `/` — основной лендинг (всё в одном).
+2) `/corp-comms` — ICP‑A страница (корп коммуникации + IT control).
+3) `/queue-kpi` — ICP‑B страница (очереди/табло/KPI).
 2) `/pilot` — деталь пилота (scope, KPI, prerequisites, что не входит).
 3) `/security` — “security overview” (коротко, для IT/procurement).
 4) `/pricing` — упаковка/пакеты (без калькулятора на первом шаге).
@@ -23,6 +25,11 @@
 Опционально:
 - `/case-study/{client}` (1 шаблон + 1 реальный кейс после 1–2 пилотов).
 - `/docs` (публичные выдержки: device requirements, supported media spec).
+
+Public docs (линковать с `/pilot` и `/security`):
+- supported media: `docs/40-public-supported-media-spec.md`
+- Android TV requirements: `docs/41-public-android-tv-device-requirements.md`
+- network requirements: `docs/42-public-network-requirements.md`
 
 ---
 
@@ -122,6 +129,60 @@ A: Да, по отдельному SOW; чаще всего на старте б
 
 ---
 
+## 2.9 ICP страницы (минимум копирайта, без лишнего)
+
+### `/corp-comms` (ICP‑A)
+H1:
+> Обновляйте корпоративные экраны за минуты — с контролем и аудитом.
+
+Кому:
+- Internal Comms/HR/Marketing Ops + IT owner
+
+Главные боли (буллеты):
+- “обновляем руками через заявки/чаты”
+- “не знаем, что реально на экранах”
+- “инциденты ночью и нет диагностики”
+
+Как решаем:
+- каналы/расписания + publish
+- fleet статусы + last seen + ошибки
+- audit/as‑run
+
+CTA:
+- `Запросить демо (15 минут)`
+- `Скачать pilot readiness checklist` (ведёт на public docs)
+
+### `/queue-kpi` (ICP‑B)
+H1:
+> Очереди и KPI на экранах — realtime поверх видео (Android TV).
+
+Кому:
+- Ops/Branch managers + IT + интегратор источника данных
+
+Как решаем:
+- overlay (SSE): очередь/KPI/уведомления
+- источники: manual / REST pull / webhook
+- устойчивый player (кэш+fallback)
+
+CTA:
+- `Запросить demo для очереди/KPI`
+- `Показать пример интеграции (REST pull)`
+
+---
+
+## 2.10 Lead magnet (нулевой бюджет)
+
+Рекомендуемый “магнит”:
+- “Pilot readiness checklist” (не PDF‑дизайн, а страница/док): ссылки на
+  - `docs/40-public-supported-media-spec.md`
+  - `docs/41-public-android-tv-device-requirements.md`
+  - `docs/42-public-network-requirements.md`
+
+Правило:
+- На старте лучше **ungated** (быстрее доверие). Gated включать только если inbound уже есть и нужна фильтрация.
+
+---
+
 ## 3) Формы (lead capture) — поля и UX
 
 ### 3.1 Мини‑форма “Request demo” (1 экран)
@@ -173,8 +234,7 @@ UX требования:
 
 ## 6) Acceptance criteria (лендинг считается готовым)
 
-- Есть 4 страницы: `/`, `/pilot`, `/security`, `/pricing`.
+- Есть 6 страниц: `/`, `/corp-comms`, `/queue-kpi`, `/pilot`, `/security`, `/pricing`.
 - Две формы (demo + pilot) отправляют лиды в CRM с UTM.
 - Есть авто‑письмо “получили заявку” (см. `docs/37-crm-spec-and-automations.md`).
 - Копирайт соответствует продуктовым границам (Android TV only, pilot scope).
-
