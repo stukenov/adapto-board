@@ -26,12 +26,15 @@
 - CDN перед storage (CloudFront/Fastly/Cloudflare) при росте трафика
 - Sentry/OpenTelemetry collector (если уже есть в компании)
 
-### 2.2 Admin UI (Kotlin)
+### 2.2 Admin UI — Web (Kotlin)
 
-Цель: админка без JS-стека.
+Цель: web-админка на Kotlin (без отдельной JS-кодовой базы).
 
-Реалистичные варианты (выбираем один и фиксируем):
-1. **Compose Multiplatform for Web** (Kotlin/JS) — самый “Kotlin-only”.
+Фиксируем v1: **Compose Multiplatform for Web** (Kotlin/Wasm или Kotlin/JS).
+
+Деплой v1 (минимум систем):
+- UI собирается в статические файлы и отдаётся тем же Kotlin-монолитом (один домен, один deployable).
+- В R1 допускается вынести статику на CDN, если это снижает нагрузку/ускоряет загрузку.
 
 
 ## 3) Компонентная модель (внутри монолита)
@@ -127,4 +130,3 @@
 
 - сегментация по tenant (шардирование по БД, если нужно)
 - edge cache / branch-cache (если трафик становится доминирующим расходом)
-

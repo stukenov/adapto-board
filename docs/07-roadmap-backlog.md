@@ -108,7 +108,7 @@
 
 - 1 Kotlin backend engineer (Ktor/Postgres)
 - 1 Android TV engineer (Media3/Compose)
-- 1 fullstack Kotlin engineer (admin UI + shared models) **или** part-time
+- 1 fullstack Kotlin engineer (web admin UI + shared models) **или** part-time
 - 0.2–0.5 SRE/DevOps (инфра, мониторинг, релизы)
 - продукт/проект (part-time) — чтобы пилот не расползся
 
@@ -135,4 +135,3 @@
 - `egress_gb ≈ screens * hours_per_day * bitrate_mbps * 3600 / 8 / 1024`
 
 Например: 200 экранов * 10 ч/день * 3 Mbps ≈ ~2.6 TB/мес egress (порядок величины). Это и определит необходимость CDN/branch-cache.
-

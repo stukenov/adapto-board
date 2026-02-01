@@ -12,8 +12,20 @@
 6. `docs/06-ops-security-sre.md` — деплой, SLO, мониторинг, безопасность, процедуры.
 7. `docs/07-roadmap-backlog.md` — релизы, эпики, user stories, критерии приёмки, риски/стоимость.
 8. `docs/DECISIONS.md` — журнал ключевых решений и компромиссов.
+9. `docs/08-business-gtm-and-pilot.md` — упаковка, GTM и план пилота.
+10. `docs/09-product-vision-and-positioning.md` — vision, позиционирование, целевой рынок, “порог” возможностей.
+11. `docs/10-icp-personas-and-jtbd.md` — ICP, персоны, JTBD, ключевые сценарии/болезни.
+12. `docs/11-success-metrics-okrs-and-telemetry.md` — метрики успеха, OKR, что и как измеряем.
+13. `docs/12-pricing-and-packaging.md` — цены/пакеты/лимиты, как считать себестоимость.
+14. `docs/13-competitive-landscape.md` — конкуренты, матрица возможностей, дифференциация.
+15. `docs/14-discovery-and-research-log.md` — план discovery + реестр гипотез/интервью/экспериментов.
+16. `docs/15-mvp-backlog-r0.md` — детальный MVP backlog (эпики → stories → AC, “без расползания”).
+17. `docs/16-release-notes-rollout-and-comms.md` — релизные артефакты: rollout, совместимость, коммуникации.
+18. `docs/17-pilot-scorecard-and-acceptance.md` — “паспорт пилота”: критерии успеха, чек-листы приёмки, отчёт.
+19. `docs/18-marketing-kit.md` — позиционирование для рынка: месседжи, сайт, контент, GTM.
+20. `docs/19-sales-playbook.md` — playbook продаж: квалификация, discovery, демо, пилот, возражения, конкуренты.
+21. `docs/20-collateral-templates.md` — готовые шаблоны (one-pager, письма, deck, SOW пилота, кейс-стади).
 
 ## Принцип “меньше систем”
 
 Базовая цель v1: один Kotlin-сервис (монолит) + один DB (PostgreSQL) + файловое хранилище (локально) для пилота. Всё остальное — опционально и добавляется только при подтверждённой необходимости (трафик, масштаб, корпоративные требования).
-
