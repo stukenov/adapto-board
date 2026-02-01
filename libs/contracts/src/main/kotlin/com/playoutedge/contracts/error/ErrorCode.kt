@@ -1,0 +1,42 @@
+package com.playoutedge.contracts.error
+
+enum class ErrorCode {
+    // Auth Errors
+    INVALID_CREDENTIALS,
+    TOKEN_EXPIRED,
+    TOKEN_INVALID,
+    FORBIDDEN_ROLE,
+    DEVICE_NOT_ENROLLED,
+    ENROLL_CODE_EXPIRED,
+    ENROLL_CODE_USED,
+
+    // Tenant Errors
+    TENANT_NOT_FOUND,
+    TENANT_SUSPENDED,
+    TENANT_QUOTA_EXCEEDED,
+
+    // Asset Errors
+    ASSET_NOT_FOUND,
+    ASSET_NOT_READY,
+    ASSET_TOO_LARGE,
+    ASSET_INVALID_FORMAT,
+
+    // Schedule Errors
+    SCHEDULE_VERSION_CONFLICT,
+    SCHEDULE_VERSION_IMMUTABLE,
+    SCHEDULE_EMPTY,
+    ROLLBACK_ASSETS_UNAVAILABLE,
+
+    // Device Errors
+    DEVICE_NOT_FOUND,
+    DEVICE_REVOKED,
+
+    // Overlay Errors
+    OVERLAY_STATE_TOO_LARGE,
+    CONNECTOR_FAILURE,
+
+    // General Errors
+    VALIDATION_ERROR,
+    NOT_FOUND,
+    INTERNAL_ERROR
+}

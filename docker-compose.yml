@@ -1,0 +1,40 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: playoutedge-postgres
+    environment:
+      POSTGRES_DB: playoutedge
+      POSTGRES_USER: dev
+      POSTGRES_PASSWORD: dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dev -d playoutedge"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile
+    container_name: playoutedge-server
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/playoutedge
+      DATABASE_USER: dev
+      DATABASE_PASSWORD: dev
+      JWT_SECRET: dev-secret-change-in-production
+      STORAGE_MODE: LOCAL
+      STORAGE_PATH: /app/storage
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./storage:/app/storage
+
+volumes:
+  pgdata:
