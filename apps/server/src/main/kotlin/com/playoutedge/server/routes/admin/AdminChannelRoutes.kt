@@ -1,0 +1,180 @@
+package com.playoutedge.server.routes.admin
+
+import com.playoutedge.domain.enums.ChannelStatus
+import com.playoutedge.domain.tenant.TenantId
+import com.playoutedge.persistence.repositories.ChannelRepository
+import com.playoutedge.persistence.repositories.CreateChannelRequest
+import com.playoutedge.persistence.repositories.DeviceRepository
+import com.playoutedge.persistence.repositories.ScheduleRepository
+import com.playoutedge.server.plugins.adminSession
+import com.playoutedge.server.views.channels.*
+import io.ktor.server.application.*
+import io.ktor.server.html.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
+import kotlinx.datetime.Clock
+import java.util.UUID
+import kotlin.time.Duration.Companion.minutes
+
+/**
+ * Admin channel management routes.
+ */
+fun Route.adminChannelRoutes(
+    channelRepository: ChannelRepository,
+    deviceRepository: DeviceRepository,
+    scheduleRepository: ScheduleRepository
+) {
+    route("/admin/channels") {
+        // GET /admin/channels - List channels
+        get {
+            val session = call.adminSession ?: run {
+                call.respondRedirect("/admin/login")
+                return@get
+            }
+
+            val tenantId = TenantId(session.tenantId)
+
+            // Parse filters
+            val statusParam = call.request.queryParameters["status"]
+            val search = call.request.queryParameters["search"]
+            val filters = ChannelFilters(
+                status = statusParam?.let { runCatching { ChannelStatus.valueOf(it) }.getOrNull() },
+                search = search?.takeIf { it.isNotBlank() }
+            )
+
+            // Fetch channels
+            var channels = channelRepository.findAll(tenantId)
+
+            // Apply filters
+            if (filters.status != null) {
+                channels = channels.filter { it.status == filters.status }
+            }
+            if (filters.search != null) {
+                channels = channels.filter { it.name.contains(filters.search, ignoreCase = true) }
+            }
+
+            // Map to view models with device counts
+            val channelItems = channels.map { channel ->
+                val deviceCount = deviceRepository.findByChannel(tenantId, channel.id.value).size
+                val lastPublish = scheduleRepository.findActiveVersion(tenantId, channel.id.value)?.publishedAt
+
+                ChannelListItem(
+                    id = channel.id.value,
+                    name = channel.name,
+                    status = channel.status,
+                    deviceCount = deviceCount,
+                    lastPublish = lastPublish
+                )
+            }
+
+            call.respondHtml {
+                channelsListView(
+                    session = session,
+                    channels = channelItems,
+                    filters = filters
+                )
+            }
+        }
+
+        // GET /admin/channels/new - New channel form
+        get("/new") {
+            val session = call.adminSession ?: run {
+                call.respondRedirect("/admin/login")
+                return@get
+            }
+
+            call.respondHtml {
+                newChannelView(session = session)
+            }
+        }
+
+        // POST /admin/channels - Create channel
+        post {
+            val session = call.adminSession ?: run {
+                call.respondRedirect("/admin/login")
+                return@post
+            }
+
+            val tenantId = TenantId(session.tenantId)
+            val params = call.receiveParameters()
+            val name = params["name"]?.trim()
+
+            if (name.isNullOrBlank()) {
+                call.respondHtml {
+                    newChannelView(session = session, error = "Channel name is required")
+                }
+                return@post
+            }
+
+            val channel = channelRepository.create(tenantId, CreateChannelRequest(name = name))
+            call.respondRedirect("/admin/channels/${channel.id.value}")
+        }
+
+        // GET /admin/channels/:id - Channel detail
+        get("/{id}") {
+            val session = call.adminSession ?: run {
+                call.respondRedirect("/admin/login")
+                return@get
+            }
+
+            val tenantId = TenantId(session.tenantId)
+            val channelId = call.parameters["id"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+
+            if (channelId == null) {
+                call.respondRedirect("/admin/channels")
+                return@get
+            }
+
+            val channel = channelRepository.findById(tenantId, channelId)
+            if (channel == null) {
+                call.respondRedirect("/admin/channels")
+                return@get
+            }
+
+            // Get devices assigned to this channel
+            val now = Clock.System.now()
+            val onlineThreshold = now - 5.minutes
+            val devices = deviceRepository.findByChannel(tenantId, channelId).map { device ->
+                DeviceListItem(
+                    id = device.id.value,
+                    name = device.displayName,
+                    status = device.enrollStatus,
+                    lastSeen = device.lastSeenAt,
+                    isOnline = device.lastSeenAt?.let { it >= onlineThreshold } ?: false
+                )
+            }
+
+            // Get current schedule items
+            val scheduleVersion = scheduleRepository.findActiveVersion(tenantId, channelId)
+            val scheduleItems = scheduleVersion?.let { version ->
+                scheduleRepository.findItemsByVersion(tenantId, version.id.value).map { item ->
+                    ScheduleItemView(
+                        id = item.id.value,
+                        assetId = item.asset.id.value,
+                        assetName = item.asset.name,
+                        sortOrder = item.orderIndex,
+                        timeStart = item.timeStart?.toString(),
+                        timeEnd = item.timeEnd?.toString()
+                    )
+                }
+            } ?: emptyList()
+
+            val channelDetail = ChannelDetail(
+                id = channel.id.value,
+                name = channel.name,
+                status = channel.status,
+                createdAt = channel.createdAt
+            )
+
+            call.respondHtml {
+                channelDetailView(
+                    session = session,
+                    channel = channelDetail,
+                    scheduleItems = scheduleItems,
+                    devices = devices
+                )
+            }
+        }
+    }
+}

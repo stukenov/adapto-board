@@ -18,6 +18,7 @@ import com.playoutedge.server.services.ScheduleService
 import com.playoutedge.persistence.config.DatabaseConfig
 import com.playoutedge.persistence.config.DatabaseFactory
 import com.playoutedge.persistence.repositories.impl.AlertRepositoryImpl
+import com.playoutedge.persistence.repositories.impl.UserRepositoryImpl
 import com.playoutedge.persistence.repositories.impl.AssetRepositoryImpl
 import com.playoutedge.persistence.repositories.impl.AsrunRepositoryImpl
 import com.playoutedge.persistence.repositories.impl.AuditRepositoryImpl
@@ -32,12 +33,20 @@ import com.playoutedge.persistence.repositories.impl.WebhookLogRepositoryImpl
 import com.playoutedge.server.jobs.AsrunCleanupJobHandler
 import com.playoutedge.server.jobs.CleanupJobHandler
 import com.playoutedge.server.jobs.JobScheduler
+import com.playoutedge.server.plugins.AdminSessionPlugin
 import com.playoutedge.server.plugins.MaintenancePlugin
 import com.playoutedge.server.plugins.RateLimitPlugin
 import com.playoutedge.server.plugins.RequestIdPlugin
 import com.playoutedge.server.plugins.TenantPlugin
 import com.playoutedge.server.plugins.configureErrorHandling
 import com.playoutedge.server.plugins.configureJwtAuth
+import com.playoutedge.server.routes.admin.adminAssetRoutes
+import com.playoutedge.server.routes.admin.adminAuthRoutes
+import com.playoutedge.server.routes.admin.adminChannelRoutes
+import com.playoutedge.server.routes.admin.adminDeviceRoutes
+import com.playoutedge.server.routes.admin.adminHomeRoutes
+import com.playoutedge.server.routes.admin.adminPlaceholderRoutes
+import com.playoutedge.server.routes.admin.adminStaticRoutes
 import com.playoutedge.server.routes.alertsRoutes
 import com.playoutedge.server.routes.assetsRoutes
 import com.playoutedge.server.routes.asrunRoutes
@@ -98,6 +107,7 @@ fun Application.module() {
     val auditRepository = AuditRepositoryImpl()
     val asrunRepository = AsrunRepositoryImpl()
     val alertRepository = AlertRepositoryImpl()
+    val userRepository = UserRepositoryImpl()
     val webhookLogRepository = WebhookLogRepositoryImpl()
     val jobRepository = JobRepositoryImpl()
     val quotaService = QuotaServiceImpl(assetRepository, deviceRepository)
@@ -132,12 +142,25 @@ fun Application.module() {
     install(MaintenancePlugin) {
         this.maintenanceService = maintenanceService
     }
+    install(AdminSessionPlugin) {
+        this.jwtService = jwtService
+    }
 
     // Initialize database
     configureDatabase()
 
     // Configure routes
     routing {
+        // Admin web routes (SSR)
+        adminAuthRoutes(userRepository, jwtService, passwordService)
+        adminHomeRoutes(deviceRepository, alertRepository)
+        adminChannelRoutes(channelRepository, deviceRepository, scheduleRepository)
+        adminDeviceRoutes(deviceRepository, channelRepository)
+        adminAssetRoutes(assetRepository)
+        adminPlaceholderRoutes()
+        adminStaticRoutes()
+
+        // API routes
         healthRoutes(storageService)
         authRoutes(jwtService, passwordService, authConfig)
         deviceAuthRoutes(jwtService, authConfig)
