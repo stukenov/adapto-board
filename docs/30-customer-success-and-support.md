@@ -52,6 +52,17 @@ P0 сигналы:
 - выделенный CSM
 - регулярные QBR
 
+## 4.1 Что должно быть в продукте для дешёвой поддержки (must)
+
+Чтобы support/CS не превращались в ручную переписку, в продукте фиксируем минимальный “support-grade” функционал:
+- Ops dashboards (fleet/publish/overlay health) и device detail (last seen, version, last errors).
+- “Copy support bundle” одной кнопкой (deviceId, tenantId, версии, таймстемпы, последние ошибки).
+- Publish tracker (X/Y applied + причины отставания).
+- Alerts list (online rate / publish failures / connector failures) с “likely causes” и next actions.
+- Maintenance mode (опционально) для плановых работ с audit и TTL.
+
+Техническая реализация и rollout per company: `docs/44-company-ops-and-per-company-rollout.md`.
+
 ## 5) Expansion playbook
 
 Триггеры расширения:
@@ -62,4 +73,3 @@ P0 сигналы:
 
 Процесс:
 - success review → предложение → SOW/заказ → rollout план.
-

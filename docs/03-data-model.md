@@ -191,9 +191,51 @@
 - `asrun_events(tenant_id, device_id, at)`
 - `asrun_events(tenant_id, channel_id, at)`
 
+### 2.7 Support / Ops (обслуживание клиента)
+
+Цель: иметь “support-grade” диагностику без отдельной support системы (см. `docs/44-company-ops-and-per-company-rollout.md`).
+
+**`tenant_contacts`**
+- `id` (uuid, pk)
+- `tenant_id`
+- `type` (IT_OWNER/OPERATOR_OWNER/BILLING/SECURITY/OTHER)
+- `name`
+- `email`
+- `phone` (optional)
+- `created_at`
+
+Индексы:
+- `tenant_contacts(tenant_id, type)`
+
+**`device_actions`** (команды устройству; опционально для R1)
+- `id` (uuid, pk)
+- `tenant_id`
+- `device_id`
+- `action` (FORCE_CONFIG_REFRESH/FORCE_PLAYLIST_REFRESH/ROTATE_TOKEN/...)
+- `params_json` (optional)
+- `status` (PENDING/ACKED/FAILED/EXPIRED)
+- `created_by` (user_id)
+- `created_at`
+- `ack_at` (nullable)
+
+Индексы:
+- `device_actions(tenant_id, device_id, created_at)`
+- `device_actions(tenant_id, status, created_at)`
+
+**`alerts`** (если не хотим жить только на метриках)
+- `id` (uuid, pk)
+- `tenant_id`
+- `type` (ONLINE_RATE_LOW/PUBLISH_FAILURE_SPIKE/CONNECTOR_FAILURE/...)
+- `status` (OPEN/ACKED/RESOLVED)
+- `payload_json`
+- `first_seen_at`
+- `last_seen_at`
+
+Индексы:
+- `alerts(tenant_id, status, last_seen_at)`
+
 ## 3) Очистка и ретеншн (обязательно определить)
 
 - `asrun_events`: ретеншн 30–90 дней (настраиваемо).
 - `audit_log`: ретеншн 180–365 дней (или бессрочно для enterprise).
 - `assets`: lifecycle “soft delete” → purge после N дней.
-

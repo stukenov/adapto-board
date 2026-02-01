@@ -50,6 +50,10 @@ Draft/publish:
 - `PATCH /api/admin/devices/{id}` (rename, assign channel)
 - `POST /api/admin/devices/{id}/assign-channel` → `{channelId}`
 
+Support/Ops (минимум, чтобы уменьшить переписку):
+- `GET /api/admin/devices/{id}/support-bundle` → JSON (или link на краткоживущий ZIP)
+- `POST /api/admin/devices/{id}/actions` → `{action, params}` (опционально R1)
+
 ### 2.5 Overlay
 
 - `POST /api/admin/overlay/profiles`
@@ -68,6 +72,14 @@ Manual data (pilot):
 
 - `GET /api/admin/audit?entityType=&entityId=&from=&to=`
 - `GET /api/admin/asrun?deviceId=&channelId=&from=&to=`
+
+### 2.7 Tenant ops (служебные настройки контура)
+
+Если нужен минимальный “company ops” без отдельной системы (см. `docs/44-company-ops-and-per-company-rollout.md`):
+- `GET /api/admin/tenant/settings`
+- `PATCH /api/admin/tenant/settings` (maintenance mode, thresholds, release ring)
+- `GET /api/admin/tenant/contacts`
+- `POST /api/admin/tenant/contacts`
 
 ## 3) Player API (Android TV)
 

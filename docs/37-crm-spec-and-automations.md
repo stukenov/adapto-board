@@ -77,6 +77,19 @@ Pipeline `Playout Edge — Pilot to Production`:
 - `Competitor_in_play` (multi-select): SaaS signage / DIY / Enterprise AV / Unknown
 - `Loss_reason` (enum): Multi-platform required / Wants visual editor / Price / Security blocker / No Android TV / No owner / Other
 
+### 3.4 Compliance/consent fields (минимум для outbound)
+
+Чтобы не убить репутацию домена/каналов и не попасть в блокировки, фиксируем поля:
+- Contact:
+  - `Consent_status` (enum): Unknown / Granted / Denied / Revoked
+  - `Lawful_basis` (enum): Consent / LegitimateInterest / Contract / Other
+  - `Consent_proof_ref` (text/url) — где лежит доказательство (форма, письмо, запись)
+  - `Do_not_contact` (boolean)
+- Company:
+  - `Preferred_channels` (multi-select): Email / SMS / WhatsApp / Telegram / Calls
+
+Техническая часть ingestion+очередей: `docs/45-lead-ingestion-llm-enrichment-and-consent-outreach.md`.
+
 ---
 
 ## 4) Автоматизации (минимум, чтобы экономить время)
@@ -147,4 +160,3 @@ Actions:
 - Competitors compared
 - 3 decisive factors
 - 1 thing to improve
-

@@ -21,6 +21,24 @@
 - список групп и порядок rollout
 - критерии “стоп/откат”
 
+## 2.1 Rollout стратегия (Backend / Admin Web) — per company
+
+По умолчанию (до PMF): **1 компания = 1 контур** (см. `docs/DECISIONS.md` D010). Тогда “rollout per company” делается так:
+- релиз = один Docker image версии `X`
+- выкладка = деплой версии `X` в окружение конкретной компании
+- канареечные компании (ring `CANARY`) получают релиз первыми; дальше — ring `STABLE`
+- rollback = откат на предыдущий image + backward-compatible миграции
+
+Детали: `docs/44-company-ops-and-per-company-rollout.md`.
+
+## 2.2 Совместимость и управление обновлениями (Server-driven)
+
+Чтобы не блокироваться на MDM/политиках:
+- backend поддерживает минимум N-1 версию Player API
+- `/player/config` возвращает `min_supported_player_version` (и опционально `update_required`)
+
+Это позволяет “мягко” управлять обновлениями по компаниям через процессы, даже если обновления приложения идут медленно.
+
 ## 3) Release readiness checklist (обязательный)
 
 - SLO/алерты на месте (app/db/online rate/publish errors)
@@ -55,4 +73,3 @@
 - корректирующие действия:
   - продуктовые (UX, ограничения, фичи для диагностики)
   - процессные (чек-лист, тесты)
-

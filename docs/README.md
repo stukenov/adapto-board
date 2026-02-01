@@ -48,6 +48,8 @@
 42. `docs/41-public-android-tv-device-requirements.md` — public docs: требования к Android TV и чек-лист пилота (whitelist/MDM/kiosk).
 43. `docs/42-public-network-requirements.md` — public docs: требования к сети/прокси/allowlist и сетевой чек-лист.
 44. `docs/43-lean-marketing-playbook.md` — lean marketing: как делать лидоген и пилоты без бюджета (outbound, партнёры, контент, эксперименты).
+45. `docs/44-company-ops-and-per-company-rollout.md` — как дешево сделать обслуживание клиентов (support/CS) и выкатки “per company”.
+46. `docs/45-lead-ingestion-llm-enrichment-and-consent-outreach.md` — импорт лидов, LLM-enrichment и очереди коммуникаций (только consent-based).
 
 ## Принцип “меньше систем”
 

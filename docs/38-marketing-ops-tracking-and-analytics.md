@@ -89,3 +89,4 @@
 
 - На форме: “By submitting you agree…” (если нужно под ваш юрисдикционный контур).
 - Не собирать лишнее: достаточно work email, company, role, screens.
+- Для outbound: обязательные `unsubscribe`/suppression и запрет автоматических рассылок на контакты без согласия/законного основания (см. `docs/45-lead-ingestion-llm-enrichment-and-consent-outreach.md`).
