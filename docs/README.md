@@ -25,6 +25,7 @@
 19. `docs/18-marketing-kit.md` — позиционирование для рынка: месседжи, сайт, контент, GTM.
 20. `docs/19-sales-playbook.md` — playbook продаж: квалификация, discovery, демо, пилот, возражения, конкуренты.
 21. `docs/20-collateral-templates.md` — готовые шаблоны (one-pager, письма, deck, SOW пилота, кейс-стади).
+22. `docs/21-software-architecture.md` — архитектура ПО: модули, границы, кодовая структура, runtime-потоки, тестирование.
 
 ## Принцип “меньше систем”
 

@@ -35,3 +35,21 @@
 - Решение: админка — только web UI.
 - Причина: проще внедрение в enterprise (доступ по URL), быстрее rollout и поддержка.
 - Компромисс: web-ограничения/кроссбраузерность; “Kotlin-only” достигаем через Compose Multiplatform for Web.
+
+## D007 — Admin Web runtime: Kotlin/JS
+
+- Решение: web-админка v1 собирается как Kotlin/JS (Compose Multiplatform for Web).
+- Причина: прогнозируемая зрелость toolchain для MVP и быстрый запуск.
+- Компромисс: сборка использует web toolchain на этапе build, но runtime остаётся “статикой” (без отдельного UI-сервиса).
+
+## D008 — Persistence v1: Exposed
+
+- Решение: persistence слой v1 делаем на Exposed.
+- Причина: Kotlin-native, быстрее старт и ниже сложность, чем codegen/DSL jOOQ в MVP.
+- Компромисс: при росте сложности запросов возможен переход на jOOQ точечно.
+
+## D009 — Overlay patch format v1: domain patch
+
+- Решение: `state + patch`, где `patch` — обновления виджетов по `widgetId` (domain patch).
+- Причина: проще применить на Android TV, проще дебажить и логировать.
+- Компромисс: нужно явно версионировать схему виджетов и валидировать входные данные.

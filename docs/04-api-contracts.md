@@ -100,6 +100,8 @@ Manual data (pilot):
     - `event: patch` → `{version, patch}`
     - `event: keepalive` → `{ts}`
 
+Примечание v1 (фиксируем): `patch` — **domain patch** по `widgetId` (обновления конкретных виджетов), а не JSON Patch RFC 6902.
+
 ## 4) Подпись URL на assets
 
 Чтобы Android TV качал медиа без постоянной авторизации на storage:
@@ -108,4 +110,3 @@ Manual data (pilot):
 - device может обновить manifest, если URL истёк.
 
 В пилоте (local storage) допускается “проксирование” через backend с device auth, но это увеличивает нагрузку на app.
-

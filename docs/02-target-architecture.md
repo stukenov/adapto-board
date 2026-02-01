@@ -18,7 +18,7 @@
 - Kotlinx Serialization (JSON)
 - PostgreSQL (основной storage)
 - Flyway (миграции)
-- Exposed (ORM) **или** jOOQ (если нужны сложные запросы/контроль)
+- Exposed (ORM)
 - Micrometer + Prometheus (метрики), structured logs (JSON)
 
 Опционально (только при необходимости):
@@ -30,7 +30,7 @@
 
 Цель: web-админка на Kotlin (без отдельной JS-кодовой базы).
 
-Фиксируем v1: **Compose Multiplatform for Web** (Kotlin/Wasm или Kotlin/JS).
+Фиксируем v1: **Compose Multiplatform for Web на Kotlin/JS** (одна Kotlin-кодовая база для web UI).
 
 Деплой v1 (минимум систем):
 - UI собирается в статические файлы и отдаётся тем же Kotlin-монолитом (один домен, один deployable).
