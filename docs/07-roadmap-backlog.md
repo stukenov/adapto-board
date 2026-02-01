@@ -106,9 +106,8 @@
 
 Для R0 (реалистично):
 
-- 1 Kotlin backend engineer (Ktor/Postgres)
+- 1 Kotlin fullstack engineer (Ktor/Postgres + SSR web admin UI)
 - 1 Android TV engineer (Media3/Compose)
-- 1 fullstack Kotlin engineer (web admin UI + shared models) **или** part-time
 - 0.2–0.5 SRE/DevOps (инфра, мониторинг, релизы)
 - продукт/проект (part-time) — чтобы пилот не расползся
 

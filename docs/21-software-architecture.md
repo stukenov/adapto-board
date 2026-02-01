@@ -22,7 +22,7 @@
 Рекомендуемая структура:
 
 - `apps/server` — Ktor монолит (HTTP, SSE, jobs, migrations, storage adapters)
-- `apps/admin-web` — web UI (Compose Multiplatform for Web)
+- `apps/admin-web` — не отдельное приложение; web-админка v1 — SSR внутри `apps/server`
 - `apps/player-androidtv` — Android TV player (Media3 + Compose overlay)
 - `libs/contracts` — Kotlin DTO + OpenAPI schema sources (если применимо)
 - `libs/domain` — доменная модель и правила (без Ktor/DB/JSON)
@@ -242,7 +242,7 @@ Audit:
 Эти решения уже приняты и должны соблюдаться при реализации:
 
 1) Admin UI: только web (см. `docs/DECISIONS.md`, D006).
-2) Admin web runtime: Kotlin/JS (см. `docs/DECISIONS.md`, D007).
+2) Admin web runtime: SSR внутри Ktor (см. `docs/DECISIONS.md`, D007).
 3) Persistence: Exposed (см. `docs/DECISIONS.md`, D008).
 4) Overlay patch format: domain patch по `widgetId` (см. `docs/DECISIONS.md`, D009).
 5) Storage: pilot — LOCAL, production — S3-compatible по необходимости (см. `docs/01-requirements-and-assumptions.md` и `docs/02-target-architecture.md`).

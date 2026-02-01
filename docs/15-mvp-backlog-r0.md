@@ -23,7 +23,8 @@ R0 считается успешным, если:
 
 - Story: как TenantAdmin, я могу создать пользователя и назначить роль.
 - AC:
-  - роли: TenantAdmin/Operator/Viewer/Integrator
+  - роли v1 (lean): TenantAdmin/Operator
+  - Viewer/Integrator откладываем: в R0 эти права покрываются TenantAdmin
   - доступы ограничены по роли
   - audit: CREATE_USER, ASSIGN_ROLE
 
@@ -77,6 +78,7 @@ R0 считается успешным, если:
 - AC:
   - code одноразовый, TTL
   - можно инвалидировать code
+  - (lean) enroll code может быть “предназначен” для конкретного channelId, чтобы сократить шаг assignment
 
 ### R0-D2: Device enroll (Android TV)
 
@@ -91,6 +93,7 @@ R0 считается успешным, если:
 - AC:
   - устройство применяет assignment при следующем config poll
   - audit: DEVICE_ASSIGNED
+  - (lean) если enroll code был привязан к channelId, отдельный шаг assignment не обязателен
 
 ### R0-D4: Heartbeat
 
@@ -140,7 +143,7 @@ R0 считается успешным, если:
 
 ### R0-F3: REST pull connector
 
-- Story: как Integrator, я настраиваю pull endpoint для overlay.
+- Story: как TenantAdmin, я настраиваю pull endpoint для overlay.
 - AC:
   - polling interval configurable
   - ошибки коннектора видны в админке
@@ -172,6 +175,9 @@ R0 считается успешным, если:
 - Devices list + assign
 - Overlay manual edit
 - Audit/as-run views
+
+Формат UI v1 (lean):
+- server-rendered (SSR) web UI, без “визуальных редакторов”, без drag&drop — только формы/таблицы.
 
 ## 9) “Не сейчас” (explicitly out of R0)
 
