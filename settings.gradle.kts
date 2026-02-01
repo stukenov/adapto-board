@@ -119,6 +119,7 @@ dependencyResolutionManagement {
             // Android Compose
             library("compose-ui", "androidx.compose.ui", "ui").versionRef("compose")
             library("compose-material", "androidx.compose.material", "material").versionRef("compose")
+            library("compose-material3", "androidx.compose.material3", "material3").version("1.3.1")
             library("compose-tv", "androidx.tv", "tv-foundation").version("1.0.0-alpha11")
 
             // Android DataStore
@@ -156,7 +157,8 @@ dependencyResolutionManagement {
             bundle("ktor-client", listOf(
                 "ktor-client-core",
                 "ktor-client-okhttp",
-                "ktor-client-content-negotiation"
+                "ktor-client-content-negotiation",
+                "ktor-serialization-json"
             ))
 
             bundle("media3", listOf(
