@@ -45,7 +45,10 @@ import com.playoutedge.server.routes.admin.adminAuthRoutes
 import com.playoutedge.server.routes.admin.adminChannelRoutes
 import com.playoutedge.server.routes.admin.adminDeviceRoutes
 import com.playoutedge.server.routes.admin.adminHomeRoutes
-import com.playoutedge.server.routes.admin.adminPlaceholderRoutes
+import com.playoutedge.server.routes.admin.adminOnboardingRoutes
+import com.playoutedge.server.routes.admin.adminOverlayRoutes
+import com.playoutedge.server.routes.admin.adminReportsRoutes
+import com.playoutedge.server.routes.admin.adminSettingsRoutes
 import com.playoutedge.server.routes.admin.adminStaticRoutes
 import com.playoutedge.server.routes.alertsRoutes
 import com.playoutedge.server.routes.assetsRoutes
@@ -157,7 +160,10 @@ fun Application.module() {
         adminChannelRoutes(channelRepository, deviceRepository, scheduleRepository)
         adminDeviceRoutes(deviceRepository, channelRepository)
         adminAssetRoutes(assetRepository)
-        adminPlaceholderRoutes()
+        adminOverlayRoutes(overlayRepository, channelRepository, webhookLogRepository)
+        adminReportsRoutes(asrunRepository, auditRepository, deviceRepository, channelRepository)
+        adminSettingsRoutes(userRepository, assetRepository, deviceRepository, passwordService)
+        adminOnboardingRoutes(assetRepository, channelRepository, deviceRepository)
         adminStaticRoutes()
 
         // API routes
