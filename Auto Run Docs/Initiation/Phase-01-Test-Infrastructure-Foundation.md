@@ -78,7 +78,7 @@ This phase establishes a solid testing foundation by ensuring all existing tests
   - Tests run against server at `http://localhost:8080` (or `TEST_BASE_URL` env var)
   - Some timeout warnings in logs for element visibility, but tests pass
 
-- [ ] Create test coverage baseline report:
+- [x] Create test coverage baseline report:
   - Add JaCoCo plugin configuration to `apps/server/build.gradle.kts` if not present:
     ```kotlin
     plugins {
@@ -100,6 +100,41 @@ This phase establishes a solid testing foundation by ensuring all existing tests
   - Run tests with coverage: `./gradlew :apps:server:test :apps:server:jacocoTestReport`
   - Coverage report will be at `apps/server/build/reports/jacoco/test/html/index.html`
   - Note the current coverage percentage as baseline
+
+  **Coverage Baseline Report (2026-02-02):**
+
+  JaCoCo plugin configured and coverage report generated successfully.
+
+  | Metric | Covered | Total | Coverage |
+  |--------|---------|-------|----------|
+  | Instructions | 4,740 | 52,975 | **8%** |
+  | Branches | 120 | 2,381 | **5%** |
+  | Lines | 864 | 8,717 | **9%** |
+  | Methods | 126 | 1,389 | **9%** |
+  | Classes | 47 | 383 | **12%** |
+
+  **Top Covered Packages:**
+  | Package | Instruction Coverage |
+  |---------|---------------------|
+  | com.playoutedge.server.views.channels | 72% |
+  | com.playoutedge.server.views | 57% |
+  | com.playoutedge.server.views.auth | 44% |
+  | com.playoutedge.server.plugins | 28% |
+
+  **Uncovered Packages (0%):**
+  - com.playoutedge.server.services
+  - com.playoutedge.server.views.overlay
+  - com.playoutedge.server.views.settings
+  - com.playoutedge.server.views.onboarding
+  - com.playoutedge.server.views.reports
+  - com.playoutedge.server.views.devices
+  - com.playoutedge.server.views.assets
+  - com.playoutedge.server.routes.player
+  - com.playoutedge.server.views.home
+  - com.playoutedge.server.jobs
+  - com.playoutedge.server (Application entry point)
+
+  **Report Location:** `apps/server/build/reports/jacoco/test/html/index.html`
 
 - [ ] Verify full project build succeeds:
   - Run complete build: `./gradlew build -x test` (excluding tests which we already verified)

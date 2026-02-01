@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization)
     application
+    jacoco
 }
 
 application {
@@ -67,6 +68,15 @@ tasks.test {
     }
     // Run tests sequentially to avoid database container race conditions
     maxParallelForks = 1
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
 }
 
 // Separate task for UI tests
