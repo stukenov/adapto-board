@@ -57,8 +57,12 @@ fun HTML.devicesListView(
             form(action = "/admin/devices", method = FormMethod.get, classes = "filter-form") {
                 div("filter-row") {
                     div("form-group") {
-                        label { +"Status" }
+                        label {
+                            htmlFor = "filter-status"
+                            +"Status"
+                        }
                         select("form-control") {
+                            id = "filter-status"
                             name = "status"
                             option {
                                 value = ""
@@ -78,8 +82,12 @@ fun HTML.devicesListView(
                         }
                     }
                     div("form-group") {
-                        label { +"Channel" }
+                        label {
+                            htmlFor = "filter-channel"
+                            +"Channel"
+                        }
                         select("form-control") {
+                            id = "filter-channel"
                             name = "channel"
                             option {
                                 value = ""
@@ -96,8 +104,12 @@ fun HTML.devicesListView(
                         }
                     }
                     div("form-group") {
-                        label { +"Search" }
+                        label {
+                            htmlFor = "filter-search"
+                            +"Search"
+                        }
                         input(type = InputType.text, classes = "form-control") {
+                            id = "filter-search"
                             name = "search"
                             placeholder = "Search devices..."
                             value = filters.search ?: ""

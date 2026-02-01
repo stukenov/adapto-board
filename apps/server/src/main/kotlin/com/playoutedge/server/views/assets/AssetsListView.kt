@@ -55,8 +55,12 @@ fun HTML.assetsListView(
             form(action = "/admin/assets", method = FormMethod.get, classes = "filter-form") {
                 div("filter-row") {
                     div("form-group") {
-                        label { +"Type" }
+                        label {
+                            htmlFor = "filter-type"
+                            +"Type"
+                        }
                         select("form-control") {
+                            id = "filter-type"
                             name = "type"
                             option {
                                 value = ""
@@ -73,8 +77,12 @@ fun HTML.assetsListView(
                         }
                     }
                     div("form-group") {
-                        label { +"Status" }
+                        label {
+                            htmlFor = "filter-status"
+                            +"Status"
+                        }
                         select("form-control") {
+                            id = "filter-status"
                             name = "status"
                             option {
                                 value = ""
@@ -91,8 +99,12 @@ fun HTML.assetsListView(
                         }
                     }
                     div("form-group") {
-                        label { +"Search" }
+                        label {
+                            htmlFor = "filter-search"
+                            +"Search"
+                        }
                         input(type = InputType.text, classes = "form-control") {
+                            id = "filter-search"
                             name = "search"
                             placeholder = "Search assets..."
                             value = filters.search ?: ""

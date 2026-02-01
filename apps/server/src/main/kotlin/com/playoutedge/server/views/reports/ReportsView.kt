@@ -91,8 +91,12 @@ fun HTML.asrunReportsView(
             form(action = "/admin/reports/asrun", method = FormMethod.get, classes = "filter-form") {
                 div("filter-row") {
                     div("form-group") {
-                        label { +"Device" }
+                        label {
+                            htmlFor = "filter-device"
+                            +"Device"
+                        }
                         select("form-control") {
+                            id = "filter-device"
                             name = "deviceId"
                             option {
                                 value = ""
@@ -109,8 +113,12 @@ fun HTML.asrunReportsView(
                         }
                     }
                     div("form-group") {
-                        label { +"Channel" }
+                        label {
+                            htmlFor = "filter-channel"
+                            +"Channel"
+                        }
                         select("form-control") {
+                            id = "filter-channel"
                             name = "channelId"
                             option {
                                 value = ""
@@ -127,8 +135,12 @@ fun HTML.asrunReportsView(
                         }
                     }
                     div("form-group") {
-                        label { +"Event Type" }
+                        label {
+                            htmlFor = "filter-event-type"
+                            +"Event Type"
+                        }
                         select("form-control") {
+                            id = "filter-event-type"
                             name = "eventType"
                             option {
                                 value = ""
@@ -145,15 +157,23 @@ fun HTML.asrunReportsView(
                         }
                     }
                     div("form-group") {
-                        label { +"From" }
+                        label {
+                            htmlFor = "filter-from-date"
+                            +"From"
+                        }
                         input(type = InputType.date, classes = "form-control") {
+                            id = "filter-from-date"
                             name = "fromDate"
                             value = filters.fromDate ?: ""
                         }
                     }
                     div("form-group") {
-                        label { +"To" }
+                        label {
+                            htmlFor = "filter-to-date"
+                            +"To"
+                        }
                         input(type = InputType.date, classes = "form-control") {
+                            id = "filter-to-date"
                             name = "toDate"
                             value = filters.toDate ?: ""
                         }
@@ -295,8 +315,12 @@ fun HTML.auditLogView(
             form(action = "/admin/reports/audit", method = FormMethod.get, classes = "filter-form") {
                 div("filter-row") {
                     div("form-group") {
-                        label { +"Entity Type" }
+                        label {
+                            htmlFor = "audit-filter-entity"
+                            +"Entity Type"
+                        }
                         select("form-control") {
+                            id = "audit-filter-entity"
                             name = "entityType"
                             option {
                                 value = ""
@@ -313,8 +337,12 @@ fun HTML.auditLogView(
                         }
                     }
                     div("form-group") {
-                        label { +"Action" }
+                        label {
+                            htmlFor = "audit-filter-action"
+                            +"Action"
+                        }
                         select("form-control") {
+                            id = "audit-filter-action"
                             name = "action"
                             option {
                                 value = ""
@@ -331,15 +359,23 @@ fun HTML.auditLogView(
                         }
                     }
                     div("form-group") {
-                        label { +"From" }
+                        label {
+                            htmlFor = "audit-filter-from"
+                            +"From"
+                        }
                         input(type = InputType.date, classes = "form-control") {
+                            id = "audit-filter-from"
                             name = "fromDate"
                             value = filters.fromDate ?: ""
                         }
                     }
                     div("form-group") {
-                        label { +"To" }
+                        label {
+                            htmlFor = "audit-filter-to"
+                            +"To"
+                        }
                         input(type = InputType.date, classes = "form-control") {
+                            id = "audit-filter-to"
                             name = "toDate"
                             value = filters.toDate ?: ""
                         }

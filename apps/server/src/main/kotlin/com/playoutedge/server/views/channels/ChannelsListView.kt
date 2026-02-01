@@ -32,8 +32,12 @@ fun HTML.channelsListView(
             form(action = "/admin/channels", method = FormMethod.get, classes = "filter-form") {
                 div("filter-row") {
                     div("form-group") {
-                        label { +"Status" }
+                        label {
+                            htmlFor = "filter-status"
+                            +"Status"
+                        }
                         select("form-control") {
+                            id = "filter-status"
                             name = "status"
                             option {
                                 value = ""
@@ -50,8 +54,12 @@ fun HTML.channelsListView(
                         }
                     }
                     div("form-group") {
-                        label { +"Search" }
+                        label {
+                            htmlFor = "filter-search"
+                            +"Search"
+                        }
                         input(type = InputType.text, classes = "form-control") {
+                            id = "filter-search"
                             name = "search"
                             placeholder = "Search channels..."
                             value = filters.search ?: ""

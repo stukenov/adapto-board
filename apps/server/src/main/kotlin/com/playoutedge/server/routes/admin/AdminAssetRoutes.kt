@@ -4,10 +4,18 @@ import com.playoutedge.domain.enums.AssetStatus
 import com.playoutedge.domain.enums.AssetType
 import com.playoutedge.domain.tenant.TenantId
 import com.playoutedge.persistence.repositories.AssetRepository
+import com.playoutedge.persistence.repositories.CreateAssetRequest
+import com.playoutedge.persistence.repositories.QuotaService
+import com.playoutedge.persistence.repositories.UpdateAssetRequest
 import com.playoutedge.server.plugins.adminSession
 import com.playoutedge.server.views.assets.*
+import com.playoutedge.storage.AssetUploadService
+import com.playoutedge.storage.UploadRequest
+import com.playoutedge.storage.ValidationResult
+import io.ktor.http.content.*
 import io.ktor.server.application.*
 import io.ktor.server.html.*
+import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import java.util.UUID
@@ -19,9 +27,153 @@ private const val DEFAULT_STORAGE_LIMIT_BYTES = 10_737_418_240L
  * Admin asset management routes.
  */
 fun Route.adminAssetRoutes(
-    assetRepository: AssetRepository
+    assetRepository: AssetRepository,
+    quotaService: QuotaService,
+    assetUploadService: AssetUploadService
 ) {
     route("/admin/assets") {
+        // GET /admin/assets/upload - Upload form (must be before /{id} route)
+        get("/upload") {
+            val session = call.adminSession ?: run {
+                call.respondRedirect("/admin/login")
+                return@get
+            }
+
+            val tenantId = TenantId(session.tenantId)
+            val usedBytes = assetRepository.getTotalStorageBytes(tenantId)
+            val quota = QuotaInfo(
+                usedBytes = usedBytes,
+                limitBytes = DEFAULT_STORAGE_LIMIT_BYTES
+            )
+
+            call.respondHtml {
+                assetUploadView(
+                    session = session,
+                    quota = quota
+                )
+            }
+        }
+
+        // POST /admin/assets/upload - Handle file upload
+        post("/upload") {
+            val session = call.adminSession ?: run {
+                call.respondRedirect("/admin/login")
+                return@post
+            }
+
+            val tenantId = TenantId(session.tenantId)
+            val usedBytes = assetRepository.getTotalStorageBytes(tenantId)
+            val quota = QuotaInfo(
+                usedBytes = usedBytes,
+                limitBytes = DEFAULT_STORAGE_LIMIT_BYTES
+            )
+
+            val multipart = call.receiveMultipart()
+            var filename: String? = null
+            var mimeType: String? = null
+            var fileBytes: ByteArray? = null
+
+            multipart.forEachPart { part ->
+                when (part) {
+                    is PartData.FileItem -> {
+                        filename = part.originalFileName?.takeIf { it.isNotBlank() }
+                        mimeType = part.contentType?.toString() ?: "application/octet-stream"
+                        fileBytes = part.streamProvider().readBytes()
+                    }
+                    else -> {}
+                }
+                part.dispose()
+            }
+
+            // Validate file presence
+            if (filename == null || fileBytes == null || fileBytes!!.isEmpty()) {
+                call.respondHtml {
+                    assetUploadView(
+                        session = session,
+                        quota = quota,
+                        error = "Please select a file to upload"
+                    )
+                }
+                return@post
+            }
+
+            val contentLength = fileBytes!!.size.toLong()
+
+            // Check quota
+            val quotaCheck = quotaService.checkStorageQuota(tenantId, contentLength)
+            if (!quotaCheck.allowed) {
+                call.respondHtml {
+                    assetUploadView(
+                        session = session,
+                        quota = quota,
+                        error = quotaCheck.reason ?: "Storage quota exceeded"
+                    )
+                }
+                return@post
+            }
+
+            val assetId = UUID.randomUUID()
+            val uploadRequest = UploadRequest(
+                tenantId = tenantId.value,
+                assetId = assetId,
+                filename = filename!!,
+                mimeType = mimeType!!,
+                contentLength = contentLength
+            )
+
+            // Validate format
+            val validation = assetUploadService.validateUpload(uploadRequest)
+            if (validation is ValidationResult.Invalid) {
+                call.respondHtml {
+                    assetUploadView(
+                        session = session,
+                        quota = quota,
+                        error = validation.reason
+                    )
+                }
+                return@post
+            }
+
+            val assetType = (validation as ValidationResult.Valid).assetType
+
+            // Upload to storage
+            val uploadResult = assetUploadService.upload(
+                uploadRequest,
+                fileBytes!!.inputStream()
+            )
+
+            if (uploadResult.validationError != null) {
+                call.respondHtml {
+                    assetUploadView(
+                        session = session,
+                        quota = quota,
+                        error = uploadResult.validationError
+                    )
+                }
+                return@post
+            }
+
+            // Create asset record
+            val asset = assetRepository.create(
+                tenantId,
+                CreateAssetRequest(
+                    type = assetType,
+                    name = filename!!,
+                    mimeType = mimeType!!,
+                    storageKey = uploadResult.storageKey,
+                    fileSizeBytes = uploadResult.sizeBytes,
+                    checksumSha256 = uploadResult.checksumSha256,
+                    createdBy = session.subject
+                )
+            )
+
+            // Mark as ready (no transcoding in MVP)
+            assetRepository.update(tenantId, asset.id.value, UpdateAssetRequest(status = AssetStatus.READY))
+
+            // Redirect to asset detail page
+            call.respondRedirect("/admin/assets/${asset.id.value}")
+        }
+
         // GET /admin/assets - List assets
         get {
             val session = call.adminSession ?: run {

@@ -160,7 +160,7 @@ fun Application.module() {
         adminHomeRoutes(deviceRepository, alertRepository)
         adminChannelRoutes(channelRepository, deviceRepository, scheduleRepository)
         adminDeviceRoutes(deviceRepository, channelRepository)
-        adminAssetRoutes(assetRepository)
+        adminAssetRoutes(assetRepository, quotaService, assetUploadService)
         adminOverlayRoutes(overlayRepository, channelRepository, webhookLogRepository)
         adminReportsRoutes(asrunRepository, auditRepository, deviceRepository, channelRepository)
         adminSettingsRoutes(userRepository, assetRepository, deviceRepository, passwordService)
