@@ -30,6 +30,7 @@ class UserEntity(id: EntityID<UUID>) : UUIDEntity(id) {
     companion object : UUIDEntityClass<UserEntity>(Users)
 
     var tenant by TenantEntity referencedOn Users.tenantId
+    val tenantId: UUID get() = readValues[Users.tenantId].value
     var email by Users.email
     var displayName by Users.displayName
     var status by Users.status

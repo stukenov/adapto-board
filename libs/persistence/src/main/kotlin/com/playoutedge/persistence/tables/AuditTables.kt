@@ -9,7 +9,7 @@ import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
 object AuditLog : UUIDTable("audit_log") {
     val tenantId = reference("tenant_id", Tenants, onDelete = ReferenceOption.SET_NULL).nullable()
     val actorUserId = reference("actor_user_id", Users, onDelete = ReferenceOption.SET_NULL).nullable()
-    val actorType = enumerationByName<ActorType>("actor_type", 20)
+    val actorType = pgEnum<ActorType>("actor_type", "actor_type")
     val action = varchar("action", 100)
     val entityType = varchar("entity_type", 100)
     val entityId = uuid("entity_id")
@@ -23,7 +23,7 @@ object AsrunEvents : UUIDTable("asrun_events") {
     val channelId = reference("channel_id", Channels, onDelete = ReferenceOption.SET_NULL).nullable()
     val scheduleVersionId = reference("schedule_version_id", ScheduleVersions, onDelete = ReferenceOption.SET_NULL).nullable()
     val assetId = reference("asset_id", Assets, onDelete = ReferenceOption.SET_NULL).nullable()
-    val eventType = enumerationByName<AsrunEventType>("event_type", 20)
+    val eventType = pgEnum<AsrunEventType>("event_type", "asrun_event_type")
     val at = timestamp("at")
     val detailsJson = jsonbColumnNullable("details_json")
     val createdAt = timestamp("created_at")

@@ -21,9 +21,9 @@ object OverlayBindings : UUIDTable("overlay_bindings") {
     val tenantId = reference("tenant_id", Tenants, onDelete = ReferenceOption.CASCADE)
     val channelId = reference("channel_id", Channels, onDelete = ReferenceOption.CASCADE)
     val overlayProfileId = reference("overlay_profile_id", OverlayProfiles, onDelete = ReferenceOption.CASCADE)
-    val sourceType = enumerationByName<OverlaySourceType>("source_type", 20)
+    val sourceType = pgEnum<OverlaySourceType>("source_type", "overlay_source_type")
     val sourceConfigJson = jsonbColumn("source_config_json")
-    val status = enumerationByName<BindingStatus>("status", 20)
+    val status = pgEnum<BindingStatus>("status", "binding_status")
     val webhookSecret = varchar("webhook_secret", 255).nullable()
     val createdAt = timestamp("created_at")
 }

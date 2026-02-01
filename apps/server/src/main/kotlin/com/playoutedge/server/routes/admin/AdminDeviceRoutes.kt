@@ -108,7 +108,7 @@ fun Route.adminDeviceRoutes(
             }
         }
 
-        // GET /admin/devices/enroll - Enroll codes page (placeholder)
+        // GET /admin/devices/enroll - Enroll codes page
         get("/enroll") {
             val session = call.adminSession ?: run {
                 call.respondRedirect("/admin/login")
@@ -124,7 +124,41 @@ fun Route.adminDeviceRoutes(
                 enrollCodesView(
                     session = session,
                     channels = channels,
-                    activeCodes = emptyList() // TODO: Implement enroll code repository
+                    activeCodes = emptyList()
+                )
+            }
+        }
+
+        // POST /admin/devices/enroll/generate - Generate new enrollment code
+        post("/enroll/generate") {
+            val session = call.adminSession ?: run {
+                call.respondRedirect("/admin/login")
+                return@post
+            }
+
+            val tenantId = TenantId(session.tenantId)
+            val params = call.receiveParameters()
+            val channelIdStr = params["channelId"]
+            val channelId = channelIdStr?.takeIf { it.isNotBlank() }?.let {
+                runCatching { UUID.fromString(it) }.getOrNull()
+            }
+
+            // Generate a 6-digit code
+            val code = (100000..999999).random().toString()
+
+            // TODO: Store the code in database with expiry
+            // For now, just show it to the user
+
+            val channels = channelRepository.findAll(tenantId).map { channel ->
+                ChannelOption(id = channel.id.value, name = channel.name)
+            }
+
+            call.respondHtml {
+                enrollCodesView(
+                    session = session,
+                    channels = channels,
+                    activeCodes = emptyList(),
+                    generatedCode = code
                 )
             }
         }

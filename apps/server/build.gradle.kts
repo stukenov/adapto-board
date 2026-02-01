@@ -48,10 +48,38 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockk)
     testImplementation(libs.bundles.testcontainers)
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+    // UI Testing with Playwright
+    testImplementation("com.microsoft.playwright:playwright:1.49.0")
 }
 
 tasks.jar {
     manifest {
         attributes["Main-Class"] = "com.playoutedge.server.ApplicationKt"
     }
+}
+
+tasks.test {
+    useJUnitPlatform {
+        // Exclude UI tests by default (require RUN_UI_TESTS=true)
+        excludeTags("ui")
+    }
+}
+
+// Separate task for UI tests
+tasks.register<Test>("uiTest") {
+    description = "Runs UI tests with Playwright"
+    group = "verification"
+
+    // Set the classpath and test classes
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+
+    useJUnitPlatform {
+        includeTags("ui")
+    }
+
+    // Pass environment variable to enable UI tests
+    environment("RUN_UI_TESTS", "true")
 }

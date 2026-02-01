@@ -4,6 +4,7 @@ import com.playoutedge.domain.enums.ChannelStatus
 import com.playoutedge.domain.tenant.TenantId
 import com.playoutedge.persistence.repositories.ChannelRepository
 import com.playoutedge.persistence.repositories.CreateChannelRequest
+import com.playoutedge.persistence.repositories.UpdateChannelRequest
 import com.playoutedge.persistence.repositories.DeviceRepository
 import com.playoutedge.persistence.repositories.ScheduleRepository
 import com.playoutedge.server.plugins.adminSession
@@ -175,6 +176,134 @@ fun Route.adminChannelRoutes(
                     devices = devices
                 )
             }
+        }
+
+        // GET /admin/channels/:id/edit - Edit channel form
+        get("/{id}/edit") {
+            val session = call.adminSession ?: run {
+                call.respondRedirect("/admin/login")
+                return@get
+            }
+
+            val tenantId = TenantId(session.tenantId)
+            val channelId = call.parameters["id"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+
+            if (channelId == null) {
+                call.respondRedirect("/admin/channels")
+                return@get
+            }
+
+            val channel = channelRepository.findById(tenantId, channelId)
+            if (channel == null) {
+                call.respondRedirect("/admin/channels")
+                return@get
+            }
+
+            call.respondHtml {
+                editChannelView(
+                    session = session,
+                    channel = ChannelDetail(
+                        id = channel.id.value,
+                        name = channel.name,
+                        status = channel.status,
+                        createdAt = channel.createdAt
+                    )
+                )
+            }
+        }
+
+        // POST /admin/channels/:id - Update channel
+        post("/{id}") {
+            val session = call.adminSession ?: run {
+                call.respondRedirect("/admin/login")
+                return@post
+            }
+
+            val tenantId = TenantId(session.tenantId)
+            val channelId = call.parameters["id"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+
+            if (channelId == null) {
+                call.respondRedirect("/admin/channels")
+                return@post
+            }
+
+            val params = call.receiveParameters()
+            val name = params["name"]?.trim()
+
+            if (name.isNullOrBlank()) {
+                val channel = channelRepository.findById(tenantId, channelId)
+                if (channel != null) {
+                    call.respondHtml {
+                        editChannelView(
+                            session = session,
+                            channel = ChannelDetail(
+                                id = channel.id.value,
+                                name = channel.name,
+                                status = channel.status,
+                                createdAt = channel.createdAt
+                            ),
+                            error = "Channel name is required"
+                        )
+                    }
+                } else {
+                    call.respondRedirect("/admin/channels")
+                }
+                return@post
+            }
+
+            channelRepository.update(tenantId, channelId, UpdateChannelRequest(name = name))
+            call.respondRedirect("/admin/channels/$channelId")
+        }
+
+        // POST /admin/channels/:id/pause - Pause channel
+        post("/{id}/pause") {
+            val session = call.adminSession ?: run {
+                call.respondRedirect("/admin/login")
+                return@post
+            }
+
+            val tenantId = TenantId(session.tenantId)
+            val channelId = call.parameters["id"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+
+            if (channelId != null) {
+                channelRepository.update(tenantId, channelId, UpdateChannelRequest(status = ChannelStatus.PAUSED))
+            }
+
+            call.respondRedirect("/admin/channels/$channelId")
+        }
+
+        // POST /admin/channels/:id/resume - Resume channel
+        post("/{id}/resume") {
+            val session = call.adminSession ?: run {
+                call.respondRedirect("/admin/login")
+                return@post
+            }
+
+            val tenantId = TenantId(session.tenantId)
+            val channelId = call.parameters["id"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+
+            if (channelId != null) {
+                channelRepository.update(tenantId, channelId, UpdateChannelRequest(status = ChannelStatus.ACTIVE))
+            }
+
+            call.respondRedirect("/admin/channels/$channelId")
+        }
+
+        // POST /admin/channels/:id/delete - Delete channel
+        post("/{id}/delete") {
+            val session = call.adminSession ?: run {
+                call.respondRedirect("/admin/login")
+                return@post
+            }
+
+            val tenantId = TenantId(session.tenantId)
+            val channelId = call.parameters["id"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+
+            if (channelId != null) {
+                channelRepository.delete(tenantId, channelId)
+            }
+
+            call.respondRedirect("/admin/channels")
         }
     }
 }

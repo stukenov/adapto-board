@@ -18,4 +18,6 @@ dependencies {
 
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.bundles.testcontainers)
+    testImplementation(kotlin("test"))
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }

@@ -79,7 +79,7 @@ fun Route.authRoutes(
 
             val claims = AdminClaims(
                 subject = user.id.value,
-                tenantId = user.tenant.id.value,
+                tenantId = user.tenantId,
                 role = role
             )
 
@@ -141,7 +141,7 @@ fun Route.authRoutes(
                     email = user.email,
                     name = user.displayName,
                     role = claims.role.name,
-                    tenantId = user.tenant.id.value.toString()
+                    tenantId = user.tenantId.toString()
                 ))
             }
         }

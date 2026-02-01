@@ -11,7 +11,7 @@ import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
 object Channels : UUIDTable("channels") {
     val tenantId = reference("tenant_id", Tenants, onDelete = ReferenceOption.CASCADE)
     val name = varchar("name", 255)
-    val status = enumerationByName<ChannelStatus>("status", 20)
+    val status = pgEnum<ChannelStatus>("status", "channel_status")
     val defaultOverlayProfileId = uuid("default_overlay_profile_id").nullable()
     val createdAt = timestamp("created_at")
 
@@ -24,7 +24,7 @@ object ScheduleVersions : UUIDTable("schedule_versions") {
     val tenantId = reference("tenant_id", Tenants, onDelete = ReferenceOption.CASCADE)
     val channelId = reference("channel_id", Channels, onDelete = ReferenceOption.CASCADE)
     val version = integer("version")
-    val state = enumerationByName<ScheduleState>("state", 20)
+    val state = pgEnum<ScheduleState>("state", "schedule_state")
     val publishedAt = timestamp("published_at").nullable()
     val createdBy = reference("created_by", Users, onDelete = ReferenceOption.SET_NULL).nullable()
     val createdAt = timestamp("created_at")

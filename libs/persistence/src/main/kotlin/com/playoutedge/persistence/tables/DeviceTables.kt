@@ -10,7 +10,7 @@ import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
 object Devices : UUIDTable("devices") {
     val tenantId = reference("tenant_id", Tenants, onDelete = ReferenceOption.CASCADE)
     val displayName = varchar("display_name", 255)
-    val enrollStatus = enumerationByName<DeviceEnrollStatus>("enroll_status", 20)
+    val enrollStatus = pgEnum<DeviceEnrollStatus>("enroll_status", "device_enroll_status")
     val deviceSecretHash = varchar("device_secret_hash", 255).nullable()
     val assignedChannelId = uuid("assigned_channel_id").nullable()
     val lastSeenAt = timestamp("last_seen_at").nullable()
@@ -24,7 +24,7 @@ object Devices : UUIDTable("devices") {
 object EnrollCodes : UUIDTable("enroll_codes") {
     val tenantId = reference("tenant_id", Tenants, onDelete = ReferenceOption.CASCADE)
     val code = varchar("code", 10)
-    val status = enumerationByName<EnrollCodeStatus>("status", 20)
+    val status = pgEnum<EnrollCodeStatus>("status", "enroll_code_status")
     val channelId = reference("channel_id", Channels, onDelete = ReferenceOption.SET_NULL).nullable()
     val expiresAt = timestamp("expires_at")
     val usedAt = timestamp("used_at").nullable()

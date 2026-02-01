@@ -44,7 +44,7 @@ fun HTML.enrollCodesView(
                 h3 { +"Generate New Code" }
             }
             div("card-body") {
-                form(action = "/admin/devices/enroll", method = FormMethod.post, classes = "auth-form") {
+                form(action = "/admin/devices/enroll/generate", method = FormMethod.post, classes = "auth-form") {
                     div("form-group") {
                         label { +"Bind to Channel (optional)" }
                         select("form-control") {

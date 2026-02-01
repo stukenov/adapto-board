@@ -9,9 +9,9 @@ import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
 
 object Assets : UUIDTable("assets") {
     val tenantId = reference("tenant_id", Tenants, onDelete = ReferenceOption.CASCADE)
-    val type = enumerationByName<AssetType>("type", 20)
+    val type = pgEnum<AssetType>("type", "asset_type")
     val name = varchar("name", 255)
-    val status = enumerationByName<AssetStatus>("status", 20)
+    val status = pgEnum<AssetStatus>("status", "asset_status")
     val durationMs = integer("duration_ms").nullable()
     val mimeType = varchar("mime_type", 100)
     val checksumSha256 = varchar("checksum_sha256", 64).nullable()
@@ -27,7 +27,7 @@ object Assets : UUIDTable("assets") {
 
 object AssetVersions : UUIDTable("asset_versions") {
     val assetId = reference("asset_id", Assets, onDelete = ReferenceOption.CASCADE)
-    val profile = enumerationByName<AssetProfile>("profile", 20)
+    val profile = pgEnum<AssetProfile>("profile", "asset_profile")
     val storageKey = varchar("storage_key", 500)
     val codec = varchar("codec", 50).nullable()
     val bitrate = integer("bitrate").nullable()

@@ -61,7 +61,7 @@ fun Route.adminAuthRoutes(
             // Generate JWT token
             val claims = AdminClaims(
                 subject = user.id.value,
-                tenantId = user.tenant.id.value,
+                tenantId = user.tenantId,
                 role = primaryRole
             )
             val token = jwtService.generateAdminAccessToken(claims)

@@ -30,7 +30,8 @@ services:
       DATABASE_PASSWORD: dev
       JWT_SECRET: dev-secret-change-in-production
       STORAGE_MODE: LOCAL
-      STORAGE_PATH: /app/storage
+      STORAGE_LOCAL_PATH: /app/storage
+      STORAGE_LOCAL_URL: http://localhost:8080/api/storage
     ports:
       - "8080:8080"
     volumes:

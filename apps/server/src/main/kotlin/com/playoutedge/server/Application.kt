@@ -48,6 +48,7 @@ import com.playoutedge.server.routes.admin.adminHomeRoutes
 import com.playoutedge.server.routes.admin.adminOnboardingRoutes
 import com.playoutedge.server.routes.admin.adminOverlayRoutes
 import com.playoutedge.server.routes.admin.adminReportsRoutes
+import com.playoutedge.server.routes.admin.adminScheduleRoutes
 import com.playoutedge.server.routes.admin.adminSettingsRoutes
 import com.playoutedge.server.routes.admin.adminStaticRoutes
 import com.playoutedge.server.routes.alertsRoutes
@@ -129,12 +130,6 @@ fun Application.module() {
     val alertService = AlertService(alertRepository)
     val maintenanceService = MaintenanceService()
 
-    // Job scheduler
-    val jobScheduler = JobScheduler(jobRepository)
-    jobScheduler.register(CleanupJobHandler(auditRepository, webhookLogRepository))
-    jobScheduler.register(AsrunCleanupJobHandler(asrunRepository))
-    jobScheduler.start()
-
     // Install plugins
     install(RequestIdPlugin)
     install(ContentNegotiation) { json() }
@@ -152,6 +147,12 @@ fun Application.module() {
     // Initialize database
     configureDatabase()
 
+    // Job scheduler (must be after database init)
+    val jobScheduler = JobScheduler(jobRepository)
+    jobScheduler.register(CleanupJobHandler(auditRepository, webhookLogRepository))
+    jobScheduler.register(AsrunCleanupJobHandler(asrunRepository))
+    jobScheduler.start()
+
     // Configure routes
     routing {
         // Admin web routes (SSR)
@@ -164,6 +165,7 @@ fun Application.module() {
         adminReportsRoutes(asrunRepository, auditRepository, deviceRepository, channelRepository)
         adminSettingsRoutes(userRepository, assetRepository, deviceRepository, passwordService)
         adminOnboardingRoutes(assetRepository, channelRepository, deviceRepository)
+        adminScheduleRoutes(channelRepository, scheduleRepository, assetRepository)
         adminStaticRoutes()
 
         // API routes
