@@ -65,6 +65,8 @@ tasks.test {
         // Exclude UI tests by default (require RUN_UI_TESTS=true)
         excludeTags("ui")
     }
+    // Run tests sequentially to avoid database container race conditions
+    maxParallelForks = 1
 }
 
 // Separate task for UI tests

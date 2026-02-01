@@ -2,49 +2,77 @@ package com.playoutedge.server
 
 import org.flywaydb.core.Flyway
 import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.testcontainers.containers.PostgreSQLContainer
-import org.testcontainers.junit.jupiter.Container
-import org.testcontainers.junit.jupiter.Testcontainers
 
-@Testcontainers
+/**
+ * Base class for tests that need a PostgreSQL database.
+ * Uses a singleton testcontainer that's reused across all test classes.
+ */
 abstract class DatabaseTestContainer {
 
     companion object {
-        @Container
-        @JvmStatic
-        val postgres: PostgreSQLContainer<*> = PostgreSQLContainer("postgres:16-alpine")
-            .withDatabaseName("testdb")
-            .withUsername("test")
-            .withPassword("test")
-            .withReuse(true)
+        // Singleton container - starts once and is reused
+        private val postgres: PostgreSQLContainer<*> by lazy {
+            PostgreSQLContainer("postgres:16-alpine")
+                .withDatabaseName("testdb")
+                .withUsername("test")
+                .withPassword("test")
+                .apply { start() }
+        }
 
-        private var initialized = false
+        private var database: Database? = null
+        private val lock = Any()
 
         @JvmStatic
         fun initDatabase(): Database {
-            if (!initialized) {
-                postgres.start()
+            synchronized(lock) {
+                // Ensure container is running
+                if (!postgres.isRunning) {
+                    postgres.start()
+                }
+
+                // Check if we already have a valid database connection
+                if (database != null && TransactionManager.defaultDatabase == database) {
+                    return database!!
+                }
 
                 // Run Flyway migrations
                 Flyway.configure()
                     .dataSource(postgres.jdbcUrl, postgres.username, postgres.password)
                     .locations("classpath:db/migration")
+                    .cleanDisabled(false)
                     .load()
-                    .migrate()
+                    .apply {
+                        // Clean and migrate to ensure fresh state
+                        clean()
+                        migrate()
+                    }
 
-                initialized = true
+                // Connect to database and make it the default
+                database = Database.connect(
+                    url = postgres.jdbcUrl,
+                    driver = "org.postgresql.Driver",
+                    user = postgres.username,
+                    password = postgres.password
+                )
+
+                // Set this as the default database for transactions
+                TransactionManager.defaultDatabase = database
+
+                return database!!
             }
-
-            return Database.connect(
-                url = postgres.jdbcUrl,
-                driver = "org.postgresql.Driver",
-                user = postgres.username,
-                password = postgres.password
-            )
         }
 
         @JvmStatic
-        fun getJdbcUrl(): String = postgres.jdbcUrl
+        fun getJdbcUrl(): String {
+            synchronized(lock) {
+                if (!postgres.isRunning) {
+                    postgres.start()
+                }
+                return postgres.jdbcUrl
+            }
+        }
 
         @JvmStatic
         fun getUsername(): String = postgres.username
