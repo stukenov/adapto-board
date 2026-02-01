@@ -131,6 +131,13 @@
 
 Быстрая формула (для прикидки):
 
-- `egress_gb ≈ screens * hours_per_day * bitrate_mbps * 3600 / 8 / 1024`
+- В нашей модели Android TV **скачивает assets и крутит из кэша**, поэтому:
+  - `egress_gb ≈ screens * U`, где `U` = GB новых/обновлённых медиа на экран в месяц.
+- Формула “битрейт × часы” — верхняя оценка только для стриминга:
+  - `egress_gb_streaming ≈ screens * hours_per_day * bitrate_mbps * 3600 * days / 8 / 1024`
 
-Например: 200 экранов * 10 ч/день * 3 Mbps ≈ ~2.6 TB/мес egress (порядок величины). Это и определит необходимость CDN/branch-cache.
+Примеры (порядок величины):
+- distribution: 200 экранов * 4 GB/экран/мес = ~0.8 TB/мес egress
+- streaming upper bound: 200 экранов * 10 ч/день * 3 Mbps ≈ ~2.6 TB/мес egress
+
+Это и определит необходимость CDN/branch-cache и лимитов на контент.

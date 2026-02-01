@@ -166,6 +166,7 @@ Stage 4 — Pilot agreed:
 
 Stage 5 — Production proposal:
 - подготовлен пакет pricing/packaging (`docs/12-pricing-and-packaging.md`)
+- расчёт и прайс строго по `docs/24-kz-pricebook.md` (никаких “в голове” и “давайте уступим ещё”)
 - готов security/IT пакет (опросник/архитектура/данные)
 
 ## 10) Требования procurement/security (минимальный пакет)
