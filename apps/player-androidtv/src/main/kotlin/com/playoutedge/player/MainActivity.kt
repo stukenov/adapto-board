@@ -244,6 +244,7 @@ class MainActivity : ComponentActivity() {
     }
 
     // Block back button in kiosk mode
+    @Suppress("MissingSuperCall")
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         // Do nothing - kiosk mode

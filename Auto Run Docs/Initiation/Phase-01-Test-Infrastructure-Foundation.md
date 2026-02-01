@@ -136,9 +136,45 @@ This phase establishes a solid testing foundation by ensuring all existing tests
 
   **Report Location:** `apps/server/build/reports/jacoco/test/html/index.html`
 
-- [ ] Verify full project build succeeds:
+- [x] Verify full project build succeeds:
   - Run complete build: `./gradlew build -x test` (excluding tests which we already verified)
   - Run with tests: `./gradlew build`
   - Fix any compilation errors or warnings
   - Ensure both server and Android modules compile successfully
   - Document the final state: all tests passing, build successful
+
+  **Build Verification (2026-02-02):**
+
+  Initial `./gradlew build -x test` failed with 2 Android lint errors:
+
+  | Error | File | Issue |
+  |-------|------|-------|
+  | MissingSuperCall | MainActivity.kt:248 | `onBackPressed()` not calling super |
+  | MissingTvBanner | AndroidManifest.xml:18 | Missing TV banner for Leanback launcher |
+
+  **Fixes Applied:**
+  1. Added `@Suppress("MissingSuperCall")` to `onBackPressed()` in `MainActivity.kt` - intentionally blocking back button in kiosk mode
+  2. Created `app_banner.xml` (320x180dp vector drawable) for TV home screen
+  3. Added `android:banner="@drawable/app_banner"` to AndroidManifest.xml
+
+  **Final Build Results:**
+  | Build Type | Command | Result |
+  |------------|---------|--------|
+  | Without tests | `./gradlew build -x test` | ✅ BUILD SUCCESSFUL |
+  | With all tests | `./gradlew build` | ✅ BUILD SUCCESSFUL |
+
+  **Test Summary (All Modules):**
+  | Module | Tests | Status |
+  |--------|-------|--------|
+  | apps:server | 31 | ✅ PASS |
+  | libs:auth | 21 | ✅ PASS |
+  | libs:storage | 12 | ✅ PASS |
+  | libs:persistence | 14 | ✅ PASS |
+  | apps:player-androidtv | 0 (no unit tests) | ✅ N/A |
+  | **TOTAL** | **78** | **✅ ALL PASSING** |
+
+  **Remaining Lint Warnings (Non-blocking):**
+  - 12 warnings in Android module (GradleDependency updates, OldTargetApi, etc.)
+  - Deprecated Gradle features warning (compatibility with Gradle 10)
+
+  **Phase 01 Complete:** All tests pass, full build succeeds for both server and Android modules.
