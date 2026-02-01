@@ -29,6 +29,16 @@
 23. `docs/22-lean-shortcuts.md` — обходные пути для скорости, меньшей команды, меньшей себестоимости и более дешёвого CAC.
 24. `docs/23-unit-economics.md` — юнит-экономика: COGS (трафик/инфра/хранилище), OPEX (команда/CAC), сценарии и пороги окупаемости.
 25. `docs/24-kz-pricebook.md` — прайс-лист KZ: тарифы, минимальные чеки, скидки, оверейджи, правила торговли.
+26. `docs/25-market-research-and-sizing.md` — market research: размер рынка, сегментация, конкурентные прайсы, procurement ожидания.
+27. `docs/26-gtm-operating-system.md` — GTM “операционка”: воронка, определения стадий, метрики, cadence, CRM-поля.
+28. `docs/27-pricing-architecture-and-discounting.md` — архитектура цены, лимиты, скидки, эксперименты, бенчмарки.
+29. `docs/28-pilot-to-production-playbook.md` — playbook “пилот → production”: этапы, чек-листы, типовые блокеры.
+30. `docs/29-procurement-security-compliance-pack.md` — пакет для procurement/security: список артефактов и ответник.
+31. `docs/30-customer-success-and-support.md` — Customer Success & Support: onboarding, health score, поддержка, expansion.
+32. `docs/31-partner-program.md` — партнёрская программа: типы партнёров, модель, enablement, lead registration.
+33. `docs/32-roi-and-business-case.md` — ROI/business-case: шаблон расчёта и нарратив “продать внутри”.
+34. `docs/33-competitive-battlecards.md` — battlecards: как выигрывать против SaaS/DIY/enterprise AV и red flags.
+35. `docs/34-commercial-terms-and-sla-outline.md` — коммерческие условия и SLA: структура и ключевые пункты (скелет).
 
 ## Принцип “меньше систем”
 
