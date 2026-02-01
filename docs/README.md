@@ -39,6 +39,14 @@
 33. `docs/32-roi-and-business-case.md` — ROI/business-case: шаблон расчёта и нарратив “продать внутри”.
 34. `docs/33-competitive-battlecards.md` — battlecards: как выигрывать против SaaS/DIY/enterprise AV и red flags.
 35. `docs/34-commercial-terms-and-sla-outline.md` — коммерческие условия и SLA: структура и ключевые пункты (скелет).
+36. `docs/35-ux-service-blueprint-end-to-end.md` — UX service blueprint: кейсы и шаги “компания ↔ система” (Admin Web + Android TV + support).
+37. `docs/36-landing-mvp-spec.md` — спецификация лендинга (структура, копирайт, формы, AC) + интеграция с CRM.
+38. `docs/37-crm-spec-and-automations.md` — CRM под пилотную модель: pipeline, поля, required fields, автоматизации, дашборды.
+39. `docs/38-marketing-ops-tracking-and-analytics.md` — marketing ops: UTM стандарт, события, базовые отчёты.
+40. `docs/39-demo-and-pilot-ops-kit.md` — demo/pilot ops kit: сценарии, шаблоны kickoff/weekly status/go-no-go/proposal.
+41. `docs/40-public-supported-media-spec.md` — public docs: поддерживаемые форматы медиа и рекомендации для пилота.
+42. `docs/41-public-android-tv-device-requirements.md` — public docs: требования к Android TV и чек-лист пилота (whitelist/MDM/kiosk).
+43. `docs/42-public-network-requirements.md` — public docs: требования к сети/прокси/allowlist и сетевой чек-лист.
 
 ## Принцип “меньше систем”
 
