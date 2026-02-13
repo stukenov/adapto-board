@@ -10,6 +10,7 @@ import com.playoutedge.persistence.repositories.CreateScheduleItemRequest
 import com.playoutedge.persistence.repositories.ScheduleRepository
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.util.UUID
 
 sealed class PublishResult {
@@ -112,11 +113,16 @@ class ScheduleService(
             return PublishResult.ScheduleEmpty
         }
 
+        // Extract asset IDs within transaction context via repository lookup
+        val itemAssetIds = newSuspendedTransaction {
+            items.map { it.asset.id.value }
+        }
+
         val notReadyAssets = mutableListOf<UUID>()
-        for (item in items) {
-            val asset = assetRepo.findById(tenantId, item.asset.id.value)
+        for (assetId in itemAssetIds) {
+            val asset = assetRepo.findById(tenantId, assetId)
             if (asset == null || asset.status != AssetStatus.READY) {
-                notReadyAssets.add(item.asset.id.value)
+                notReadyAssets.add(assetId)
             }
         }
 
@@ -124,7 +130,8 @@ class ScheduleService(
             return PublishResult.AssetsNotReady(notReadyAssets)
         }
 
-        val previousActive = scheduleRepo.findActiveVersion(tenantId, version.channel.id.value)
+        val channelId = newSuspendedTransaction { version.channel.id.value }
+        val previousActive = scheduleRepo.findActiveVersion(tenantId, channelId)
         if (previousActive != null) {
             scheduleRepo.updateVersionState(tenantId, previousActive.id.value, ScheduleState.ROLLED_BACK)
         }

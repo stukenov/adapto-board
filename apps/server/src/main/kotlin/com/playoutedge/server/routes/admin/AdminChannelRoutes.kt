@@ -17,6 +17,7 @@ import io.ktor.server.routing.*
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.util.UUID
 import kotlin.time.Duration.Companion.minutes
 
@@ -135,40 +136,43 @@ fun Route.adminChannelRoutes(
                 return@get
             }
 
-            // Get devices assigned to this channel
+            // Get devices assigned to this channel — wrap in transaction for lazy entity access
             val now = Clock.System.now()
             val onlineThreshold = now - 5.minutes
-            val devices = deviceRepository.findByChannel(tenantId, channelId).map { device ->
-                DeviceListItem(
-                    id = device.id.value,
-                    name = device.displayName,
-                    status = device.enrollStatus,
-                    lastSeen = device.lastSeenAt,
-                    isOnline = device.lastSeenAt?.let { it >= onlineThreshold } ?: false
-                )
-            }
-
-            // Get current schedule items
-            val scheduleVersion = scheduleRepository.findActiveVersion(tenantId, channelId)
-            val scheduleItems = scheduleVersion?.let { version ->
-                scheduleRepository.findItemsByVersion(tenantId, version.id.value).map { item ->
-                    ScheduleItemView(
-                        id = item.id.value,
-                        assetId = item.asset.id.value,
-                        assetName = item.asset.name,
-                        sortOrder = item.orderIndex,
-                        timeStart = item.timeStart?.toString(),
-                        timeEnd = item.timeEnd?.toString()
+            val (devices, scheduleItems, channelDetail) = newSuspendedTransaction {
+                val devices = deviceRepository.findByChannel(tenantId, channelId).map { device ->
+                    DeviceListItem(
+                        id = device.id.value,
+                        name = device.displayName,
+                        status = device.enrollStatus,
+                        lastSeen = device.lastSeenAt,
+                        isOnline = device.lastSeenAt?.let { it >= onlineThreshold } ?: false
                     )
                 }
-            } ?: emptyList()
 
-            val channelDetail = ChannelDetail(
-                id = channel.id.value,
-                name = channel.name,
-                status = channel.status,
-                createdAt = channel.createdAt
-            )
+                val scheduleVersion = scheduleRepository.findActiveVersion(tenantId, channelId)
+                val scheduleItems = scheduleVersion?.let { version ->
+                    scheduleRepository.findItemsByVersion(tenantId, version.id.value).map { item ->
+                        ScheduleItemView(
+                            id = item.id.value,
+                            assetId = item.asset.id.value,
+                            assetName = item.asset.name,
+                            sortOrder = item.orderIndex,
+                            timeStart = item.timeStart?.toString(),
+                            timeEnd = item.timeEnd?.toString()
+                        )
+                    }
+                } ?: emptyList()
+
+                val channelDetail = ChannelDetail(
+                    id = channel.id.value,
+                    name = channel.name,
+                    status = channel.status,
+                    createdAt = channel.createdAt
+                )
+
+                Triple(devices, scheduleItems, channelDetail)
+            }
 
             call.respondHtml {
                 channelDetailView(
@@ -329,20 +333,24 @@ fun Route.adminChannelRoutes(
                 return@get
             }
 
-            val activeVersion = scheduleRepository.findActiveVersion(tenantId, channelId)
-            val scheduleItems = activeVersion?.let { version ->
-                scheduleRepository.findItemsByVersion(tenantId, version.id.value)
-            } ?: emptyList()
+            val (scheduleVersionNumber, previewItems) = newSuspendedTransaction {
+                val activeVersion = scheduleRepository.findActiveVersion(tenantId, channelId)
+                val scheduleItems = activeVersion?.let { version ->
+                    scheduleRepository.findItemsByVersion(tenantId, version.id.value)
+                } ?: emptyList()
 
-            val previewItems = scheduleItems.mapIndexed { index, item ->
-                LivePreviewItem(
-                    assetId = item.asset.id.value,
-                    assetName = item.asset.name,
-                    durationMs = item.asset.durationMs,
-                    orderIndex = index,
-                    timeStart = item.timeStart?.toString(),
-                    timeEnd = item.timeEnd?.toString()
-                )
+                val items = scheduleItems.mapIndexed { index, item ->
+                    LivePreviewItem(
+                        assetId = item.asset.id.value,
+                        assetName = item.asset.name,
+                        durationMs = item.asset.durationMs,
+                        orderIndex = index,
+                        timeStart = item.timeStart?.toString(),
+                        timeEnd = item.timeEnd?.toString()
+                    )
+                }
+
+                Pair(activeVersion?.version, items)
             }
 
             val now = Clock.System.now()
@@ -354,7 +362,7 @@ fun Route.adminChannelRoutes(
                     session = session,
                     channelId = channelId,
                     channelName = channel.name,
-                    scheduleVersion = activeVersion?.version,
+                    scheduleVersion = scheduleVersionNumber,
                     items = previewItems,
                     currentIndex = currentIndex,
                     currentTimeFormatted = "${currentTime.hour}:${String.format("%02d", currentTime.minute)}"

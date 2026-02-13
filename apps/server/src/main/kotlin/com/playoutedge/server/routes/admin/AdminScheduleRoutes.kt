@@ -17,6 +17,7 @@ import io.ktor.server.routing.*
 import kotlinx.datetime.LocalTime
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.util.UUID
 
 @Serializable
@@ -63,37 +64,45 @@ fun Route.adminScheduleRoutes(
                 return@get
             }
 
-            // Get draft or active version items
-            val draftVersion = scheduleRepository.findDraftVersion(tenantId, channelId)
-            val activeVersion = scheduleRepository.findActiveVersion(tenantId, channelId)
-            val sourceVersion = draftVersion ?: activeVersion
-            val items = sourceVersion?.let { version ->
-                scheduleRepository.findItemsByVersion(tenantId, version.id.value)
-            } ?: emptyList()
+            // Get draft or active version items — wrap in transaction to access lazy entity fields
+            val (draftVersionId, activeVersionNumber, editorItems, libraryAssets) = newSuspendedTransaction {
+                val draftVersion = scheduleRepository.findDraftVersion(tenantId, channelId)
+                val activeVersion = scheduleRepository.findActiveVersion(tenantId, channelId)
+                val sourceVersion = draftVersion ?: activeVersion
+                val items = sourceVersion?.let { version ->
+                    scheduleRepository.findItemsByVersion(tenantId, version.id.value)
+                } ?: emptyList()
 
-            // Get available assets
-            val assets = assetRepository.findAllActive(tenantId)
+                val assets = assetRepository.findAllActive(tenantId)
 
-            val editorItems = items.mapIndexed { index, item ->
-                ScheduleEditorItem(
-                    assetId = item.asset.id.value,
-                    assetName = item.asset.name,
-                    assetType = item.asset.type,
-                    durationMs = item.asset.durationMs,
-                    orderIndex = index,
-                    timeStart = item.timeStart?.toString(),
-                    timeEnd = item.timeEnd?.toString(),
-                    daysOfWeek = item.daysOfWeek
-                )
-            }
+                val editorItems = items.mapIndexed { index, item ->
+                    ScheduleEditorItem(
+                        assetId = item.asset.id.value,
+                        assetName = item.asset.name,
+                        assetType = item.asset.type,
+                        durationMs = item.asset.durationMs,
+                        orderIndex = index,
+                        timeStart = item.timeStart?.toString(),
+                        timeEnd = item.timeEnd?.toString(),
+                        daysOfWeek = item.daysOfWeek
+                    )
+                }
 
-            val libraryAssets = assets.map { asset ->
-                LibraryAsset(
-                    id = asset.id.value,
-                    name = asset.name,
-                    type = asset.type,
-                    durationMs = asset.durationMs,
-                    fileSizeFormatted = formatFileSize(asset.fileSizeBytes ?: 0)
+                val libraryAssets = assets.map { asset ->
+                    LibraryAsset(
+                        id = asset.id.value,
+                        name = asset.name,
+                        type = asset.type,
+                        durationMs = asset.durationMs,
+                        fileSizeFormatted = formatFileSize(asset.fileSizeBytes ?: 0)
+                    )
+                }
+
+                ScheduleEditorData(
+                    draftVersionId = draftVersion?.id?.value,
+                    activeVersionNumber = activeVersion?.version,
+                    editorItems = editorItems,
+                    libraryAssets = libraryAssets
                 )
             }
 
@@ -106,8 +115,8 @@ fun Route.adminScheduleRoutes(
                     channelName = channel.name,
                     items = editorItems,
                     libraryAssets = libraryAssets,
-                    draftVersionId = draftVersion?.id?.value,
-                    activeVersionNumber = activeVersion?.version,
+                    draftVersionId = draftVersionId,
+                    activeVersionNumber = activeVersionNumber,
                     success = successParam
                 )
             }
@@ -236,6 +245,13 @@ fun Route.adminScheduleRoutes(
         }
     }
 }
+
+private data class ScheduleEditorData(
+    val draftVersionId: java.util.UUID?,
+    val activeVersionNumber: Int?,
+    val editorItems: List<ScheduleEditorItem>,
+    val libraryAssets: List<LibraryAsset>
+)
 
 private fun formatFileSize(bytes: Long): String {
     return when {
