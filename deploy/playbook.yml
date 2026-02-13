@@ -1,0 +1,17 @@
+---
+- name: Deploy Playout Edge to production
+  hosts: production
+  become: true
+  vars_files:
+    - group_vars/production.yml
+
+  pre_tasks:
+    - name: Wait for server to be reachable
+      wait_for_connection:
+        timeout: 30
+
+  roles:
+    - base
+    - docker
+    - app
+    - nginx

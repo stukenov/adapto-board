@@ -1,0 +1,84 @@
+---
+- name: Install Nginx and Certbot
+  apt:
+    name:
+      - nginx
+      - certbot
+      - python3-certbot-nginx
+    state: present
+
+- name: Remove default Nginx site
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: reload nginx
+
+- name: Deploy Nginx config (HTTP only, for initial cert)
+  template:
+    src: nginx-http.conf.j2
+    dest: "/etc/nginx/sites-available/{{ domain }}"
+    mode: "0644"
+  notify: reload nginx
+
+- name: Enable Nginx site
+  file:
+    src: "/etc/nginx/sites-available/{{ domain }}"
+    dest: "/etc/nginx/sites-enabled/{{ domain }}"
+    state: link
+  notify: reload nginx
+
+- name: Validate Nginx config
+  command: nginx -t
+  changed_when: false
+
+- name: Ensure Nginx is running
+  service:
+    name: nginx
+    state: started
+    enabled: yes
+
+- name: Flush handlers to apply nginx config before certbot
+  meta: flush_handlers
+
+- name: Obtain Let's Encrypt certificate
+  command: >
+    certbot --nginx
+    -d {{ domain }}
+    --non-interactive
+    --agree-tos
+    --email {{ letsencrypt_email }}
+    --redirect
+  args:
+    creates: "/etc/letsencrypt/live/{{ domain }}/fullchain.pem"
+
+- name: Deploy full Nginx config with SSL
+  template:
+    src: nginx-ssl.conf.j2
+    dest: "/etc/nginx/sites-available/{{ domain }}"
+    mode: "0644"
+  notify: reload nginx
+
+- name: Validate Nginx config after SSL
+  command: nginx -t
+  changed_when: false
+
+- name: Set up certbot auto-renewal timer
+  cron:
+    name: "certbot-renew"
+    minute: "30"
+    hour: "2"
+    job: "certbot renew --quiet --deploy-hook 'systemctl reload nginx'"
+    user: root
+
+- name: Harden Nginx main config
+  blockinfile:
+    path: /etc/nginx/nginx.conf
+    insertafter: "http {"
+    marker: "# {mark} ANSIBLE MANAGED SECURITY HEADERS"
+    block: |
+        # Security
+        server_tokens off;
+        client_max_body_size 100M;
+        client_body_timeout 30s;
+        client_header_timeout 30s;
+  notify: reload nginx

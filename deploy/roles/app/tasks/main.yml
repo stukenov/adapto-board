@@ -1,0 +1,73 @@
+---
+- name: Create app directory
+  file:
+    path: "{{ app_dir }}"
+    state: directory
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: "0750"
+
+- name: Create storage directory
+  file:
+    path: "{{ app_dir }}/storage"
+    state: directory
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: "0750"
+
+- name: Create postgres data directory
+  file:
+    path: "{{ app_dir }}/pgdata"
+    state: directory
+    owner: "999"
+    group: "999"
+    mode: "0700"
+
+- name: Generate secrets file (only if not exists)
+  template:
+    src: env.j2
+    dest: "{{ app_dir }}/.env"
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: "0600"
+    force: no
+
+- name: Deploy docker-compose.yml
+  template:
+    src: docker-compose.prod.yml.j2
+    dest: "{{ app_dir }}/docker-compose.yml"
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: "0640"
+
+- name: Copy project source for build
+  synchronize:
+    src: "{{ playbook_dir }}/../"
+    dest: "{{ app_dir }}/src/"
+    rsync_opts:
+      - "--exclude=.git"
+      - "--exclude=.gradle"
+      - "--exclude=build"
+      - "--exclude=.idea"
+      - "--exclude=node_modules"
+      - "--exclude=/storage"
+      - "--exclude=deploy"
+    delete: yes
+
+- name: Build and start application
+  community.docker.docker_compose_v2:
+    project_src: "{{ app_dir }}"
+    build: always
+    pull: always
+    state: present
+  register: compose_result
+
+- name: Wait for app to be healthy
+  uri:
+    url: "http://localhost:{{ app_port }}/health/live"
+    method: GET
+    status_code: 200
+  register: health_check
+  until: health_check.status == 200
+  retries: 30
+  delay: 5

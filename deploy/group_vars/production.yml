@@ -1,0 +1,21 @@
+---
+# Domain
+domain: tv.adapto.kz
+letsencrypt_email: admin@adapto.kz
+
+# App
+app_name: playoutedge
+app_dir: /opt/playoutedge
+app_port: 8080
+
+# Database
+db_name: playoutedge
+db_user: playoutedge
+db_password: "{{ vault_db_password | default(lookup('password', '/dev/null chars=ascii_letters,digits length=32')) }}"
+
+# JWT
+jwt_secret: "{{ vault_jwt_secret | default(lookup('password', '/dev/null chars=ascii_letters,digits length=64')) }}"
+
+# SSH
+ssh_port: 22
+deploy_user: deploy

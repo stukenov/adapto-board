@@ -1,0 +1,49 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: {{ app_name }}-postgres
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - {{ app_dir }}/pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U {{ db_user }} -d {{ db_name }}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+    security_opt:
+      - no-new-privileges:true
+
+  app:
+    build:
+      context: ./src
+      dockerfile: apps/server/Dockerfile
+    container_name: {{ app_name }}-app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file: .env
+    volumes:
+      - {{ app_dir }}/storage:/app/storage
+    ports:
+      - "127.0.0.1:{{ app_port }}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - backend
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+
+networks:
+  backend:
+    driver: bridge
