@@ -19,8 +19,8 @@
   file:
     path: "{{ app_dir }}/pgdata"
     state: directory
-    owner: "999"
-    group: "999"
+    owner: "70"
+    group: "70"
     mode: "0700"
 
 - name: Generate secrets file (only if not exists)
