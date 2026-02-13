@@ -15,6 +15,8 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import java.util.UUID
 import kotlin.time.Duration.Companion.minutes
 
@@ -305,5 +307,75 @@ fun Route.adminChannelRoutes(
 
             call.respondRedirect("/admin/channels")
         }
+
+        // GET /admin/channels/:id/live - Live preview
+        get("/{id}/live") {
+            val session = call.adminSession ?: run {
+                call.respondRedirect("/admin/login")
+                return@get
+            }
+
+            val tenantId = TenantId(session.tenantId)
+            val channelId = call.parameters["id"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+
+            if (channelId == null) {
+                call.respondRedirect("/admin/channels")
+                return@get
+            }
+
+            val channel = channelRepository.findById(tenantId, channelId)
+            if (channel == null) {
+                call.respondRedirect("/admin/channels")
+                return@get
+            }
+
+            val activeVersion = scheduleRepository.findActiveVersion(tenantId, channelId)
+            val scheduleItems = activeVersion?.let { version ->
+                scheduleRepository.findItemsByVersion(tenantId, version.id.value)
+            } ?: emptyList()
+
+            val previewItems = scheduleItems.mapIndexed { index, item ->
+                LivePreviewItem(
+                    assetId = item.asset.id.value,
+                    assetName = item.asset.name,
+                    durationMs = item.asset.durationMs,
+                    orderIndex = index,
+                    timeStart = item.timeStart?.toString(),
+                    timeEnd = item.timeEnd?.toString()
+                )
+            }
+
+            val now = Clock.System.now()
+            val currentTime = now.toLocalDateTime(TimeZone.currentSystemDefault())
+            val currentIndex = calculateCurrentIndex(previewItems, now.toEpochMilliseconds())
+
+            call.respondHtml {
+                livePreviewView(
+                    session = session,
+                    channelId = channelId,
+                    channelName = channel.name,
+                    scheduleVersion = activeVersion?.version,
+                    items = previewItems,
+                    currentIndex = currentIndex,
+                    currentTimeFormatted = "${currentTime.hour}:${String.format("%02d", currentTime.minute)}"
+                )
+            }
+        }
     }
+}
+
+/**
+ * Calculate which item should be playing based on elapsed time.
+ */
+private fun calculateCurrentIndex(items: List<LivePreviewItem>, nowEpochMs: Long): Int {
+    if (items.isEmpty()) return 0
+    val totalDurationMs = items.mapNotNull { it.durationMs }.sum().toLong()
+    if (totalDurationMs <= 0) return 0
+    val elapsed = nowEpochMs % totalDurationMs
+    var cumulative = 0L
+    items.forEachIndexed { index, item ->
+        cumulative += (item.durationMs ?: 0).toLong()
+        if (elapsed < cumulative) return index
+    }
+    return 0
 }

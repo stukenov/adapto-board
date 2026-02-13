@@ -5,21 +5,39 @@ import com.playoutedge.persistence.repositories.AssetRepository
 import com.playoutedge.persistence.repositories.ChannelRepository
 import com.playoutedge.persistence.repositories.ScheduleRepository
 import com.playoutedge.server.plugins.adminSession
-import com.playoutedge.server.views.adminLayout
+import com.playoutedge.server.services.PublishResult
+import com.playoutedge.server.services.ScheduleItemInput
+import com.playoutedge.server.services.ScheduleService
+import com.playoutedge.server.views.channels.*
 import io.ktor.server.application.*
 import io.ktor.server.html.*
+import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import kotlinx.html.*
+import kotlinx.datetime.LocalTime
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import java.util.UUID
 
+@Serializable
+private data class ScheduleItemJson(
+    val assetId: String,
+    val orderIndex: Int,
+    val timeStart: String? = null,
+    val timeEnd: String? = null,
+    val daysOfWeek: Int? = null
+)
+
+private val json = Json { ignoreUnknownKeys = true }
+
 /**
- * Admin schedule management routes.
+ * Admin schedule management routes with drag & drop editor.
  */
 fun Route.adminScheduleRoutes(
     channelRepository: ChannelRepository,
     scheduleRepository: ScheduleRepository,
-    assetRepository: AssetRepository
+    assetRepository: AssetRepository,
+    scheduleService: ScheduleService
 ) {
     route("/admin/channels/{channelId}/schedule") {
         // GET /admin/channels/:channelId/schedule - Schedule editor
@@ -45,130 +63,185 @@ fun Route.adminScheduleRoutes(
                 return@get
             }
 
-            // Get current schedule
-            val scheduleVersion = scheduleRepository.findActiveVersion(tenantId, channelId)
-            val items = scheduleVersion?.let { version ->
+            // Get draft or active version items
+            val draftVersion = scheduleRepository.findDraftVersion(tenantId, channelId)
+            val activeVersion = scheduleRepository.findActiveVersion(tenantId, channelId)
+            val sourceVersion = draftVersion ?: activeVersion
+            val items = sourceVersion?.let { version ->
                 scheduleRepository.findItemsByVersion(tenantId, version.id.value)
             } ?: emptyList()
 
             // Get available assets
             val assets = assetRepository.findAllActive(tenantId)
 
+            val editorItems = items.mapIndexed { index, item ->
+                ScheduleEditorItem(
+                    assetId = item.asset.id.value,
+                    assetName = item.asset.name,
+                    assetType = item.asset.type,
+                    durationMs = item.asset.durationMs,
+                    orderIndex = index,
+                    timeStart = item.timeStart?.toString(),
+                    timeEnd = item.timeEnd?.toString(),
+                    daysOfWeek = item.daysOfWeek
+                )
+            }
+
+            val libraryAssets = assets.map { asset ->
+                LibraryAsset(
+                    id = asset.id.value,
+                    name = asset.name,
+                    type = asset.type,
+                    durationMs = asset.durationMs,
+                    fileSizeFormatted = formatFileSize(asset.fileSizeBytes ?: 0)
+                )
+            }
+
+            val successParam = call.request.queryParameters["success"]
+
             call.respondHtml {
-                adminLayout(title = "Edit Schedule - ${channel.name}", userName = "Admin") {
-                    div("page-header") {
-                        div {
-                            a(href = "/admin/channels/$channelId", classes = "link") {
-                                +"← Back to ${channel.name}"
-                            }
-                            h1("page-title") { +"Schedule Editor" }
-                        }
-                        div("header-actions") {
-                            if (scheduleVersion != null) {
-                                span("badge badge-success") { +"Published v${scheduleVersion.version}" }
-                            }
-                        }
-                    }
-
-                    div("card mb-4") {
-                        div("card-header") {
-                            h3 { +"Schedule Items" }
-                        }
-                        div("card-body") {
-                            if (items.isEmpty()) {
-                                div("empty-state") {
-                                    p { +"No items in schedule" }
-                                    p("text-muted") { +"Add assets from the library below to create a playlist." }
-                                }
-                            } else {
-                                table("table") {
-                                    thead {
-                                        tr {
-                                            th { +"#" }
-                                            th { +"Asset" }
-                                            th { +"Duration" }
-                                            th { +"Time Window" }
-                                        }
-                                    }
-                                    tbody {
-                                        items.forEachIndexed { index, item ->
-                                            tr {
-                                                td { +"${index + 1}" }
-                                                td { +item.asset.name }
-                                                td {
-                                                    item.asset.durationMs?.let {
-                                                        +"${it / 1000}s"
-                                                    } ?: span("text-muted") { +"—" }
-                                                }
-                                                td {
-                                                    if (item.timeStart != null || item.timeEnd != null) {
-                                                        +"${item.timeStart ?: "00:00"} - ${item.timeEnd ?: "23:59"}"
-                                                    } else {
-                                                        span("text-muted") { +"All day" }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    div("card") {
-                        div("card-header") {
-                            h3 { +"Available Assets" }
-                        }
-                        div("card-body") {
-                            if (assets.isEmpty()) {
-                                div("empty-state") {
-                                    p { +"No assets available" }
-                                    a(href = "/admin/assets", classes = "btn btn-primary") {
-                                        +"Upload Assets"
-                                    }
-                                }
-                            } else {
-                                div("asset-grid") {
-                                    assets.forEach { asset ->
-                                        div("asset-card") {
-                                            div("asset-info") {
-                                                strong { +asset.name }
-                                                span("text-muted") {
-                                                    +" (${asset.type.name.lowercase()})"
-                                                }
-                                            }
-                                            form(action = "/admin/channels/$channelId/schedule/add", method = FormMethod.post, classes = "inline") {
-                                                input(type = InputType.hidden) {
-                                                    name = "assetId"
-                                                    value = asset.id.value.toString()
-                                                }
-                                                button(type = ButtonType.submit, classes = "btn btn-sm btn-secondary") {
-                                                    +"Add to Schedule"
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                scheduleEditorView(
+                    session = session,
+                    channelId = channelId,
+                    channelName = channel.name,
+                    items = editorItems,
+                    libraryAssets = libraryAssets,
+                    draftVersionId = draftVersion?.id?.value,
+                    activeVersionNumber = activeVersion?.version,
+                    success = successParam
+                )
             }
         }
 
-        // POST /admin/channels/:channelId/schedule/add - Add item to schedule
-        post("/add") {
+        // POST /admin/channels/:channelId/schedule/save - Save draft
+        post("/save") {
+            val session = call.adminSession ?: run {
+                call.respondRedirect("/admin/login")
+                return@post
+            }
+
+            val tenantId = TenantId(session.tenantId)
+            val channelId = call.parameters["channelId"]?.let {
+                runCatching { UUID.fromString(it) }.getOrNull()
+            }
+
+            if (channelId == null) {
+                call.respondRedirect("/admin/channels")
+                return@post
+            }
+
+            val params = call.receiveParameters()
+            val itemsJsonStr = params["itemsJson"] ?: "[]"
+
+            val parsedItems = try {
+                json.decodeFromString<List<ScheduleItemJson>>(itemsJsonStr)
+            } catch (e: Exception) {
+                call.respondRedirect("/admin/channels/$channelId/schedule?error=Invalid+data")
+                return@post
+            }
+
+            // Get or create draft
+            var draftVersion = scheduleRepository.findDraftVersion(tenantId, channelId)
+            if (draftVersion == null) {
+                draftVersion = scheduleService.createDraft(tenantId, channelId, session.subject)
+            }
+
+            // Replace items
+            val inputs = parsedItems.map { item ->
+                ScheduleItemInput(
+                    assetId = UUID.fromString(item.assetId),
+                    orderIndex = item.orderIndex,
+                    timeStart = item.timeStart?.takeIf { it.isNotBlank() }?.let { LocalTime.parse(it) },
+                    timeEnd = item.timeEnd?.takeIf { it.isNotBlank() }?.let { LocalTime.parse(it) },
+                    daysOfWeek = item.daysOfWeek
+                )
+            }
+
+            scheduleService.replaceItems(tenantId, draftVersion.id.value, inputs)
+
+            call.respondRedirect("/admin/channels/$channelId/schedule?success=Draft+saved")
+        }
+
+        // POST /admin/channels/:channelId/schedule/publish - Publish draft
+        post("/publish") {
+            val session = call.adminSession ?: run {
+                call.respondRedirect("/admin/login")
+                return@post
+            }
+
+            val tenantId = TenantId(session.tenantId)
+            val channelId = call.parameters["channelId"]?.let {
+                runCatching { UUID.fromString(it) }.getOrNull()
+            }
+
+            if (channelId == null) {
+                call.respondRedirect("/admin/channels")
+                return@post
+            }
+
+            val params = call.receiveParameters()
+            val itemsJsonStr = params["itemsJson"] ?: "[]"
+
+            val parsedItems = try {
+                json.decodeFromString<List<ScheduleItemJson>>(itemsJsonStr)
+            } catch (e: Exception) {
+                call.respondRedirect("/admin/channels/$channelId/schedule?error=Invalid+data")
+                return@post
+            }
+
+            // Get or create draft
+            var draftVersion = scheduleRepository.findDraftVersion(tenantId, channelId)
+            if (draftVersion == null) {
+                draftVersion = scheduleService.createDraft(tenantId, channelId, session.subject)
+            }
+
+            // Replace items first
+            val inputs = parsedItems.map { item ->
+                ScheduleItemInput(
+                    assetId = UUID.fromString(item.assetId),
+                    orderIndex = item.orderIndex,
+                    timeStart = item.timeStart?.takeIf { it.isNotBlank() }?.let { LocalTime.parse(it) },
+                    timeEnd = item.timeEnd?.takeIf { it.isNotBlank() }?.let { LocalTime.parse(it) },
+                    daysOfWeek = item.daysOfWeek
+                )
+            }
+
+            scheduleService.replaceItems(tenantId, draftVersion.id.value, inputs)
+
+            // Publish
+            val result = scheduleService.publish(tenantId, draftVersion.id.value)
+
+            val message = when (result) {
+                is PublishResult.Success -> "Schedule+published+successfully"
+                is PublishResult.AssetsNotReady -> "Some+assets+are+not+ready"
+                is PublishResult.ScheduleEmpty -> "Cannot+publish+empty+schedule"
+                is PublishResult.VersionNotFound -> "Version+not+found"
+                is PublishResult.VersionNotDraft -> "Version+is+not+a+draft"
+            }
+
+            val param = if (result is PublishResult.Success) "success" else "error"
+            call.respondRedirect("/admin/channels/$channelId/schedule?$param=$message")
+        }
+
+        // POST /admin/channels/:channelId/schedule/remove/:itemIndex — fallback without JS
+        post("/remove/{itemIndex}") {
             val session = call.adminSession ?: run {
                 call.respondRedirect("/admin/login")
                 return@post
             }
 
             val channelId = call.parameters["channelId"]
-
-            // TODO: Implement adding items to schedule
-            // For now, just redirect back
-
+            // Fallback: just redirect back, JS handles removal client-side
             call.respondRedirect("/admin/channels/$channelId/schedule")
         }
+    }
+}
+
+private fun formatFileSize(bytes: Long): String {
+    return when {
+        bytes >= 1_073_741_824 -> String.format("%.1f GB", bytes / 1_073_741_824.0)
+        bytes >= 1_048_576 -> String.format("%.1f MB", bytes / 1_048_576.0)
+        bytes >= 1_024 -> String.format("%.1f KB", bytes / 1_024.0)
+        else -> "$bytes B"
     }
 }

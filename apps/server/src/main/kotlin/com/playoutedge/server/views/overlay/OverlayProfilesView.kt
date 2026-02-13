@@ -141,22 +141,33 @@ fun HTML.newOverlayProfileView(
                     }
 
                     div("form-group") {
-                        label {
-                            htmlFor = "template"
-                            +"Template"
-                        }
-                        select("form-control") {
+                        label { +"Template" }
+                        input(type = InputType.hidden) {
                             id = "template"
                             name = "template"
+                            value = OverlayTemplate.entries.first().name
+                        }
+                        div("template-gallery") {
                             OverlayTemplate.entries.forEach { template ->
-                                option {
-                                    value = template.name
-                                    +"${template.displayName} — ${template.description}"
+                                val templateIcon = when (template) {
+                                    OverlayTemplate.TICKER -> "📰"
+                                    OverlayTemplate.KPI_TILES -> "📊"
+                                    OverlayTemplate.QUEUE_TABLE -> "📋"
+                                    OverlayTemplate.QR_CARD -> "📱"
+                                }
+                                div("template-card") {
+                                    attributes["data-template"] = template.name
+                                    if (template == OverlayTemplate.entries.first()) {
+                                        classes = classes + " selected"
+                                    }
+                                    div("template-card-icon") { +templateIcon }
+                                    div("template-card-name") { +template.displayName }
+                                    div("template-card-desc") { +template.description }
                                 }
                             }
                         }
                         small("form-helper") {
-                            +"Start with a pre-built template or customize from scratch."
+                            +"Select a template to start with."
                         }
                     }
 
@@ -165,7 +176,7 @@ fun HTML.newOverlayProfileView(
                             htmlFor = "definitionJson"
                             +"Definition JSON"
                         }
-                        textArea(classes = "form-control") {
+                        textArea(classes = "form-control code-editor") {
                             id = "definitionJson"
                             name = "definitionJson"
                             rows = "10"
@@ -173,6 +184,25 @@ fun HTML.newOverlayProfileView(
                         }
                         small("form-helper") {
                             +"Leave empty to use template defaults. Advanced users can customize the JSON directly."
+                        }
+                    }
+
+                    // Template gallery selection script
+                    script {
+                        unsafe {
+                            +"""
+(function() {
+    var cards = document.querySelectorAll('.template-card');
+    var input = document.getElementById('template');
+    cards.forEach(function(card) {
+        card.addEventListener('click', function() {
+            cards.forEach(function(c) { c.classList.remove('selected'); });
+            card.classList.add('selected');
+            input.value = card.dataset.template;
+        });
+    });
+})();
+"""
                         }
                     }
 
@@ -221,8 +251,10 @@ fun HTML.overlayProfileDetailView(
                 h3 { +"Definition" }
             }
             div("card-body") {
-                pre("code-block") {
-                    +profile.definitionJson
+                pre("code-block code-editor") {
+                    code {
+                        +profile.definitionJson
+                    }
                 }
             }
         }

@@ -27,13 +27,11 @@ fun HTML.channelDetailView(
             span("badge badge-${channelStatusBadge(channel.status)} mr-2") {
                 +channel.status.name.lowercase()
             }
+            a(href = "/admin/channels/${channel.id}/live", classes = "btn btn-info") {
+                +"Live Preview"
+            }
             a(href = "/admin/channels/${channel.id}/edit", classes = "btn btn-secondary") {
                 +"Edit Channel"
-            }
-            form(action = "/admin/channels/${channel.id}/publish", method = FormMethod.post, classes = "inline") {
-                button(type = ButtonType.submit, classes = "btn btn-primary") {
-                    +"Publish"
-                }
             }
         }
 

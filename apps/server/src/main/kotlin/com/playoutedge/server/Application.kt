@@ -175,7 +175,7 @@ fun Application.module() {
         adminReportsRoutes(asrunRepository, auditRepository, deviceRepository, channelRepository)
         adminSettingsRoutes(userRepository, assetRepository, deviceRepository, passwordService)
         adminOnboardingRoutes(assetRepository, channelRepository, deviceRepository)
-        adminScheduleRoutes(channelRepository, scheduleRepository, assetRepository)
+        adminScheduleRoutes(channelRepository, scheduleRepository, assetRepository, scheduleService)
         adminStaticRoutes()
 
         // API routes
