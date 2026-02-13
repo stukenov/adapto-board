@@ -2660,8 +2660,358 @@ pre.code-block {
     color: var(--gray-500);
 }
 
+/* ========================================
+   SIGNUP PAGE - SPLIT SCREEN
+   ======================================== */
+.signup-page {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Brand panel (left) */
+.signup-brand {
+    flex: 0 0 45%;
+    background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #7c3aed 100%);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 48px;
+    position: relative;
+    overflow: hidden;
+}
+
+.signup-brand::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px);
+    background-size: 24px 24px;
+    pointer-events: none;
+}
+
+.signup-brand-content {
+    position: relative;
+    z-index: 1;
+}
+
+.signup-brand-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    color: white;
+    text-decoration: none;
+    font-size: var(--font-xl);
+    font-weight: var(--font-weight-bold);
+    margin-bottom: 48px;
+}
+
+.signup-brand-logo .nav-brand-icon {
+    background: rgba(255,255,255,0.2);
+}
+
+.signup-brand-text {
+    margin-bottom: 40px;
+}
+
+.signup-brand-text h1 {
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1.2;
+    margin: 0 0 var(--spacing-md);
+}
+
+.signup-brand-text p {
+    font-size: var(--font-lg);
+    opacity: 0.85;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.signup-trust-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.signup-trust-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: var(--font-base);
+    font-weight: var(--font-weight-medium);
+}
+
+.signup-trust-item svg {
+    flex-shrink: 0;
+}
+
+.signup-testimonial {
+    position: relative;
+    z-index: 1;
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    border: 1px solid rgba(255,255,255,0.15);
+}
+
+.signup-testimonial-quote {
+    font-size: var(--font-base);
+    line-height: 1.6;
+    margin: 0 0 var(--spacing-md);
+    font-style: italic;
+    opacity: 0.95;
+}
+
+.signup-testimonial-author {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.signup-testimonial-author strong {
+    font-size: var(--font-sm);
+}
+
+.signup-testimonial-author span {
+    font-size: var(--font-xs);
+    opacity: 0.7;
+}
+
+/* Form panel (right) */
+.signup-form-panel {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px;
+    background: white;
+}
+
+.signup-form-container {
+    width: 100%;
+    max-width: 420px;
+}
+
+/* Step indicator */
+.signup-steps {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+}
+
+.signup-step-dots {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.signup-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-full);
+    background: var(--gray-300);
+    transition: all var(--transition-normal);
+}
+
+.signup-dot.active {
+    background: var(--primary);
+    width: 24px;
+}
+
+.signup-dot.completed {
+    background: var(--success);
+}
+
+.signup-step-text {
+    font-size: var(--font-sm);
+    color: var(--gray-500);
+    font-weight: var(--font-weight-medium);
+}
+
+/* Form title */
+.signup-form-title {
+    font-size: var(--font-2xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--gray-900);
+    margin: 0 0 var(--spacing-xs);
+}
+
+.signup-form-subtitle {
+    color: var(--gray-500);
+    margin: 0 0 var(--spacing-lg);
+}
+
+/* Form */
+.signup-form {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+/* Step transitions */
+.signup-step {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.signup-step-hidden {
+    display: none;
+}
+
+/* Password wrapper */
+.password-wrapper {
+    position: relative;
+}
+
+.password-wrapper .form-control {
+    padding-right: 44px;
+    width: 100%;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    color: var(--gray-400);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    transition: color var(--transition-fast);
+}
+
+.password-toggle:hover {
+    color: var(--gray-600);
+}
+
+/* Password strength bar */
+.password-strength {
+    display: flex;
+    gap: 4px;
+    margin-top: var(--spacing-sm);
+}
+
+.password-strength-segment {
+    flex: 1;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--gray-200);
+    transition: background 0.3s ease;
+}
+
+.password-strength-label {
+    display: block;
+    margin-top: var(--spacing-xs);
+    font-size: var(--font-xs);
+    font-weight: var(--font-weight-medium);
+    min-height: 16px;
+}
+
+/* Password match indicator */
+.password-match {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+}
+
+/* Step 2 actions */
+.signup-step2-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+}
+
+.signup-submit-btn {
+    flex: 1;
+}
+
+/* Footer */
+.signup-form-footer {
+    margin-top: var(--spacing-lg);
+    text-align: center;
+}
+
+.signup-form-footer p {
+    margin: 0 0 var(--spacing-sm);
+    color: var(--gray-500);
+    font-size: var(--font-sm);
+}
+
+.signup-form-footer a {
+    color: var(--primary);
+    font-weight: var(--font-weight-medium);
+}
+
+.signup-terms {
+    font-size: var(--font-xs) !important;
+    color: var(--gray-400) !important;
+}
+
+.signup-terms a {
+    color: var(--gray-500) !important;
+    text-decoration: underline;
+}
+
 /* Responsive - Public pages */
 @media (max-width: 768px) {
+    .signup-page {
+        flex-direction: column;
+    }
+
+    .signup-brand {
+        flex: none;
+        padding: var(--spacing-lg) var(--spacing-md);
+    }
+
+    .signup-brand-logo {
+        margin-bottom: var(--spacing-md);
+    }
+
+    .signup-brand-text {
+        margin-bottom: var(--spacing-md);
+    }
+
+    .signup-brand-text h1 {
+        font-size: 22px;
+    }
+
+    .signup-brand-text p {
+        display: none;
+    }
+
+    .signup-trust-list {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: var(--spacing-sm);
+    }
+
+    .signup-trust-item {
+        font-size: var(--font-xs);
+    }
+
+    .signup-testimonial {
+        display: none;
+    }
+
+    .signup-form-panel {
+        padding: var(--spacing-lg) var(--spacing-md);
+    }
+
     .public-nav-links {
         display: none;
     }

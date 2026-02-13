@@ -373,7 +373,7 @@ class PublicPagesUITest {
 
     @Test
     @Order(50)
-    @DisplayName("Signup page should display registration form")
+    @DisplayName("Signup page should display split-screen layout with step 1")
     fun `signup page should load`() {
         val p = requirePage()
         p.navigate("$baseUrl/signup")
@@ -383,17 +383,32 @@ class PublicPagesUITest {
         val title = p.title()
         assertTrue(title.contains("Sign Up"), "Title should contain 'Sign Up', got: $title")
 
-        // Form fields
+        // Split-screen layout
+        assertTrue(p.locator(".signup-brand").isVisible, "Brand panel should be visible")
+        assertTrue(p.locator(".signup-form-panel").isVisible, "Form panel should be visible")
+
+        // Step 1 fields visible
         assertTrue(p.locator("input[name='orgName']").isVisible, "Org name input should be visible")
         assertTrue(p.locator("input[name='email']").isVisible, "Email input should be visible")
         assertTrue(p.locator("input[name='displayName']").isVisible, "Display name input should be visible")
-        assertTrue(p.locator("input[name='password']").isVisible, "Password input should be visible")
-        assertTrue(p.locator("input[name='confirmPassword']").isVisible, "Confirm password input should be visible")
-        assertTrue(p.locator("button[type='submit']").isVisible, "Submit button should be visible")
+
+        // Step 2 fields hidden
+        assertFalse(p.locator("#step2").isVisible, "Step 2 should be hidden initially")
+
+        // Continue button visible
+        assertTrue(p.locator("#continueBtn").isVisible, "Continue button should be visible")
+
+        // Step indicator
+        assertTrue(p.locator(".signup-steps").isVisible, "Step indicator should be visible")
+        assertTrue(p.locator("#stepText").textContent().contains("Step 1"), "Should show Step 1")
 
         // Sign in link
         val signInLink = p.locator("a[href='/admin/login']")
         assertTrue(signInLink.count() > 0, "Should have a link to sign in")
+
+        // Trust signals
+        val trustItems = p.locator(".signup-trust-item")
+        assertEquals(3, trustItems.count(), "Should have 3 trust signal items")
     }
 
     @Test
@@ -416,39 +431,155 @@ class PublicPagesUITest {
 
     @Test
     @Order(52)
-    @DisplayName("Navigate to Signup from nav button")
-    fun `navigate to signup from nav`() {
+    @DisplayName("Continue button navigates to step 2")
+    fun `signup step navigation`() {
         val p = requirePage()
-        p.navigate(baseUrl)
+        p.navigate("$baseUrl/signup")
         p.waitForLoadState()
 
-        p.click(".public-nav-actions a[href='/signup']")
-        p.waitForLoadState()
+        // Fill step 1 fields
+        p.fill("input[name='orgName']", "Test Org")
+        p.fill("input[name='email']", "test@example.com")
+        p.fill("input[name='displayName']", "Test User")
 
-        assertTrue(p.url().contains("/signup"), "Should navigate to /signup")
-        screenshot("52-signup-via-nav")
+        screenshot("52-signup-step1-filled")
+
+        // Click Continue
+        p.click("#continueBtn")
+        Thread.sleep(400)
+
+        screenshot("53-signup-step2")
+
+        // Step 2 should be visible
+        assertTrue(p.locator("#step2").isVisible, "Step 2 should be visible after Continue")
+        assertFalse(p.locator("#step1").isVisible, "Step 1 should be hidden after Continue")
+
+        // Step indicator should show step 2
+        assertTrue(p.locator("#stepText").textContent().contains("Step 2"), "Should show Step 2")
+
+        // Password fields visible
+        assertTrue(p.locator("input[name='password']").isVisible, "Password input should be visible")
+        assertTrue(p.locator("input[name='confirmPassword']").isVisible, "Confirm password input should be visible")
     }
 
     @Test
     @Order(53)
+    @DisplayName("Back button returns to step 1")
+    fun `signup back navigation`() {
+        val p = requirePage()
+        p.navigate("$baseUrl/signup")
+        p.waitForLoadState()
+
+        // Fill and go to step 2
+        p.fill("input[name='orgName']", "Test Org")
+        p.fill("input[name='email']", "test@example.com")
+        p.fill("input[name='displayName']", "Test User")
+        p.click("#continueBtn")
+        Thread.sleep(400)
+
+        // Click Back
+        p.click("#backBtn")
+        Thread.sleep(400)
+
+        screenshot("54-signup-back-to-step1")
+
+        // Step 1 should be visible again
+        assertTrue(p.locator("#step1").isVisible, "Step 1 should be visible after Back")
+        assertFalse(p.locator("#step2").isVisible, "Step 2 should be hidden after Back")
+        assertTrue(p.locator("#stepText").textContent().contains("Step 1"), "Should show Step 1 after Back")
+    }
+
+    @Test
+    @Order(54)
+    @DisplayName("Password strength indicator works")
+    fun `signup password strength`() {
+        val p = requirePage()
+        p.navigate("$baseUrl/signup")
+        p.waitForLoadState()
+
+        // Go to step 2
+        p.fill("input[name='orgName']", "Test Org")
+        p.fill("input[name='email']", "test@example.com")
+        p.fill("input[name='displayName']", "Test User")
+        p.click("#continueBtn")
+        Thread.sleep(400)
+
+        // Type weak password
+        p.fill("input[name='password']", "abc")
+        Thread.sleep(200)
+        val weakLabel = p.locator("#strengthLabel").textContent()
+        screenshot("55-signup-password-weak")
+
+        // Type stronger password
+        p.fill("input[name='password']", "StrongPass123!")
+        Thread.sleep(200)
+        val strongLabel = p.locator("#strengthLabel").textContent()
+        screenshot("56-signup-password-strong")
+
+        assertTrue(strongLabel.contains("Strong", ignoreCase = true), "Strong password should show 'Strong', got: $strongLabel")
+    }
+
+    @Test
+    @Order(55)
+    @DisplayName("Password show/hide toggle works")
+    fun `signup password toggle`() {
+        val p = requirePage()
+        p.navigate("$baseUrl/signup")
+        p.waitForLoadState()
+
+        // Go to step 2
+        p.fill("input[name='orgName']", "Test Org")
+        p.fill("input[name='email']", "test@example.com")
+        p.fill("input[name='displayName']", "Test User")
+        p.click("#continueBtn")
+        Thread.sleep(400)
+
+        // Password field should be type=password initially
+        val initialType = p.locator("input[name='password']").getAttribute("type")
+        assertEquals("password", initialType, "Initially should be password type")
+
+        // Click toggle
+        p.click("#togglePassword")
+        Thread.sleep(200)
+
+        val toggledType = p.locator("input[name='password']").getAttribute("type")
+        assertEquals("text", toggledType, "After toggle should be text type")
+
+        screenshot("57-signup-password-visible")
+
+        // Click toggle again
+        p.click("#togglePassword")
+        Thread.sleep(200)
+
+        val retoggledType = p.locator("input[name='password']").getAttribute("type")
+        assertEquals("password", retoggledType, "After second toggle should be password type again")
+    }
+
+    @Test
+    @Order(56)
     @DisplayName("Signup with mismatched passwords should show error")
     fun `signup password mismatch`() {
         val p = requirePage()
         p.navigate("$baseUrl/signup")
         p.waitForLoadState()
 
+        // Fill step 1
         p.fill("input[name='orgName']", "Test Org")
         p.fill("input[name='email']", "mismatch@example.com")
         p.fill("input[name='displayName']", "Test User")
+        p.click("#continueBtn")
+        Thread.sleep(400)
+
+        // Fill step 2 with mismatched passwords
         p.fill("input[name='password']", "TestPass123")
         p.fill("input[name='confirmPassword']", "DifferentPass456")
 
-        screenshot("53-signup-filled-mismatch")
+        screenshot("58-signup-filled-mismatch")
 
         p.click("button[type='submit']")
         p.waitForLoadState()
 
-        screenshot("54-signup-mismatch-error")
+        screenshot("59-signup-mismatch-error")
 
         // Should redirect back with error and preserved fields
         assertTrue(p.url().contains("error="), "URL should contain error parameter")
@@ -456,7 +587,7 @@ class PublicPagesUITest {
     }
 
     @Test
-    @Order(54)
+    @Order(57)
     @DisplayName("Signup with short org name should show error")
     fun `signup short org name`() {
         val p = requirePage()
@@ -470,19 +601,27 @@ class PublicPagesUITest {
         p.fill("input[name='orgName']", "AB")
         p.fill("input[name='email']", "short-org@example.com")
         p.fill("input[name='displayName']", "Test User")
+
+        // Go to step 2
+        p.click("#continueBtn")
+        Thread.sleep(400)
+
+        // Remove step 2 validation too
+        p.evaluate("document.querySelector('input[name=password]').removeAttribute('minLength')")
+
         p.fill("input[name='password']", "TestPass123")
         p.fill("input[name='confirmPassword']", "TestPass123")
 
         p.click("button[type='submit']")
         p.waitForLoadState()
 
-        screenshot("55-signup-short-org-error")
+        screenshot("60-signup-short-org-error")
 
         assertTrue(p.url().contains("error="), "Should show error for short org name")
     }
 
     @Test
-    @Order(55)
+    @Order(58)
     @DisplayName("Signup with weak password should show error")
     fun `signup weak password`() {
         val p = requirePage()
@@ -497,13 +636,18 @@ class PublicPagesUITest {
         p.fill("input[name='orgName']", "Test Org Valid")
         p.fill("input[name='email']", "weak-pass@example.com")
         p.fill("input[name='displayName']", "Test User")
+
+        // Go to step 2
+        p.click("#continueBtn")
+        Thread.sleep(400)
+
         p.fill("input[name='password']", "nope")
         p.fill("input[name='confirmPassword']", "nope")
 
         p.click("button[type='submit']")
         p.waitForLoadState()
 
-        screenshot("56-signup-weak-password-error")
+        screenshot("61-signup-weak-password-error")
 
         assertTrue(p.url().contains("error="), "Should show error for weak password")
     }
@@ -516,18 +660,23 @@ class PublicPagesUITest {
         p.navigate("$baseUrl/signup")
         p.waitForLoadState()
 
+        // Step 1
         p.fill("input[name='orgName']", testOrgName)
         p.fill("input[name='email']", testEmail)
         p.fill("input[name='displayName']", "UI Test User")
+        p.click("#continueBtn")
+        Thread.sleep(400)
+
+        // Step 2
         p.fill("input[name='password']", testPassword)
         p.fill("input[name='confirmPassword']", testPassword)
 
-        screenshot("60-signup-filled-valid")
+        screenshot("62-signup-filled-valid")
 
         p.click("button[type='submit']")
         p.waitForLoadState()
 
-        screenshot("61-signup-success-redirect")
+        screenshot("63-signup-success-redirect")
 
         // Should redirect to admin onboarding
         val url = p.url()
@@ -552,17 +701,21 @@ class PublicPagesUITest {
         p.navigate("$baseUrl/signup")
         p.waitForLoadState()
 
-        // Try to register with the same email again
+        // Step 1
         p.fill("input[name='orgName']", "Another Org")
         p.fill("input[name='email']", testEmail)
         p.fill("input[name='displayName']", "Duplicate User")
+        p.click("#continueBtn")
+        Thread.sleep(400)
+
+        // Step 2
         p.fill("input[name='password']", testPassword)
         p.fill("input[name='confirmPassword']", testPassword)
 
         p.click("button[type='submit']")
         p.waitForLoadState()
 
-        screenshot("62-signup-duplicate-email")
+        screenshot("64-signup-duplicate-email")
 
         assertTrue(p.url().contains("error="), "Should show error for duplicate email")
         assertTrue(
@@ -613,8 +766,8 @@ class PublicPagesUITest {
         assertTrue(p.locator(".contact-card").count() == 3, "Should have 3 contact cards")
         screenshot("74-nav-contact")
 
-        // Signup
-        p.click(".public-nav-actions a[href='/signup']")
+        // Signup (navigate directly since signup page has no public-nav)
+        p.navigate("$baseUrl/signup")
         p.waitForLoadState()
         assertTrue(p.url().contains("/signup"), "Should be on /signup")
         assertTrue(p.locator("input[name='orgName']").isVisible, "Signup form should be visible")
@@ -700,7 +853,7 @@ class PublicPagesUITest {
 
     @Test
     @Order(81)
-    @DisplayName("Signup page should work on mobile")
+    @DisplayName("Signup page should work on mobile with vertical layout")
     fun `signup page mobile`() {
         context?.close()
         context = browser!!.newContext(
@@ -713,9 +866,23 @@ class PublicPagesUITest {
         p.waitForLoadState()
         screenshot("81-mobile-signup")
 
-        // All form fields should be visible
+        // Brand panel and form should both be visible (stacked vertically)
+        assertTrue(p.locator(".signup-brand").isVisible, "Brand panel should be visible on mobile")
+        assertTrue(p.locator(".signup-form-panel").isVisible, "Form panel should be visible on mobile")
+
+        // All step 1 form fields should be visible
         assertTrue(p.locator("input[name='orgName']").isVisible, "Org name should be visible on mobile")
         assertTrue(p.locator("input[name='email']").isVisible, "Email should be visible on mobile")
-        assertTrue(p.locator("button[type='submit']").isVisible, "Submit should be visible on mobile")
+        assertTrue(p.locator("#continueBtn").isVisible, "Continue button should be visible on mobile")
+
+        // Step navigation should work on mobile
+        p.fill("input[name='orgName']", "Mobile Org")
+        p.fill("input[name='email']", "mobile@example.com")
+        p.fill("input[name='displayName']", "Mobile User")
+        p.click("#continueBtn")
+        Thread.sleep(400)
+
+        assertTrue(p.locator("#step2").isVisible, "Step 2 should work on mobile")
+        screenshot("82-mobile-signup-step2")
     }
 }
