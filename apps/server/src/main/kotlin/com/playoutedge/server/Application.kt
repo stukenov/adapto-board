@@ -10,6 +10,7 @@ import com.playoutedge.server.services.ChannelService
 import com.playoutedge.server.services.DeviceActionService
 import com.playoutedge.server.services.DeviceService
 import com.playoutedge.server.services.MaintenanceService
+import com.playoutedge.server.services.RegistrationService
 import com.playoutedge.server.services.WebhookService
 import com.playoutedge.server.services.OverlayService
 import com.playoutedge.server.services.OverlaySubscribers
@@ -29,6 +30,7 @@ import com.playoutedge.persistence.repositories.impl.OverlayRepositoryImpl
 import com.playoutedge.persistence.repositories.impl.QuotaServiceImpl
 import com.playoutedge.persistence.repositories.impl.JobRepositoryImpl
 import com.playoutedge.persistence.repositories.impl.ScheduleRepositoryImpl
+import com.playoutedge.persistence.repositories.impl.TenantRepositoryImpl
 import com.playoutedge.persistence.repositories.impl.WebhookLogRepositoryImpl
 import com.playoutedge.server.jobs.AsrunCleanupJobHandler
 import com.playoutedge.server.jobs.CleanupJobHandler
@@ -70,6 +72,8 @@ import com.playoutedge.server.routes.player.devicePlayerRoutes
 import com.playoutedge.server.routes.player.overlayStreamRoutes
 import com.playoutedge.server.routes.player.playerAsrunRoutes
 import com.playoutedge.server.routes.player.playlistRoutes
+import com.playoutedge.server.routes.landing.publicLandingRoutes
+import com.playoutedge.server.routes.landing.publicSignupRoutes
 import com.playoutedge.storage.AssetUploadService
 import com.playoutedge.storage.LocalStorageService
 import com.playoutedge.storage.StorageConfig
@@ -111,6 +115,7 @@ fun Application.module() {
     val auditRepository = AuditRepositoryImpl()
     val asrunRepository = AsrunRepositoryImpl()
     val alertRepository = AlertRepositoryImpl()
+    val tenantRepository = TenantRepositoryImpl()
     val userRepository = UserRepositoryImpl()
     val webhookLogRepository = WebhookLogRepositoryImpl()
     val jobRepository = JobRepositoryImpl()
@@ -128,6 +133,7 @@ fun Application.module() {
     val auditService = AuditService(auditRepository)
     val asrunService = AsrunService(asrunRepository)
     val alertService = AlertService(alertRepository)
+    val registrationService = RegistrationService(tenantRepository, userRepository, passwordService)
     val maintenanceService = MaintenanceService()
 
     // Install plugins
@@ -155,6 +161,10 @@ fun Application.module() {
 
     // Configure routes
     routing {
+        // Public routes (before admin to avoid auth)
+        publicLandingRoutes()
+        publicSignupRoutes(registrationService, jwtService)
+
         // Admin web routes (SSR)
         adminAuthRoutes(userRepository, jwtService, passwordService)
         adminHomeRoutes(deviceRepository, alertRepository)
