@@ -3145,6 +3145,11 @@ pre.code-block {
     border-style: dashed;
 }
 
+.playlist-item-placeholder {
+    opacity: 0.5;
+    border: 2px dashed var(--primary);
+}
+
 .playlist-item-handle {
     color: var(--gray-400);
     font-size: 18px;

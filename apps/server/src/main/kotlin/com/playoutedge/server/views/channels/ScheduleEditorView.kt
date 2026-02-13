@@ -315,9 +315,10 @@ private fun scheduleEditorScript(): String = """
 
     let draggedEl = null;
     let dragSource = null; // 'playlist' or 'library'
+    let libraryPlaceholder = null; // single placeholder for library drag
 
     function updateState() {
-        const items = playlist.querySelectorAll('.playlist-item');
+        const items = playlist.querySelectorAll('.playlist-item:not(.playlist-item-placeholder)');
         // Update order numbers
         items.forEach((el, i) => {
             const orderEl = el.querySelector('.playlist-item-order');
@@ -433,52 +434,69 @@ private fun scheduleEditorScript(): String = """
     // Attach events to existing items
     playlist.querySelectorAll('.playlist-item').forEach(attachItemEvents);
 
-    // Playlist drag over / drop for reordering
+    // Playlist drag over / drop
     playlist.addEventListener('dragover', function(e) {
         e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
         const target = e.target.closest('.playlist-item');
         document.querySelectorAll('.playlist-item.drag-over').forEach(x => x.classList.remove('drag-over'));
-        if (target && target !== draggedEl) {
-            const rect = target.getBoundingClientRect();
-            const mid = rect.top + rect.height / 2;
-            if (e.clientY < mid) {
-                target.classList.add('drag-over');
-                playlist.insertBefore(getDragElement(), target);
-            } else {
-                target.classList.add('drag-over');
-                playlist.insertBefore(getDragElement(), target.nextSibling);
+
+        if (dragSource === 'library' && draggedEl) {
+            e.dataTransfer.dropEffect = 'copy';
+            // Create placeholder once
+            if (!libraryPlaceholder) {
+                libraryPlaceholder = createPlaylistItem(
+                    draggedEl.dataset.assetId,
+                    draggedEl.dataset.assetName,
+                    draggedEl.dataset.assetType,
+                    draggedEl.dataset.assetDuration
+                );
+                libraryPlaceholder.classList.add('playlist-item-placeholder');
+                playlist.appendChild(libraryPlaceholder);
             }
+            // Move existing placeholder to correct position
+            if (target && target !== libraryPlaceholder) {
+                const rect = target.getBoundingClientRect();
+                const mid = rect.top + rect.height / 2;
+                if (e.clientY < mid) {
+                    playlist.insertBefore(libraryPlaceholder, target);
+                } else {
+                    playlist.insertBefore(libraryPlaceholder, target.nextSibling);
+                }
+            }
+        } else if (dragSource === 'playlist' && draggedEl) {
+            e.dataTransfer.dropEffect = 'move';
+            if (target && target !== draggedEl) {
+                const rect = target.getBoundingClientRect();
+                const mid = rect.top + rect.height / 2;
+                if (e.clientY < mid) {
+                    target.classList.add('drag-over');
+                    playlist.insertBefore(draggedEl, target);
+                } else {
+                    target.classList.add('drag-over');
+                    playlist.insertBefore(draggedEl, target.nextSibling);
+                }
+            }
+        }
+    });
+
+    playlist.addEventListener('dragleave', function(e) {
+        // Remove placeholder if leaving playlist entirely
+        if (libraryPlaceholder && !playlist.contains(e.relatedTarget)) {
+            libraryPlaceholder.remove();
+            libraryPlaceholder = null;
         }
     });
 
     playlist.addEventListener('drop', function(e) {
         e.preventDefault();
         document.querySelectorAll('.drag-over').forEach(x => x.classList.remove('drag-over'));
-        if (dragSource === 'library' && draggedEl) {
-            const el = createPlaylistItem(
-                draggedEl.dataset.assetId,
-                draggedEl.dataset.assetName,
-                draggedEl.dataset.assetType,
-                draggedEl.dataset.assetDuration
-            );
-            playlist.appendChild(el);
+        if (dragSource === 'library' && libraryPlaceholder) {
+            // Finalize placeholder into real item
+            libraryPlaceholder.classList.remove('playlist-item-placeholder');
+            libraryPlaceholder = null;
         }
         updateState();
     });
-
-    function getDragElement() {
-        if (dragSource === 'library' && draggedEl) {
-            const el = createPlaylistItem(
-                draggedEl.dataset.assetId,
-                draggedEl.dataset.assetName,
-                draggedEl.dataset.assetType,
-                draggedEl.dataset.assetDuration
-            );
-            return el;
-        }
-        return draggedEl;
-    }
 
     // Library drag
     document.querySelectorAll('.library-asset').forEach(function(el) {
@@ -488,8 +506,14 @@ private fun scheduleEditorScript(): String = """
             e.dataTransfer.effectAllowed = 'copy';
         });
         el.addEventListener('dragend', function() {
+            // Clean up placeholder if drop didn't happen
+            if (libraryPlaceholder) {
+                libraryPlaceholder.remove();
+                libraryPlaceholder = null;
+            }
             draggedEl = null;
             dragSource = null;
+            updateState();
         });
         // Add button click
         const addBtn = el.querySelector('.library-add-btn');
