@@ -19,6 +19,8 @@ import com.playoutedge.server.DatabaseTestContainer
 import com.playoutedge.server.plugins.AdminSessionPlugin
 import com.playoutedge.server.plugins.configureErrorHandling
 import com.playoutedge.server.routes.admin.adminChannelRoutes
+import com.playoutedge.storage.StorageResult
+import com.playoutedge.storage.StorageService
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
@@ -130,7 +132,12 @@ class ChannelUseCaseTest : DatabaseTestContainer() {
         }
 
         routing {
-            adminChannelRoutes(channelRepository, deviceRepository, scheduleRepository)
+            adminChannelRoutes(channelRepository, deviceRepository, scheduleRepository, object : StorageService {
+                override suspend fun put(key: String, content: java.io.InputStream, contentLength: Long) = StorageResult(key, "", contentLength)
+                override suspend fun delete(key: String) = true
+                override suspend fun getSignedUrl(key: String, ttl: kotlin.time.Duration) = "/mock-storage/$key"
+                override suspend fun exists(key: String) = true
+            })
         }
     }
 

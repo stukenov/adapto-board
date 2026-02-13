@@ -16,7 +16,11 @@ import com.playoutedge.server.plugins.configureErrorHandling
 import com.playoutedge.server.routes.admin.adminScheduleRoutes
 import com.playoutedge.server.routes.admin.adminChannelRoutes
 import com.playoutedge.server.services.ScheduleService
+import com.playoutedge.storage.StorageResult
+import com.playoutedge.storage.StorageService
 import com.playoutedge.persistence.repositories.impl.DeviceRepositoryImpl
+import java.io.InputStream
+import kotlin.time.Duration
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
@@ -159,7 +163,12 @@ class ScheduleEditorUseCaseTest : DatabaseTestContainer() {
         }
         routing {
             adminScheduleRoutes(channelRepository, scheduleRepository, assetRepository, scheduleService)
-            adminChannelRoutes(channelRepository, deviceRepository, scheduleRepository)
+            adminChannelRoutes(channelRepository, deviceRepository, scheduleRepository, object : StorageService {
+                override suspend fun put(key: String, content: InputStream, contentLength: Long) = StorageResult(key, "", contentLength)
+                override suspend fun delete(key: String) = true
+                override suspend fun getSignedUrl(key: String, ttl: Duration) = "/mock-storage/$key"
+                override suspend fun exists(key: String) = true
+            })
         }
     }
 

@@ -168,7 +168,7 @@ fun Application.module() {
         // Admin web routes (SSR)
         adminAuthRoutes(userRepository, jwtService, passwordService)
         adminHomeRoutes(deviceRepository, alertRepository)
-        adminChannelRoutes(channelRepository, deviceRepository, scheduleRepository)
+        adminChannelRoutes(channelRepository, deviceRepository, scheduleRepository, storageService)
         adminDeviceRoutes(deviceRepository, channelRepository)
         adminAssetRoutes(assetRepository, quotaService, assetUploadService)
         adminOverlayRoutes(overlayRepository, channelRepository, webhookLogRepository)

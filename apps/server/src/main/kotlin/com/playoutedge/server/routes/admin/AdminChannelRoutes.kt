@@ -18,7 +18,10 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import com.playoutedge.domain.enums.AssetType
+import com.playoutedge.storage.StorageService
 import java.util.UUID
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 
 /**
@@ -27,7 +30,8 @@ import kotlin.time.Duration.Companion.minutes
 fun Route.adminChannelRoutes(
     channelRepository: ChannelRepository,
     deviceRepository: DeviceRepository,
-    scheduleRepository: ScheduleRepository
+    scheduleRepository: ScheduleRepository,
+    storageService: StorageService
 ) {
     route("/admin/channels") {
         // GET /admin/channels - List channels
@@ -343,6 +347,8 @@ fun Route.adminChannelRoutes(
                     LivePreviewItem(
                         assetId = item.asset.id.value,
                         assetName = item.asset.name,
+                        assetType = item.asset.type,
+                        assetStorageKey = item.asset.storageKey,
                         durationMs = item.asset.durationMs,
                         orderIndex = index,
                         timeStart = item.timeStart?.toString(),
@@ -351,6 +357,11 @@ fun Route.adminChannelRoutes(
                 }
 
                 Pair(activeVersion?.version, items)
+            }
+
+            // Generate signed URLs outside transaction
+            val itemsWithUrls = previewItems.map { item ->
+                item.copy(assetUrl = storageService.getSignedUrl(item.assetStorageKey, 1.hours))
             }
 
             val now = Clock.System.now()
@@ -363,7 +374,7 @@ fun Route.adminChannelRoutes(
                     channelId = channelId,
                     channelName = channel.name,
                     scheduleVersion = scheduleVersionNumber,
-                    items = previewItems,
+                    items = itemsWithUrls,
                     currentIndex = currentIndex,
                     currentTimeFormatted = "${currentTime.hour}:${String.format("%02d", currentTime.minute)}"
                 )
