@@ -3,7 +3,8 @@ package com.playoutedge.domain.enums
 enum class ActionType {
     FORCE_CONFIG_REFRESH,
     FORCE_PLAYLIST_REFRESH,
-    ROTATE_DEVICE_TOKEN
+    ROTATE_DEVICE_TOKEN,
+    REBOOT
 }
 
 enum class ActionStatus {

@@ -43,13 +43,15 @@ class UserRepositoryImpl : UserRepository {
         passwordHash: String,
         role: UserRole
     ): UserEntity = newSuspendedTransaction {
+        val now = Clock.System.now()
         val user = UserEntity.new {
             this.tenant = TenantEntity[tenantId.value]
             this.email = email.lowercase()
             this.displayName = displayName
             this.passwordHash = passwordHash
             this.status = UserStatus.ACTIVE
-            this.createdAt = Clock.System.now()
+            this.createdAt = now
+            this.inviteExpiresAt = now.plus(kotlin.time.Duration.parse("7d"))
         }
 
         // Add role

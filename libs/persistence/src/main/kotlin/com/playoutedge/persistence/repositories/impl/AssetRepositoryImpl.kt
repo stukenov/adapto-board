@@ -37,6 +37,18 @@ class AssetRepositoryImpl : AssetRepository {
             }.toList()
         }
 
+    override suspend fun findAllActivePaged(tenantId: TenantId, limit: Int, offset: Int): Pair<List<AssetEntity>, Long> =
+        newSuspendedTransaction {
+            val query = AssetEntity.find {
+                (Assets.tenantId eq tenantId.value) and
+                (Assets.status neq AssetStatus.ARCHIVED) and
+                (Assets.archivedAt.isNull())
+            }
+            val total = query.count()
+            val items = query.limit(limit).offset(offset.toLong()).toList()
+            Pair(items, total)
+        }
+
     override suspend fun findByStatus(tenantId: TenantId, status: AssetStatus): List<AssetEntity> =
         newSuspendedTransaction {
             AssetEntity.find {
@@ -60,6 +72,8 @@ class AssetRepositoryImpl : AssetRepository {
                 height = asset.height
                 createdBy = asset.createdBy?.let { UserEntity[it] }
                 createdAt = Clock.System.now()
+                description = asset.description
+                tags = asset.tags
             }
         }
 
@@ -77,6 +91,12 @@ class AssetRepositoryImpl : AssetRepository {
             update.width?.let { entity.width = it }
             update.height?.let { entity.height = it }
             update.rejectionReason?.let { entity.rejectionReason = it }
+            update.description?.let { entity.description = it }
+            update.tags?.let { entity.tags = it }
+            update.storageKey?.let { entity.storageKey = it }
+            update.mimeType?.let { entity.mimeType = it }
+            update.approvalStatus?.let { entity.approvalStatus = it }
+            update.expiresAt?.let { entity.expiresAt = it }
             entity
         }
 
@@ -99,6 +119,38 @@ class AssetRepositoryImpl : AssetRepository {
 
             entity.delete()
             true
+        }
+
+    override suspend fun updateMetadata(tenantId: TenantId, assetId: UUID, description: String?, tags: String?) =
+        newSuspendedTransaction {
+            val entity = AssetEntity.find {
+                (Assets.id eq assetId) and (Assets.tenantId eq tenantId.value)
+            }.firstOrNull() ?: return@newSuspendedTransaction false
+            description?.let { entity.description = it }
+            tags?.let { entity.tags = it }
+            true
+        }
+
+    override suspend fun findByChecksumSha256(tenantId: TenantId, checksum: String): List<AssetEntity> =
+        newSuspendedTransaction {
+            AssetEntity.find {
+                (Assets.tenantId eq tenantId.value) and
+                (Assets.checksumSha256 eq checksum) and
+                (Assets.status neq AssetStatus.ARCHIVED)
+            }.toList()
+        }
+
+    override suspend fun getAllTags(tenantId: TenantId): List<String> =
+        newSuspendedTransaction {
+            AssetEntity.find {
+                (Assets.tenantId eq tenantId.value) and
+                (Assets.tags.isNotNull())
+            }.mapNotNull { it.tags }
+                .flatMap { it.split(",") }
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
+                .distinct()
+                .sorted()
         }
 
     override suspend fun getTotalStorageBytes(tenantId: TenantId): Long =

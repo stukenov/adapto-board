@@ -25,6 +25,14 @@ class DeviceRepositoryImpl : DeviceRepository {
             DeviceEntity.find { Devices.tenantId eq tenantId.value }.toList()
         }
 
+    override suspend fun findAllPaged(tenantId: TenantId, limit: Int, offset: Int): Pair<List<DeviceEntity>, Long> =
+        newSuspendedTransaction {
+            val query = DeviceEntity.find { Devices.tenantId eq tenantId.value }
+            val total = query.count()
+            val items = query.limit(limit).offset(offset.toLong()).toList()
+            Pair(items, total)
+        }
+
     override suspend fun findByStatus(tenantId: TenantId, status: DeviceEnrollStatus): List<DeviceEntity> =
         newSuspendedTransaction {
             DeviceEntity.find {
@@ -48,6 +56,11 @@ class DeviceRepositoryImpl : DeviceRepository {
             update.displayName?.let { entity.displayName = it }
             update.assignedChannelId?.let { entity.assignedChannelId = it }
             update.enrollStatus?.let { entity.enrollStatus = it }
+            update.latitude?.let { entity.latitude = it }
+            update.longitude?.let { entity.longitude = it }
+            update.locationName?.let { entity.locationName = it }
+            update.powerOnTime?.let { entity.powerOnTime = it }
+            update.powerOffTime?.let { entity.powerOffTime = it }
             entity
         }
 

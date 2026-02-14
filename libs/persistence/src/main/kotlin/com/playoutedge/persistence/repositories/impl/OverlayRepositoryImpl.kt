@@ -35,6 +35,14 @@ class OverlayRepositoryImpl : OverlayRepository {
             OverlayProfileEntity.find { OverlayProfiles.tenantId eq tenantId.value }.toList()
         }
 
+    override suspend fun findAllProfilesPaged(tenantId: TenantId, limit: Int, offset: Int): Pair<List<OverlayProfileEntity>, Long> =
+        newSuspendedTransaction {
+            val query = OverlayProfileEntity.find { OverlayProfiles.tenantId eq tenantId.value }
+            val total = query.count()
+            val items = query.limit(limit).offset(offset.toLong()).toList()
+            Pair(items, total)
+        }
+
     override suspend fun createProfile(
         tenantId: TenantId,
         name: String,

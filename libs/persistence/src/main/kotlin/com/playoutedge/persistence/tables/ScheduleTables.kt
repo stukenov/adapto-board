@@ -14,6 +14,7 @@ object Channels : UUIDTable("channels") {
     val status = pgEnum<ChannelStatus>("status", "channel_status")
     val defaultOverlayProfileId = uuid("default_overlay_profile_id").nullable()
     val embedEnabled = bool("embed_enabled").default(false)
+    val groupId = reference("group_id", ChannelGroups, onDelete = ReferenceOption.SET_NULL).nullable()
     val createdAt = timestamp("created_at")
 
     init {

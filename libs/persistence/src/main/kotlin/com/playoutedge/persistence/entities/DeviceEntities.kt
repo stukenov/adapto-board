@@ -22,6 +22,11 @@ class DeviceEntity(id: EntityID<UUID>) : UUIDEntity(id) {
     var androidModel by Devices.androidModel
     var androidVersion by Devices.androidVersion
     var revokedAt by Devices.revokedAt
+    var latitude by Devices.latitude
+    var longitude by Devices.longitude
+    var locationName by Devices.locationName
+    var powerOnTime by Devices.powerOnTime
+    var powerOffTime by Devices.powerOffTime
     var createdAt by Devices.createdAt
 }
 

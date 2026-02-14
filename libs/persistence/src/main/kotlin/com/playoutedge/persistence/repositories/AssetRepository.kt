@@ -10,12 +10,16 @@ interface AssetRepository {
     suspend fun findById(tenantId: TenantId, assetId: UUID): AssetEntity?
     suspend fun findAll(tenantId: TenantId): List<AssetEntity>
     suspend fun findAllActive(tenantId: TenantId): List<AssetEntity>
+    suspend fun findAllActivePaged(tenantId: TenantId, limit: Int = 50, offset: Int = 0): Pair<List<AssetEntity>, Long>
     suspend fun findByStatus(tenantId: TenantId, status: AssetStatus): List<AssetEntity>
     suspend fun create(tenantId: TenantId, asset: CreateAssetRequest): AssetEntity
     suspend fun update(tenantId: TenantId, assetId: UUID, update: UpdateAssetRequest): AssetEntity?
     suspend fun archive(tenantId: TenantId, assetId: UUID): AssetEntity?
     suspend fun delete(tenantId: TenantId, assetId: UUID): Boolean
     suspend fun getTotalStorageBytes(tenantId: TenantId): Long
+    suspend fun updateMetadata(tenantId: TenantId, assetId: UUID, description: String?, tags: String?): Boolean
+    suspend fun findByChecksumSha256(tenantId: TenantId, checksum: String): List<AssetEntity>
+    suspend fun getAllTags(tenantId: TenantId): List<String>
 }
 
 data class CreateAssetRequest(
@@ -28,7 +32,9 @@ data class CreateAssetRequest(
     val durationMs: Int? = null,
     val width: Int? = null,
     val height: Int? = null,
-    val createdBy: UUID? = null
+    val createdBy: UUID? = null,
+    val description: String? = null,
+    val tags: String? = null
 )
 
 data class UpdateAssetRequest(
@@ -39,5 +45,11 @@ data class UpdateAssetRequest(
     val durationMs: Int? = null,
     val width: Int? = null,
     val height: Int? = null,
-    val rejectionReason: String? = null
+    val rejectionReason: String? = null,
+    val description: String? = null,
+    val tags: String? = null,
+    val storageKey: String? = null,
+    val mimeType: String? = null,
+    val approvalStatus: String? = null,
+    val expiresAt: kotlinx.datetime.Instant? = null
 )

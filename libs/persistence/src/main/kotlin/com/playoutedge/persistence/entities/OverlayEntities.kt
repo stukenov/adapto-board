@@ -49,5 +49,6 @@ class WebhookLogEntity(id: EntityID<UUID>) : UUIDEntity(id) {
     var latencyMs by WebhookLogs.latencyMs
     var payloadSize by WebhookLogs.payloadSize
     var error by WebhookLogs.error
+    var retryCount by WebhookLogs.retryCount
     var createdAt by WebhookLogs.createdAt
 }

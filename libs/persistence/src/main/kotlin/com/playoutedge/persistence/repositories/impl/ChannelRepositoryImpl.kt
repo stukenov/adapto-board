@@ -32,6 +32,14 @@ class ChannelRepositoryImpl : ChannelRepository {
             ChannelEntity.find { Channels.tenantId eq tenantId.value }.toList()
         }
 
+    override suspend fun findAllPaged(tenantId: TenantId, limit: Int, offset: Int): Pair<List<ChannelEntity>, Long> =
+        newSuspendedTransaction {
+            val query = ChannelEntity.find { Channels.tenantId eq tenantId.value }
+            val total = query.count()
+            val items = query.limit(limit).offset(offset.toLong()).toList()
+            Pair(items, total)
+        }
+
     override suspend fun findByStatus(tenantId: TenantId, status: ChannelStatus): List<ChannelEntity> =
         newSuspendedTransaction {
             ChannelEntity.find {

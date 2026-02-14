@@ -9,6 +9,7 @@ interface ChannelRepository {
     suspend fun findByIdAnyTenant(channelId: UUID): ChannelEntity?
     suspend fun findById(tenantId: TenantId, channelId: UUID): ChannelEntity?
     suspend fun findAll(tenantId: TenantId): List<ChannelEntity>
+    suspend fun findAllPaged(tenantId: TenantId, limit: Int = 50, offset: Int = 0): Pair<List<ChannelEntity>, Long>
     suspend fun findByStatus(tenantId: TenantId, status: ChannelStatus): List<ChannelEntity>
     suspend fun create(tenantId: TenantId, channel: CreateChannelRequest): ChannelEntity
     suspend fun update(tenantId: TenantId, channelId: UUID, update: UpdateChannelRequest): ChannelEntity?

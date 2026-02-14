@@ -37,4 +37,5 @@ class UserEntity(id: EntityID<UUID>) : UUIDEntity(id) {
     var passwordHash by Users.passwordHash
     var createdAt by Users.createdAt
     var updatedAt by Users.updatedAt
+    var inviteExpiresAt by Users.inviteExpiresAt
 }

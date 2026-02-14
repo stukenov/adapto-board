@@ -25,6 +25,10 @@ class AssetEntity(id: EntityID<UUID>) : UUIDEntity(id) {
     var createdAt by Assets.createdAt
     var archivedAt by Assets.archivedAt
     var rejectionReason by Assets.rejectionReason
+    var description by Assets.description
+    var tags by Assets.tags
+    var approvalStatus by Assets.approvalStatus
+    var expiresAt by Assets.expiresAt
 
     val versions by AssetVersionEntity referrersOn AssetVersions.assetId
 }

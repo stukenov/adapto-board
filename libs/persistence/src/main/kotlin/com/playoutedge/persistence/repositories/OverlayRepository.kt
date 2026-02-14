@@ -12,6 +12,7 @@ interface OverlayRepository {
     // Profile operations
     suspend fun findProfileById(tenantId: TenantId, profileId: UUID): OverlayProfileEntity?
     suspend fun findAllProfiles(tenantId: TenantId): List<OverlayProfileEntity>
+    suspend fun findAllProfilesPaged(tenantId: TenantId, limit: Int = 50, offset: Int = 0): Pair<List<OverlayProfileEntity>, Long>
     suspend fun createProfile(tenantId: TenantId, name: String, definitionJson: String): OverlayProfileEntity
     suspend fun updateProfile(tenantId: TenantId, profileId: UUID, name: String, definitionJson: String): OverlayProfileEntity?
     suspend fun deleteProfile(tenantId: TenantId, profileId: UUID): Boolean

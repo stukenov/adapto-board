@@ -24,6 +24,11 @@ object Assets : UUIDTable("assets") {
     val archivedAt = timestamp("archived_at").nullable()
     val rejectionReason = text("rejection_reason").nullable()
     val voiceoverKey = varchar("voiceover_key", 500).nullable()
+    val description = text("description").nullable()
+    val tags = varchar("tags", 1000).nullable()
+    val approvalStatus = varchar("approval_status", 20).default("APPROVED")
+    val expiresAt = timestamp("expires_at").nullable()
+    val checksum = varchar("checksum", 64).nullable()
 }
 
 object AssetVersions : UUIDTable("asset_versions") {

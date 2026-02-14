@@ -25,6 +25,8 @@ object OverlayBindings : UUIDTable("overlay_bindings") {
     val sourceConfigJson = jsonbColumn("source_config_json")
     val status = pgEnum<BindingStatus>("status", "binding_status")
     val webhookSecret = varchar("webhook_secret", 255).nullable()
+    val scheduleStart = timestamp("schedule_start").nullable()
+    val scheduleEnd = timestamp("schedule_end").nullable()
     val createdAt = timestamp("created_at")
 }
 
@@ -46,5 +48,6 @@ object WebhookLogs : UUIDTable("webhook_logs") {
     val latencyMs = integer("latency_ms")
     val payloadSize = integer("payload_size")
     val error = text("error").nullable()
+    val retryCount = integer("retry_count").default(0)
     val createdAt = timestamp("created_at")
 }

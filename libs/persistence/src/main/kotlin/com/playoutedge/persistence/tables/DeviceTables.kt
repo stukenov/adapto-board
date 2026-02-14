@@ -18,6 +18,11 @@ object Devices : UUIDTable("devices") {
     val androidModel = varchar("android_model", 100).nullable()
     val androidVersion = varchar("android_version", 50).nullable()
     val revokedAt = timestamp("revoked_at").nullable()
+    val latitude = double("latitude").nullable()
+    val longitude = double("longitude").nullable()
+    val locationName = varchar("location_name", 255).nullable()
+    val powerOnTime = varchar("power_on_time", 5).nullable()
+    val powerOffTime = varchar("power_off_time", 5).nullable()
     val createdAt = timestamp("created_at")
 }
 

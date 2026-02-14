@@ -29,6 +29,7 @@ object Users : UUIDTable("users") {
     val passwordHash = varchar("password_hash", 255)
     val createdAt = timestamp("created_at")
     val updatedAt = timestamp("updated_at").nullable()
+    val inviteExpiresAt = timestamp("invite_expires_at").nullable()
 
     init {
         uniqueIndex("uq_users_tenant_email", tenantId, email)
