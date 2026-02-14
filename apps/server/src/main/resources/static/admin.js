@@ -133,19 +133,24 @@ document.addEventListener('submit', function(e) {
 });
 
 // ========================================
-// HAMBURGER MENU (MOBILE)
+// SIDEBAR TOGGLE (mobile)
 // ========================================
-(function() {
-    var toggle = document.getElementById('nav-hamburger');
-    var links = document.querySelector('.nav-links');
-    if (toggle && links) {
-        toggle.addEventListener('click', function() {
-            links.classList.toggle('nav-links-open');
-            toggle.classList.toggle('hamburger-active');
-            toggle.setAttribute('aria-expanded', links.classList.contains('nav-links-open'));
-        });
+function toggleSidebar() {
+    var sidebar = document.querySelector('.sidebar');
+    var overlay = document.querySelector('.sidebar-overlay');
+    if (sidebar) {
+        sidebar.classList.toggle('open');
+        if (overlay) overlay.classList.toggle('open');
     }
-})();
+}
+function closeSidebar() {
+    var sidebar = document.querySelector('.sidebar');
+    var overlay = document.querySelector('.sidebar-overlay');
+    if (sidebar) sidebar.classList.remove('open');
+    if (overlay) overlay.classList.remove('open');
+}
+window.toggleSidebar = toggleSidebar;
+window.closeSidebar = closeSidebar;
 
 // ========================================
 // KEYBOARD SHORTCUTS
@@ -307,7 +312,7 @@ window.updatePasswordStrength = updatePasswordStrength;
 
     function showTour() {
         if (localStorage.getItem('tour_completed')) return;
-        if (!document.querySelector('.admin-nav')) return;
+        if (!document.querySelector('.sidebar')) return;
 
         let step = 0;
 
