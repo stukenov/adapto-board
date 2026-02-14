@@ -243,7 +243,13 @@ fun HTML.assetsListView(
                                     }
                                     td {
                                         // Thumbnail or type icon
-                                        if (asset.thumbnailStorageKey != null) {
+                                        if (asset.type == AssetType.IMAGE && asset.storageKey != null) {
+                                            img(classes = "asset-thumbnail") {
+                                                src = "/storage/${asset.storageKey}"
+                                                alt = asset.name
+                                                attributes["loading"] = "lazy"
+                                            }
+                                        } else if (asset.thumbnailStorageKey != null) {
                                             img(classes = "asset-thumbnail") {
                                                 src = "/storage/${asset.thumbnailStorageKey}"
                                                 alt = asset.name
@@ -253,7 +259,8 @@ fun HTML.assetsListView(
                                                 +when (asset.type) {
                                                     AssetType.VIDEO -> "🎬"
                                                     AssetType.IMAGE -> "🖼"
-                                                    else -> "📄"
+                                                    AssetType.AUDIO -> "🎵"
+                                                    AssetType.SLIDESHOW -> "📽"
                                                 }
                                             }
                                         }
@@ -331,11 +338,23 @@ fun HTML.assetsListView(
                             attributes["data-name"] = asset.name
                             attributes["data-date"] = asset.createdAt.toString()
                             attributes["data-size"] = asset.fileSize.toString()
-                            div("asset-grid-icon") {
-                                +when (asset.type) {
-                                    AssetType.VIDEO -> "🎬"
-                                    AssetType.IMAGE -> "🖼"
-                                    else -> "📄"
+                            if (asset.type == AssetType.IMAGE && asset.storageKey != null) {
+                                div("asset-grid-thumb") {
+                                    img {
+                                        src = "/storage/${asset.storageKey}"
+                                        alt = asset.name
+                                        attributes["loading"] = "lazy"
+                                        style = "width:100%;height:100%;object-fit:cover"
+                                    }
+                                }
+                            } else {
+                                div("asset-grid-icon") {
+                                    +when (asset.type) {
+                                        AssetType.VIDEO -> "🎬"
+                                        AssetType.IMAGE -> "🖼"
+                                        AssetType.AUDIO -> "🎵"
+                                        AssetType.SLIDESHOW -> "📽"
+                                    }
                                 }
                             }
                             div("asset-grid-info") {

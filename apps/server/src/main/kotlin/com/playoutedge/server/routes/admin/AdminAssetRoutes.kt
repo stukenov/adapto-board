@@ -485,6 +485,7 @@ fun Route.adminAssetRoutes(
                     fileSize = asset.fileSizeBytes ?: 0,
                     duration = asset.durationMs,
                     createdAt = asset.createdAt,
+                    storageKey = asset.storageKey,
                     approvalStatus = asset.approvalStatus,
                     width = asset.width,
                     height = asset.height
@@ -556,7 +557,9 @@ fun Route.adminAssetRoutes(
                 width = asset.width,
                 height = asset.height,
                 rejectionReason = asset.rejectionReason,
-                createdAt = asset.createdAt
+                createdAt = asset.createdAt,
+                storageKey = asset.storageKey,
+                slideshowDefinition = asset.slideshowDefinition?.toString()
             )
 
             call.respondHtml {
