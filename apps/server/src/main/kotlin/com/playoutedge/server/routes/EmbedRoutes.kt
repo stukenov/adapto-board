@@ -118,8 +118,8 @@ fun Route.embedRoutes(
             val items = manifest?.items?.map { item ->
                 ManifestItem(
                     url = item.url,
-                    type = if (item.durationMs != null && item.durationMs > 0) "VIDEO" else "IMAGE",
-                    durationMs = item.durationMs ?: 10000,
+                    type = item.assetType,
+                    durationMs = item.durationMs ?: if (item.assetType == "VIDEO") 30000 else 10000,
                     voiceoverUrl = item.voiceoverUrl
                 )
             } ?: emptyList()

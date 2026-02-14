@@ -65,6 +65,23 @@ fun HTML.livePreviewView(
                 }
             }
         } else {
+            // Full embed preview with overlay support
+            div("card mb-4") {
+                div("card-header") {
+                    h3 { +"Embed Preview (with Overlays)" }
+                }
+                div("card-body") {
+                    div {
+                        style = "position:relative;width:100%;padding-top:56.25%;background:#000;border-radius:8px;overflow:hidden;"
+                        iframe {
+                            src = "/embed/$channelId"
+                            style = "position:absolute;top:0;left:0;width:100%;height:100%;border:none;"
+                            attributes["allow"] = "autoplay"
+                        }
+                    }
+                }
+            }
+
             // Preview player
             div("preview-player card mb-4") {
                 div("preview-player-screen") {

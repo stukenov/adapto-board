@@ -8,6 +8,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.util.UUID
 import kotlin.time.Duration.Companion.hours
 
@@ -23,6 +24,7 @@ data class PlaylistItem(
     val url: String,
     val checksum: String?,
     val durationMs: Int?,
+    val assetType: String = "IMAGE",
     val orderIndex: Int,
     val validFrom: LocalDate?,
     val validTo: LocalDate?,
@@ -41,12 +43,40 @@ class PlaylistService(
     suspend fun getManifest(tenantId: TenantId, channelId: UUID): PlaylistManifest? {
         val activeVersion = scheduleRepo.findActiveVersion(tenantId, channelId) ?: return null
 
-        val items = scheduleRepo.findItemsByVersion(tenantId, activeVersion.id.value)
-        val playlistItems = items.mapNotNull { item ->
-            val asset = assetRepo.findById(tenantId, item.asset.id.value) ?: return@mapNotNull null
+        // Extract all item data inside a single transaction to avoid lazy reference errors
+        data class ItemData(
+            val assetId: UUID,
+            val orderIndex: Int,
+            val validFrom: LocalDate?,
+            val validTo: LocalDate?,
+            val daysOfWeek: Int?,
+            val timeStart: LocalTime?,
+            val timeEnd: LocalTime?,
+            val voiceoverKey: String?,
+            val weight: Int
+        )
+
+        val itemsData = newSuspendedTransaction {
+            val items = scheduleRepo.findItemsByVersion(tenantId, activeVersion.id.value)
+            items.map { item ->
+                ItemData(
+                    assetId = item.asset.id.value,
+                    orderIndex = item.orderIndex,
+                    validFrom = item.validFrom,
+                    validTo = item.validTo,
+                    daysOfWeek = item.daysOfWeek,
+                    timeStart = item.timeStart,
+                    timeEnd = item.timeEnd,
+                    voiceoverKey = item.voiceoverKey,
+                    weight = item.weight
+                )
+            }
+        }
+
+        val playlistItems = itemsData.mapNotNull { item ->
+            val asset = assetRepo.findById(tenantId, item.assetId) ?: return@mapNotNull null
             val signedUrl = storageService.getSignedUrl(asset.storageKey, 1.hours)
 
-            // Generate voiceover signed URL if available
             val voiceoverUrl = item.voiceoverKey?.let { key ->
                 storageService.getSignedUrl(key, 1.hours)
             }
@@ -56,6 +86,7 @@ class PlaylistService(
                 url = signedUrl,
                 checksum = asset.checksumSha256,
                 durationMs = asset.durationMs,
+                assetType = asset.type.name,
                 orderIndex = item.orderIndex,
                 validFrom = item.validFrom,
                 validTo = item.validTo,
