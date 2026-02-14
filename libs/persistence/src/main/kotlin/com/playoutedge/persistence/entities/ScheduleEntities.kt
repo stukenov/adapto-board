@@ -15,6 +15,7 @@ class ChannelEntity(id: EntityID<UUID>) : UUIDEntity(id) {
     var name by Channels.name
     var status by Channels.status
     var defaultOverlayProfileId by Channels.defaultOverlayProfileId
+    var embedEnabled by Channels.embedEnabled
     var createdAt by Channels.createdAt
 
     val scheduleVersions by ScheduleVersionEntity referrersOn ScheduleVersions.channelId

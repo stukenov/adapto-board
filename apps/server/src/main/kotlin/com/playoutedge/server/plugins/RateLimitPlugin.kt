@@ -54,8 +54,16 @@ val RateLimitPlugin = createApplicationPlugin(name = "RateLimitPlugin") {
     val config = RateLimitConfig()
     val adminBuckets = ConcurrentHashMap<String, RateLimitBucket>()
     val playerBuckets = ConcurrentHashMap<String, RateLimitBucket>()
+    var lastCleanup = Clock.System.now()
 
     onCall { call ->
+        // Periodic cleanup of stale buckets (every 5 minutes)
+        val now = Clock.System.now()
+        if ((now - lastCleanup) > 5.minutes) {
+            lastCleanup = now
+            adminBuckets.entries.removeIf { it.value.getResetTime() < now }
+            playerBuckets.entries.removeIf { it.value.getResetTime() < now }
+        }
         val path = call.request.local.uri
 
         // Determine if admin or player API

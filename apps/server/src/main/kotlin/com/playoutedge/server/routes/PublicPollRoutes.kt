@@ -17,12 +17,29 @@ import java.util.UUID
 @Serializable
 private data class VoteRequest(val optionIndex: Int)
 
+private val pollRateLimits = java.util.concurrent.ConcurrentHashMap<String, Long>()
+private const val POLL_COOLDOWN_MS = 5000L // 5 seconds between votes per IP
+
 fun Route.publicPollRoutes(
     overlayRepository: OverlayRepository,
     overlaySubscribers: OverlaySubscribers
 ) {
     route("/api/public/poll") {
         post("/{channelId}/vote") {
+            // Rate limit by IP
+            val clientIp = call.request.local.remoteHost
+            val now = System.currentTimeMillis()
+            val lastVote = pollRateLimits[clientIp]
+            if (lastVote != null && (now - lastVote) < POLL_COOLDOWN_MS) {
+                call.respond(HttpStatusCode.TooManyRequests, mapOf("error" to "Please wait before voting again"))
+                return@post
+            }
+            pollRateLimits[clientIp] = now
+            // Cleanup old entries periodically
+            if (pollRateLimits.size > 10000) {
+                val cutoff = now - POLL_COOLDOWN_MS * 2
+                pollRateLimits.entries.removeIf { it.value < cutoff }
+            }
             val channelId = call.parameters["channelId"]?.let {
                 runCatching { UUID.fromString(it) }.getOrNull()
             }

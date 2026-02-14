@@ -35,6 +35,8 @@ import com.playoutedge.persistence.repositories.impl.JobRepositoryImpl
 import com.playoutedge.persistence.repositories.impl.ScheduleRepositoryImpl
 import com.playoutedge.persistence.repositories.impl.TenantRepositoryImpl
 import com.playoutedge.persistence.repositories.impl.WebhookLogRepositoryImpl
+import com.playoutedge.persistence.repositories.impl.RefreshTokenRepositoryImpl
+import com.playoutedge.persistence.repositories.impl.ApiKeyRepositoryImpl
 import com.playoutedge.server.jobs.AsrunCleanupJobHandler
 import com.playoutedge.server.jobs.CleanupJobHandler
 import com.playoutedge.server.jobs.JobScheduler
@@ -125,6 +127,8 @@ fun Application.module() {
     val webhookLogRepository = WebhookLogRepositoryImpl()
     val jobRepository = JobRepositoryImpl()
     val quotaService = QuotaServiceImpl(assetRepository, deviceRepository)
+    val refreshTokenRepository = RefreshTokenRepositoryImpl()
+    val apiKeyRepository = ApiKeyRepositoryImpl()
 
     // Domain services
     val channelService = ChannelService(channelRepository)
@@ -170,6 +174,13 @@ fun Application.module() {
     // Start overlay REST pull polling service
     overlayPollService.start()
 
+    // Graceful shutdown for all background services
+    environment.monitor.subscribe(ApplicationStopped) {
+        overlayPollService.stop()
+        kotlinx.coroutines.runBlocking { jobScheduler.stop() }
+        DatabaseFactory.close()
+    }
+
     // Configure routes
     routing {
         // Public routes (before admin to avoid auth)
@@ -186,15 +197,15 @@ fun Application.module() {
         adminAssetRoutes(assetRepository, quotaService, assetUploadService)
         adminOverlayRoutes(overlayRepository, channelRepository, webhookLogRepository)
         adminReportsRoutes(asrunRepository, auditRepository, deviceRepository, channelRepository)
-        adminSettingsRoutes(userRepository, assetRepository, deviceRepository, passwordService)
+        adminSettingsRoutes(userRepository, assetRepository, deviceRepository, passwordService, tenantRepository, apiKeyRepository)
         adminOnboardingRoutes(assetRepository, channelRepository, deviceRepository)
         adminScheduleRoutes(channelRepository, scheduleRepository, assetRepository, scheduleService, ttsService)
         adminStaticRoutes()
 
         // API routes
         healthRoutes(storageService)
-        authRoutes(jwtService, passwordService, authConfig)
-        deviceAuthRoutes(jwtService, authConfig)
+        authRoutes(jwtService, passwordService, authConfig, refreshTokenRepository)
+        deviceAuthRoutes(jwtService, authConfig, refreshTokenRepository)
         assetsRoutes(assetRepository, quotaService, assetUploadService, storageService)
         storageRoutes(storageConfig, localStorageService)
         channelsRoutes(channelService)
@@ -217,9 +228,4 @@ fun Application.module() {
 fun Application.configureDatabase() {
     val config = DatabaseConfig.fromEnvironment()
     DatabaseFactory.init(config)
-
-    // Graceful shutdown
-    environment.monitor.subscribe(ApplicationStopped) {
-        DatabaseFactory.close()
-    }
 }

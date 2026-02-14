@@ -55,9 +55,13 @@ class WebhookService(
                 return WebhookResult.BindingNotFound
             }
 
-        // Verify signature
+        // Verify signature - required when secret is configured
         val secret = binding.webhookSecret
-        if (secret != null && signature != null) {
+        if (secret != null) {
+            if (signature == null) {
+                logWebhook(bindingId, 401, startTime, payload.size, "Missing signature header")
+                return WebhookResult.InvalidSignature
+            }
             if (!verifySignature(secret, signature, payload)) {
                 logWebhook(bindingId, 401, startTime, payload.size, "Invalid signature")
                 return WebhookResult.InvalidSignature

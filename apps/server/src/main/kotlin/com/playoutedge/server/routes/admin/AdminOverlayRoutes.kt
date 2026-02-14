@@ -15,9 +15,12 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import java.util.UUID
 
-private const val WEBHOOK_BASE_URL = "https://api.playoutedge.com/webhooks/overlay"
+private fun getWebhookBaseUrl(): String {
+    return System.getenv("APP_BASE_URL")?.trimEnd('/') ?: "https://tv.adapto.kz"
+}
 
 /**
  * Admin overlay management routes.
@@ -402,7 +405,7 @@ fun Route.adminOverlayRoutes(
                     sourceConfigJson = formatJson(binding.sourceConfigJson.toString()),
                     status = binding.status,
                     webhookSecret = binding.webhookSecret,
-                    webhookUrl = binding.webhookSecret?.let { "$WEBHOOK_BASE_URL/${binding.id.value}" },
+                    webhookUrl = binding.webhookSecret?.let { "${getWebhookBaseUrl()}/api/webhook/${binding.id.value}" },
                     createdAt = binding.createdAt
                 )
 
@@ -489,15 +492,14 @@ fun Route.adminOverlayRoutes(
                 }
 
                 val params = call.receiveParameters()
-                val configJson = buildString {
-                    append("{")
-                    append("\"url\":\"${params["url"] ?: ""}\",")
-                    append("\"authType\":\"${params["authType"] ?: "none"}\",")
-                    append("\"authValue\":\"${params["authValue"] ?: ""}\",")
-                    append("\"intervalSeconds\":${params["intervalSeconds"]?.toIntOrNull() ?: 60},")
-                    append("\"mappingPreset\":\"${params["mappingPreset"] ?: "raw"}\"")
-                    append("}")
+                val configObj = kotlinx.serialization.json.buildJsonObject {
+                    put("url", kotlinx.serialization.json.JsonPrimitive(params["url"] ?: ""))
+                    put("authType", kotlinx.serialization.json.JsonPrimitive(params["authType"] ?: "none"))
+                    put("authValue", kotlinx.serialization.json.JsonPrimitive(params["authValue"] ?: ""))
+                    put("intervalSeconds", kotlinx.serialization.json.JsonPrimitive(params["intervalSeconds"]?.toIntOrNull() ?: 60))
+                    put("mappingPreset", kotlinx.serialization.json.JsonPrimitive(params["mappingPreset"] ?: "raw"))
                 }
+                val configJson = Json.encodeToString(kotlinx.serialization.json.JsonObject.serializer(), configObj)
 
                 overlayRepository.updateBindingConfig(tenantId, bindingId, configJson)
                 call.respondRedirect("/admin/overlay/bindings/$bindingId")
@@ -526,10 +528,12 @@ fun Route.adminOverlayRoutes(
 private fun extractWidgetTypes(definitionJson: String): List<String> {
     return try {
         val json = Json.decodeFromString<JsonObject>(definitionJson)
-        json["widgets"]?.let { widgets ->
-            // Extract widget types from definition
-            listOf("ticker") // Simplified - would parse actual widget types
-        } ?: emptyList()
+        val widgets = json["widgets"] as? kotlinx.serialization.json.JsonArray ?: return emptyList()
+        widgets.mapNotNull { widget ->
+            (widget as? JsonObject)?.get("type")?.let { type ->
+                (type as? kotlinx.serialization.json.JsonPrimitive)?.content
+            }
+        }.distinct()
     } catch (e: Exception) {
         emptyList()
     }

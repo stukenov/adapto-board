@@ -43,15 +43,19 @@ fun Route.embedRoutes(
                 return@get
             }
 
-            // Find channel across all tenants (public endpoint)
-            val channel = channelRepository.findByIdAnyTenant(channelId)
-            if (channel == null) {
-                call.respondText("Channel not found", status = HttpStatusCode.NotFound)
+            // Find channel - must have embed enabled
+            val channelData = newSuspendedTransaction {
+                val ch = channelRepository.findByIdAnyTenant(channelId) ?: return@newSuspendedTransaction null
+                if (!ch.embedEnabled) return@newSuspendedTransaction null
+                ch.name
+            }
+            if (channelData == null) {
+                call.respondText("Channel not found or embed not enabled", status = HttpStatusCode.NotFound)
                 return@get
             }
 
             call.respondHtml(HttpStatusCode.OK) {
-                embedPlayerView(channelId.toString(), channel.name)
+                embedPlayerView(channelId.toString(), channelData)
             }
         }
 
@@ -66,6 +70,7 @@ fun Route.embedRoutes(
 
             val channelData = newSuspendedTransaction {
                 val ch = channelRepository.findByIdAnyTenant(channelId) ?: return@newSuspendedTransaction null
+                if (!ch.embedEnabled) return@newSuspendedTransaction null
                 Pair(ch.name, ch.tenant.id.value)
             }
             if (channelData == null) {

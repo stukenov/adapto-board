@@ -13,6 +13,7 @@ object Channels : UUIDTable("channels") {
     val name = varchar("name", 255)
     val status = pgEnum<ChannelStatus>("status", "channel_status")
     val defaultOverlayProfileId = uuid("default_overlay_profile_id").nullable()
+    val embedEnabled = bool("embed_enabled").default(false)
     val createdAt = timestamp("created_at")
 
     init {

@@ -42,6 +42,8 @@ fun Route.jobRoutes(jobRepo: JobRepository) {
 
                 val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 50
 
+                // TODO: JobRepository.findAll should be scoped by tenant
+                // For now, filter client-side is not possible without tenant field on jobs
                 val jobs = jobRepo.findAll(limit.coerceIn(1, 100))
 
                 call.respond(JobsListResponse(

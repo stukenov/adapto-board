@@ -86,9 +86,10 @@ private suspend fun checkDatabase(): ComponentHealth {
 
 private suspend fun checkStorage(storageService: StorageService): ComponentHealth {
     return try {
-        // For now, just mark as UP if we have a storage service
-        // A more thorough check would attempt a test operation
-        ComponentHealth(status = "UP")
+        val latency = measureTimeMillis {
+            storageService.exists("health-check-probe")
+        }
+        ComponentHealth(status = "UP", latencyMs = latency)
     } catch (e: Exception) {
         ComponentHealth(status = "DOWN", error = e.message)
     }

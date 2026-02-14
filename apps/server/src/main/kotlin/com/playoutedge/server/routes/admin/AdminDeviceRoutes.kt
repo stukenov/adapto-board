@@ -1,10 +1,15 @@
 package com.playoutedge.server.routes.admin
 
 import com.playoutedge.domain.enums.DeviceEnrollStatus
+import com.playoutedge.domain.enums.EnrollCodeStatus
 import com.playoutedge.domain.tenant.TenantId
+import com.playoutedge.persistence.entities.EnrollCodeEntity
+import com.playoutedge.persistence.entities.TenantEntity
+import com.playoutedge.persistence.entities.UserEntity
 import com.playoutedge.persistence.repositories.ChannelRepository
 import com.playoutedge.persistence.repositories.DeviceRepository
 import com.playoutedge.persistence.repositories.UpdateDeviceRequest
+import com.playoutedge.persistence.tables.EnrollCodes
 import com.playoutedge.server.plugins.adminSession
 import com.playoutedge.server.views.devices.*
 import io.ktor.server.application.*
@@ -13,6 +18,8 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.datetime.Clock
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.util.UUID
 import kotlin.time.Duration.Companion.minutes
 
@@ -143,11 +150,37 @@ fun Route.adminDeviceRoutes(
                 runCatching { UUID.fromString(it) }.getOrNull()
             }
 
-            // Generate a 6-digit code
-            val code = (100000..999999).random().toString()
+            // Generate code and store in database
+            val code = com.playoutedge.server.routes.generateEnrollCode()
+            val expiresAt = Clock.System.now().plus(30.minutes)
 
-            // TODO: Store the code in database with expiry
-            // For now, just show it to the user
+            newSuspendedTransaction {
+                EnrollCodeEntity.new {
+                    this.tenant = TenantEntity[session.tenantId]
+                    this.code = code
+                    this.status = EnrollCodeStatus.PENDING
+                    this.expiresAt = expiresAt
+                    this.createdBy = UserEntity[session.subject]
+                    this.createdAt = Clock.System.now()
+                    this.channel = channelId?.let { com.playoutedge.persistence.entities.ChannelEntity.findById(it) }
+                }
+            }
+
+            // Fetch active codes to display
+            val activeCodes = newSuspendedTransaction {
+                EnrollCodeEntity.find {
+                    (EnrollCodes.tenantId eq session.tenantId) and
+                    (EnrollCodes.status eq EnrollCodeStatus.PENDING)
+                }.toList().map { ec ->
+                    EnrollCodeItem(
+                        id = ec.id.value,
+                        code = ec.code,
+                        expiresAt = ec.expiresAt,
+                        channelName = ec.channel?.name,
+                        isExpired = ec.expiresAt < Clock.System.now()
+                    )
+                }
+            }
 
             val channels = channelRepository.findAll(tenantId).map { channel ->
                 ChannelOption(id = channel.id.value, name = channel.name)
@@ -157,7 +190,7 @@ fun Route.adminDeviceRoutes(
                 enrollCodesView(
                     session = session,
                     channels = channels,
-                    activeCodes = emptyList(),
+                    activeCodes = activeCodes,
                     generatedCode = code
                 )
             }

@@ -14,6 +14,10 @@ import io.ktor.server.html.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.deleteWhere
+import org.jetbrains.exposed.sql.insert
+import java.security.MessageDigest
 import java.util.UUID
 
 private const val DEFAULT_STORAGE_LIMIT_BYTES = 10_737_418_240L // 10 GB
@@ -26,7 +30,9 @@ fun Route.adminSettingsRoutes(
     userRepository: UserRepository,
     assetRepository: AssetRepository,
     deviceRepository: DeviceRepository,
-    passwordService: PasswordService
+    passwordService: PasswordService,
+    tenantRepository: com.playoutedge.persistence.repositories.TenantRepository,
+    apiKeyRepository: com.playoutedge.persistence.repositories.ApiKeyRepository
 ) {
     route("/admin/settings") {
         // GET /admin/settings - General settings
@@ -58,15 +64,16 @@ fun Route.adminSettingsRoutes(
                 } else 0
             )
 
-            // Tenant settings (would come from tenant entity)
+            // Fetch actual tenant settings
+            val tenant = tenantRepository.findById(session.tenantId)
             val settings = TenantSettingsView(
                 tenantId = session.tenantId,
-                name = "Demo Tenant", // Would fetch from TenantRepository
+                name = tenant?.name ?: "Unknown",
                 timezone = "UTC",
                 offlineThresholdMinutes = 5,
-                maintenanceMode = false,
-                maintenanceReason = null,
-                releaseRing = "STABLE"
+                maintenanceMode = tenant?.maintenanceMode ?: false,
+                maintenanceReason = tenant?.maintenanceReason,
+                releaseRing = tenant?.releaseRing?.name ?: "STABLE"
             )
 
             call.respondHtml {
@@ -89,8 +96,16 @@ fun Route.adminSettingsRoutes(
             val maintenanceReason = params["maintenanceReason"]?.takeIf { it.isNotBlank() }
             val releaseRing = params["releaseRing"] ?: "STABLE"
 
-            // Would update tenant settings here
-            // tenantRepository.updateSettings(...)
+            // Update tenant settings
+            val tenant = tenantRepository.findById(session.tenantId)
+            if (tenant != null) {
+                org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction {
+                    tenant.name = name
+                    tenant.maintenanceMode = maintenanceMode
+                    tenant.maintenanceReason = maintenanceReason
+                    tenant.releaseRing = com.playoutedge.domain.enums.ReleaseRing.valueOf(releaseRing)
+                }
+            }
 
             call.respondRedirect("/admin/settings?success=Settings+updated")
         }
@@ -226,7 +241,23 @@ fun Route.adminSettingsRoutes(
                     userRepository.updateStatus(userId, status)
                 }
 
-                // Would also update displayName and role here
+                val displayName = params["displayName"]?.takeIf { it.isNotBlank() }
+                val role = params["role"]?.let { runCatching { UserRole.valueOf(it) }.getOrNull() }
+                if (displayName != null || role != null) {
+                    org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction {
+                        val user = com.playoutedge.persistence.entities.UserEntity.findById(userId)
+                        if (user != null) {
+                            if (displayName != null) user.displayName = displayName
+                            if (role != null) {
+                                com.playoutedge.persistence.tables.UserRoles.deleteWhere { com.playoutedge.persistence.tables.UserRoles.userId eq userId }
+                                com.playoutedge.persistence.tables.UserRoles.insert {
+                                    it[com.playoutedge.persistence.tables.UserRoles.userId] = user.id
+                                    it[com.playoutedge.persistence.tables.UserRoles.role] = role
+                                }
+                            }
+                        }
+                    }
+                }
 
                 call.respondRedirect("/admin/settings/users/$userId?success=User+updated")
             }
@@ -269,8 +300,19 @@ fun Route.adminSettingsRoutes(
                     return@get
                 }
 
-                // API keys would be fetched from repository
-                val apiKeys = emptyList<ApiKeyItem>()
+                val tenantId = TenantId(session.tenantId)
+                val keys = apiKeyRepository.findByTenant(tenantId)
+                val apiKeys = keys.map { key ->
+                    ApiKeyItem(
+                        id = key.id.value,
+                        name = key.name,
+                        prefix = key.keyPrefix,
+                        scopes = key.scopes.split(",").filter { it.isNotBlank() },
+                        lastUsed = null,
+                        createdAt = key.createdAt,
+                        expiresAt = key.expiresAt
+                    )
+                }
 
                 call.respondHtml {
                     apiKeysView(session, apiKeys)
@@ -308,11 +350,19 @@ fun Route.adminSettingsRoutes(
                     return@post
                 }
 
+                val tenantId = TenantId(session.tenantId)
+
                 // Generate API key
                 val apiKey = "pk_${UUID.randomUUID().toString().replace("-", "")}"
+                val keyHash = MessageDigest.getInstance("SHA-256")
+                    .digest(apiKey.toByteArray())
+                    .joinToString("") { "%02x".format(it) }
+                val keyPrefix = apiKey.take(12)
+                val expiresAt = expiresIn.toLongOrNull()?.let {
+                    kotlinx.datetime.Instant.fromEpochSeconds(kotlinx.datetime.Clock.System.now().epochSeconds + it * 86400)
+                }
 
-                // Would store in repository with hashed key
-                // apiKeyRepository.create(tenantId, name, hash(apiKey), scopes, expiresAt)
+                apiKeyRepository.create(tenantId, name, keyHash, keyPrefix, scopes, expiresAt)
 
                 call.respondHtml {
                     newApiKeyView(session, createdKey = apiKey)
@@ -326,10 +376,12 @@ fun Route.adminSettingsRoutes(
                     return@post
                 }
 
+                val tenantId = TenantId(session.tenantId)
                 val keyId = call.parameters["id"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
 
-                // Would delete from repository
-                // apiKeyRepository.delete(tenantId, keyId)
+                if (keyId != null) {
+                    apiKeyRepository.revoke(tenantId, keyId)
+                }
 
                 call.respondRedirect("/admin/settings/api-keys")
             }

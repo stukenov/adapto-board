@@ -63,6 +63,17 @@ class MaintenanceService {
         val tenant = TenantEntity.findById(tenantId.value)
             ?: return@newSuspendedTransaction false
 
-        tenant.maintenanceMode
+        if (!tenant.maintenanceMode) return@newSuspendedTransaction false
+
+        // Auto-disable if maintenance window has passed
+        val until = tenant.maintenanceUntil
+        if (until != null && until < kotlinx.datetime.Clock.System.now()) {
+            tenant.maintenanceMode = false
+            tenant.maintenanceReason = null
+            tenant.maintenanceUntil = null
+            return@newSuspendedTransaction false
+        }
+
+        true
     }
 }

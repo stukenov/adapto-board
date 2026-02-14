@@ -97,7 +97,7 @@ class AuthRoutesTest : DatabaseTestContainer() {
         configureJwtAuth(authConfig)
 
         routing {
-            authRoutes(jwtService, passwordService, authConfig)
+            authRoutes(jwtService, passwordService, authConfig, com.playoutedge.persistence.repositories.impl.RefreshTokenRepositoryImpl())
         }
     }
 

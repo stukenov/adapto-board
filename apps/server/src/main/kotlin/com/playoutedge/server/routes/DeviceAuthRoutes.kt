@@ -73,7 +73,8 @@ fun generateEnrollCode(): String {
 
 fun Route.deviceAuthRoutes(
     jwtService: JwtService,
-    authConfig: AuthConfig
+    authConfig: AuthConfig,
+    refreshTokenRepository: com.playoutedge.persistence.repositories.RefreshTokenRepository
 ) {
     authenticate(AUTH_ADMIN) {
         route("/api/admin/enroll-codes") {
@@ -182,6 +183,16 @@ fun Route.deviceAuthRoutes(
             val accessToken = jwtService.generateDeviceAccessToken(claims)
             val refreshToken = jwtService.generateDeviceRefreshToken()
 
+            // Store device refresh token
+            val tokenHash = hashToken(refreshToken)
+            refreshTokenRepository.store(
+                tokenHash = tokenHash,
+                subjectId = deviceId,
+                subjectType = "DEVICE",
+                tenantId = tenantId,
+                expiresAt = kotlinx.datetime.Clock.System.now().plus(authConfig.deviceRefreshTokenTtl)
+            )
+
             call.respond(HttpStatusCode.Created, DeviceEnrollResponse(
                 deviceId = deviceId.toString(),
                 accessToken = accessToken,
@@ -193,10 +204,46 @@ fun Route.deviceAuthRoutes(
         post("/refresh") {
             val request = call.receive<DeviceRefreshRequest>()
 
-            throw ApiException.Unauthorized(
-                code = ErrorCode.TOKEN_EXPIRED,
-                message = "Device token refresh requires implementation of refresh token storage"
+            val tokenHash = hashToken(request.refreshToken)
+            val storedToken = refreshTokenRepository.findByHash(tokenHash)
+                ?: throw ApiException.Unauthorized(
+                    code = ErrorCode.TOKEN_EXPIRED,
+                    message = "Invalid or expired refresh token"
+                )
+
+            if (storedToken.expiresAt < kotlinx.datetime.Clock.System.now()) {
+                refreshTokenRepository.revoke(tokenHash)
+                throw ApiException.Unauthorized(
+                    code = ErrorCode.TOKEN_EXPIRED,
+                    message = "Refresh token has expired"
+                )
+            }
+
+            // Find device and generate new access token
+            val result = org.jetbrains.exposed.sql.transactions.transaction {
+                val device = DeviceEntity.find {
+                    (Devices.id eq storedToken.subjectId) and (Devices.tenantId eq storedToken.tenantId)
+                }.firstOrNull() ?: throw ApiException.Unauthorized(
+                    code = ErrorCode.DEVICE_NOT_FOUND,
+                    message = "Device not found"
+                )
+                Triple(device.id.value, device.tenant.id.value, device.assignedChannelId)
+            }
+
+            val (deviceId, tenantId, channelId) = result
+
+            val claims = DeviceClaims(
+                subject = deviceId,
+                tenantId = tenantId,
+                channelId = channelId
             )
+
+            val accessToken = jwtService.generateDeviceAccessToken(claims)
+
+            call.respond(DeviceRefreshResponse(
+                accessToken = accessToken,
+                expiresIn = authConfig.deviceAccessTokenTtl.inWholeSeconds
+            ))
         }
     }
 }

@@ -9,6 +9,7 @@ import com.playoutedge.contracts.error.ErrorCode
 import com.playoutedge.domain.enums.UserRole
 import com.playoutedge.domain.enums.UserStatus
 import com.playoutedge.persistence.entities.UserEntity
+import com.playoutedge.persistence.repositories.RefreshTokenRepository
 import com.playoutedge.persistence.tables.UserRoles
 import com.playoutedge.persistence.tables.Users
 import com.playoutedge.server.plugins.AUTH_ADMIN
@@ -19,9 +20,11 @@ import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.security.MessageDigest
 
 @Serializable
 data class LoginRequest(val email: String, val password: String)
@@ -41,7 +44,8 @@ data class UserInfoResponse(
 fun Route.authRoutes(
     jwtService: JwtService,
     passwordService: PasswordService,
-    authConfig: AuthConfig
+    authConfig: AuthConfig,
+    refreshTokenRepository: RefreshTokenRepository
 ) {
     route("/api/auth") {
         post("/login") {
@@ -86,6 +90,16 @@ fun Route.authRoutes(
             val accessToken = jwtService.generateAdminAccessToken(claims)
             val refreshToken = jwtService.generateAdminRefreshToken()
 
+            // Store refresh token hash
+            val tokenHash = hashToken(refreshToken)
+            refreshTokenRepository.store(
+                tokenHash = tokenHash,
+                subjectId = user.id.value,
+                subjectType = "ADMIN",
+                tenantId = user.tenantId,
+                expiresAt = Clock.System.now().plus(authConfig.adminRefreshTokenTtl)
+            )
+
             call.response.cookies.append(
                 Cookie(
                     name = "refresh_token",
@@ -104,19 +118,60 @@ fun Route.authRoutes(
         }
 
         post("/refresh") {
-            call.request.cookies["refresh_token"]
+            val refreshToken = call.request.cookies["refresh_token"]
                 ?: throw ApiException.Unauthorized(
                     code = ErrorCode.TOKEN_INVALID,
                     message = "Refresh token not found"
                 )
 
-            throw ApiException.Unauthorized(
-                code = ErrorCode.TOKEN_EXPIRED,
-                message = "Token refresh requires implementation of refresh token storage"
+            val tokenHash = hashToken(refreshToken)
+            val storedToken = refreshTokenRepository.findByHash(tokenHash)
+                ?: throw ApiException.Unauthorized(
+                    code = ErrorCode.TOKEN_EXPIRED,
+                    message = "Refresh token is invalid or expired"
+                )
+
+            if (storedToken.expiresAt < Clock.System.now()) {
+                refreshTokenRepository.revoke(tokenHash)
+                throw ApiException.Unauthorized(
+                    code = ErrorCode.TOKEN_EXPIRED,
+                    message = "Refresh token has expired"
+                )
+            }
+
+            // Look up user and generate new access token
+            val (user, role) = transaction {
+                val user = UserEntity.findById(storedToken.subjectId)
+                    ?: throw ApiException.Unauthorized(
+                        code = ErrorCode.TOKEN_INVALID,
+                        message = "User not found"
+                    )
+                val role = UserRoles.selectAll()
+                    .where { UserRoles.userId eq user.id }
+                    .map { it[UserRoles.role] }
+                    .firstOrNull() ?: UserRole.OPERATOR
+                Pair(user, role)
+            }
+
+            val claims = AdminClaims(
+                subject = user.id.value,
+                tenantId = user.tenantId,
+                role = role
             )
+
+            val accessToken = jwtService.generateAdminAccessToken(claims)
+
+            call.respond(LoginResponse(
+                accessToken = accessToken,
+                expiresIn = authConfig.adminAccessTokenTtl.inWholeSeconds
+            ))
         }
 
         post("/logout") {
+            val refreshToken = call.request.cookies["refresh_token"]
+            if (refreshToken != null) {
+                refreshTokenRepository.revoke(hashToken(refreshToken))
+            }
             call.response.cookies.appendExpired("refresh_token", path = "/api/auth")
             call.respond(HttpStatusCode.NoContent)
         }
@@ -146,4 +201,9 @@ fun Route.authRoutes(
             }
         }
     }
+}
+
+internal fun hashToken(token: String): String {
+    val digest = MessageDigest.getInstance("SHA-256")
+    return digest.digest(token.toByteArray()).joinToString("") { "%02x".format(it) }
 }
