@@ -89,26 +89,27 @@ class OverlayRepositoryImpl : OverlayRepository {
         newSuspendedTransaction {
             OverlayBindingEntity.find {
                 (OverlayBindings.id eq bindingId) and (OverlayBindings.tenantId eq tenantId.value)
-            }.firstOrNull()
+            }.firstOrNull()?.also { it.channel; it.overlayProfile }
         }
 
     override suspend fun findAllBindings(tenantId: TenantId): List<OverlayBindingEntity> =
         newSuspendedTransaction {
             OverlayBindingEntity.find { OverlayBindings.tenantId eq tenantId.value }.toList()
+                .onEach { it.channel; it.overlayProfile }
         }
 
     override suspend fun findBindingsByProfile(tenantId: TenantId, profileId: UUID): List<OverlayBindingEntity> =
         newSuspendedTransaction {
             OverlayBindingEntity.find {
                 (OverlayBindings.tenantId eq tenantId.value) and (OverlayBindings.overlayProfileId eq profileId)
-            }.toList()
+            }.toList().onEach { it.channel; it.overlayProfile }
         }
 
     override suspend fun findBindingsByChannel(tenantId: TenantId, channelId: UUID): List<OverlayBindingEntity> =
         newSuspendedTransaction {
             OverlayBindingEntity.find {
                 (OverlayBindings.tenantId eq tenantId.value) and (OverlayBindings.channelId eq channelId)
-            }.toList()
+            }.toList().onEach { it.channel; it.overlayProfile }
         }
 
     override suspend fun createBinding(
