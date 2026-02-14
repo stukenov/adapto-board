@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "playout-edge": {
+      "command": "node",
+      "args": ["scripts/mcp-proxy.mjs"],
+      "env": {
+        "PE_URL": "https://tv.adapto.kz",
+        "PE_EMAIL": "saken@tukenov.kz",
+        "PE_PASSWORD": "Test1234"
+      }
+    }
+  }
+}

@@ -97,6 +97,7 @@ class AssetRepositoryImpl : AssetRepository {
             update.mimeType?.let { entity.mimeType = it }
             update.approvalStatus?.let { entity.approvalStatus = it }
             update.expiresAt?.let { entity.expiresAt = it }
+            update.slideshowDefinition?.let { entity.slideshowDefinition = it }
             entity
         }
 

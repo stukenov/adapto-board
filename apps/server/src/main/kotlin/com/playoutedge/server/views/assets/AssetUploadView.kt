@@ -70,14 +70,14 @@ fun HTML.assetUploadView(
                             div("dropzone-text") {
                                 p("dropzone-primary") { +"Drag files here or click to browse" }
                                 p("dropzone-secondary") {
-                                    +"PNG, JPEG images (max 20MB) · MP4 videos (max 2GB)"
+                                    +"PNG, JPEG images (max 20MB) · MP4 videos (max 2GB) · MP3, WAV, OGG audio (max 100MB)"
                                 }
                             }
                         }
                         input(type = InputType.file, classes = "dropzone-input") {
                             id = "file"
                             name = "file"
-                            accept = "image/png,image/jpeg,video/mp4,video/x-m4v"
+                            accept = "image/png,image/jpeg,video/mp4,video/x-m4v,audio/mpeg,audio/mp3,audio/wav,audio/ogg"
                             required = true
                         }
                     }
@@ -174,7 +174,7 @@ fun HTML.assetUploadView(
             };
             reader.readAsDataURL(file);
         } else {
-            previewImage.innerHTML = '<div class="file-preview-icon">🎬</div>';
+            previewImage.innerHTML = '<div class="file-preview-icon">' + (file.type.startsWith('audio/') ? '🎵' : '🎬') + '</div>';
         }
     }
 

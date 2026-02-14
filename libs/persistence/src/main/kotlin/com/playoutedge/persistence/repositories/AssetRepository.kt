@@ -51,5 +51,6 @@ data class UpdateAssetRequest(
     val storageKey: String? = null,
     val mimeType: String? = null,
     val approvalStatus: String? = null,
-    val expiresAt: kotlinx.datetime.Instant? = null
+    val expiresAt: kotlinx.datetime.Instant? = null,
+    val slideshowDefinition: kotlinx.serialization.json.JsonObject? = null
 )

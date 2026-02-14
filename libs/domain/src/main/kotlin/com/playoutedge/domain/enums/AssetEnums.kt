@@ -2,7 +2,9 @@ package com.playoutedge.domain.enums
 
 enum class AssetType {
     VIDEO,
-    IMAGE
+    IMAGE,
+    AUDIO,
+    SLIDESHOW
 }
 
 enum class AssetStatus {

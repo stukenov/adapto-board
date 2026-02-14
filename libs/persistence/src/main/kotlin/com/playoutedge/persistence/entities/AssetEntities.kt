@@ -1,5 +1,6 @@
 package com.playoutedge.persistence.entities
 
+import kotlinx.serialization.json.JsonObject
 import com.playoutedge.persistence.tables.Assets
 import com.playoutedge.persistence.tables.AssetVersions
 import org.jetbrains.exposed.dao.UUIDEntity
@@ -29,6 +30,7 @@ class AssetEntity(id: EntityID<UUID>) : UUIDEntity(id) {
     var tags by Assets.tags
     var approvalStatus by Assets.approvalStatus
     var expiresAt by Assets.expiresAt
+    var slideshowDefinition by Assets.slideshowDefinition
 
     val versions by AssetVersionEntity referrersOn AssetVersions.assetId
 }

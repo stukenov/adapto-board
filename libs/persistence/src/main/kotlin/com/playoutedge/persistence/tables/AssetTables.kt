@@ -29,6 +29,7 @@ object Assets : UUIDTable("assets") {
     val approvalStatus = varchar("approval_status", 20).default("APPROVED")
     val expiresAt = timestamp("expires_at").nullable()
     val checksum = varchar("checksum", 64).nullable()
+    val slideshowDefinition = jsonbColumnNullable("slideshow_definition")
 }
 
 object AssetVersions : UUIDTable("asset_versions") {

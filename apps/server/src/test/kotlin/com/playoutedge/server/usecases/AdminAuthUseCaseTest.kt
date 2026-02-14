@@ -36,6 +36,8 @@ import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestMethodOrder
+import com.playoutedge.auth.NoOpEmailService
+import com.playoutedge.persistence.repositories.impl.TenantRepositoryImpl
 import com.playoutedge.persistence.repositories.impl.UserRepositoryImpl
 import java.util.*
 import kotlin.time.Duration.Companion.days
@@ -109,7 +111,7 @@ class AdminAuthUseCaseTest : DatabaseTestContainer() {
         }
 
         routing {
-            adminAuthRoutes(userRepository, jwtService, passwordService)
+            adminAuthRoutes(userRepository, jwtService, passwordService, TenantRepositoryImpl(), NoOpEmailService())
         }
     }
 

@@ -19,9 +19,15 @@ import io.ktor.http.content.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
+import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.jsonObject
 import java.io.File
 import java.util.UUID
 
@@ -37,7 +43,37 @@ data class AssetResponse(
     val durationMs: Int?,
     val width: Int?,
     val height: Int?,
-    val createdAt: String
+    val createdAt: String,
+    val slideshowDefinition: String? = null
+)
+
+@Serializable
+data class SlideshowSlide(
+    val assetId: String,
+    val durationMs: Int = 5000,
+    val transition: String = "fade"
+)
+
+@Serializable
+data class SlideshowDefinition(
+    val slides: List<SlideshowSlide>,
+    val audioAssetId: String? = null,
+    val totalDurationMs: Int? = null
+)
+
+@Serializable
+data class CreateSlideshowRequest(
+    val name: String,
+    val slides: List<SlideshowSlide>,
+    val audioAssetId: String? = null,
+    val totalDurationMs: Int? = null
+)
+
+@Serializable
+data class SlideshowResponse(
+    val id: String,
+    val name: String,
+    val definition: SlideshowDefinition
 )
 
 @Serializable
@@ -204,7 +240,8 @@ fun Route.assetsRoutes(
                             durationMs = asset.durationMs,
                             width = asset.width,
                             height = asset.height,
-                            createdAt = asset.createdAt.toString()
+                            createdAt = asset.createdAt.toString(),
+                            slideshowDefinition = asset.slideshowDefinition?.toString()
                         )
                     },
                     total = assets.size
@@ -238,6 +275,167 @@ fun Route.assetsRoutes(
                     width = asset.width,
                     height = asset.height,
                     createdAt = asset.createdAt.toString()
+                ))
+            }
+
+            // POST /api/admin/assets/slideshow - Create slideshow asset
+            post("/slideshow") {
+                val tenantId = call.tenantId ?: throw ApiException.unauthorized(
+                    ErrorCode.TOKEN_INVALID,
+                    "Missing tenant context"
+                )
+                val adminClaims = call.adminClaims ?: throw ApiException.unauthorized(
+                    ErrorCode.TOKEN_INVALID,
+                    "Missing admin claims"
+                )
+
+                val request = call.receive<CreateSlideshowRequest>()
+
+                if (request.name.isBlank()) {
+                    throw ApiException.badRequest(ErrorCode.VALIDATION_ERROR, "Name is required")
+                }
+                if (request.slides.isEmpty()) {
+                    throw ApiException.badRequest(ErrorCode.VALIDATION_ERROR, "At least one slide is required")
+                }
+
+                // Validate all slide assets are IMAGE type
+                for (slide in request.slides) {
+                    val slideAssetId = UUID.fromString(slide.assetId)
+                    val slideAsset = assetRepository.findById(tenantId, slideAssetId)
+                        ?: throw ApiException.badRequest(ErrorCode.VALIDATION_ERROR, "Slide asset not found: ${slide.assetId}")
+                    if (slideAsset.type != com.playoutedge.domain.enums.AssetType.IMAGE) {
+                        throw ApiException.badRequest(ErrorCode.VALIDATION_ERROR, "Slide asset must be IMAGE type: ${slide.assetId}")
+                    }
+                }
+
+                // Validate audio asset if provided
+                if (request.audioAssetId != null) {
+                    val audioAssetId = UUID.fromString(request.audioAssetId)
+                    val audioAsset = assetRepository.findById(tenantId, audioAssetId)
+                        ?: throw ApiException.badRequest(ErrorCode.VALIDATION_ERROR, "Audio asset not found: ${request.audioAssetId}")
+                    if (audioAsset.type != com.playoutedge.domain.enums.AssetType.AUDIO) {
+                        throw ApiException.badRequest(ErrorCode.VALIDATION_ERROR, "Audio asset must be AUDIO type: ${request.audioAssetId}")
+                    }
+                }
+
+                val definition = SlideshowDefinition(
+                    slides = request.slides,
+                    audioAssetId = request.audioAssetId,
+                    totalDurationMs = request.totalDurationMs ?: request.slides.sumOf { it.durationMs }
+                )
+
+                val definitionJson = Json.encodeToJsonElement(SlideshowDefinition.serializer(), definition).jsonObject
+
+                val asset = assetRepository.create(
+                    tenantId,
+                    CreateAssetRequest(
+                        type = com.playoutedge.domain.enums.AssetType.SLIDESHOW,
+                        name = request.name,
+                        mimeType = "application/x-slideshow+json",
+                        storageKey = "slideshow/${UUID.randomUUID()}",
+                        fileSizeBytes = definitionJson.toString().length.toLong(),
+                        durationMs = definition.totalDurationMs,
+                        createdBy = adminClaims.subject
+                    )
+                )
+
+                assetRepository.update(tenantId, asset.id.value, UpdateAssetRequest(
+                    status = AssetStatus.READY,
+                    slideshowDefinition = definitionJson
+                ))
+
+                call.respond(HttpStatusCode.Created, SlideshowResponse(
+                    id = asset.id.value.toString(),
+                    name = request.name,
+                    definition = definition
+                ))
+            }
+
+            // PUT /api/admin/assets/{id}/slideshow - Update slideshow definition
+            put("/{id}/slideshow") {
+                val tenantId = call.tenantId ?: throw ApiException.unauthorized(
+                    ErrorCode.TOKEN_INVALID,
+                    "Missing tenant context"
+                )
+
+                val assetId = call.parameters["id"]?.let { UUID.fromString(it) }
+                    ?: throw ApiException.badRequest(ErrorCode.VALIDATION_ERROR, "Invalid asset ID")
+
+                val asset = assetRepository.findById(tenantId, assetId)
+                    ?: throw ApiException.notFound(ErrorCode.ASSET_NOT_FOUND, "Asset not found")
+
+                if (asset.type != com.playoutedge.domain.enums.AssetType.SLIDESHOW) {
+                    throw ApiException.badRequest(ErrorCode.VALIDATION_ERROR, "Asset is not a slideshow")
+                }
+
+                val request = call.receive<CreateSlideshowRequest>()
+
+                // Validate slides
+                for (slide in request.slides) {
+                    val slideAssetId = UUID.fromString(slide.assetId)
+                    val slideAsset = assetRepository.findById(tenantId, slideAssetId)
+                        ?: throw ApiException.badRequest(ErrorCode.VALIDATION_ERROR, "Slide asset not found: ${slide.assetId}")
+                    if (slideAsset.type != com.playoutedge.domain.enums.AssetType.IMAGE) {
+                        throw ApiException.badRequest(ErrorCode.VALIDATION_ERROR, "Slide asset must be IMAGE type: ${slide.assetId}")
+                    }
+                }
+
+                if (request.audioAssetId != null) {
+                    val audioAssetId = UUID.fromString(request.audioAssetId)
+                    val audioAsset = assetRepository.findById(tenantId, audioAssetId)
+                        ?: throw ApiException.badRequest(ErrorCode.VALIDATION_ERROR, "Audio asset not found: ${request.audioAssetId}")
+                    if (audioAsset.type != com.playoutedge.domain.enums.AssetType.AUDIO) {
+                        throw ApiException.badRequest(ErrorCode.VALIDATION_ERROR, "Audio asset must be AUDIO type: ${request.audioAssetId}")
+                    }
+                }
+
+                val definition = SlideshowDefinition(
+                    slides = request.slides,
+                    audioAssetId = request.audioAssetId,
+                    totalDurationMs = request.totalDurationMs ?: request.slides.sumOf { it.durationMs }
+                )
+
+                val definitionJson = Json.encodeToJsonElement(SlideshowDefinition.serializer(), definition).jsonObject
+
+                assetRepository.update(tenantId, assetId, UpdateAssetRequest(
+                    name = request.name,
+                    slideshowDefinition = definitionJson,
+                    durationMs = definition.totalDurationMs
+                ))
+
+                call.respond(SlideshowResponse(
+                    id = assetId.toString(),
+                    name = request.name,
+                    definition = definition
+                ))
+            }
+
+            // GET /api/admin/assets/{id}/slideshow - Get slideshow definition
+            get("/{id}/slideshow") {
+                val tenantId = call.tenantId ?: throw ApiException.unauthorized(
+                    ErrorCode.TOKEN_INVALID,
+                    "Missing tenant context"
+                )
+
+                val assetId = call.parameters["id"]?.let { UUID.fromString(it) }
+                    ?: throw ApiException.badRequest(ErrorCode.VALIDATION_ERROR, "Invalid asset ID")
+
+                val asset = assetRepository.findById(tenantId, assetId)
+                    ?: throw ApiException.notFound(ErrorCode.ASSET_NOT_FOUND, "Asset not found")
+
+                if (asset.type != com.playoutedge.domain.enums.AssetType.SLIDESHOW) {
+                    throw ApiException.badRequest(ErrorCode.VALIDATION_ERROR, "Asset is not a slideshow")
+                }
+
+                val definitionJson = asset.slideshowDefinition
+                    ?: throw ApiException.notFound(ErrorCode.ASSET_NOT_FOUND, "Slideshow definition not found")
+
+                val definition = Json.decodeFromJsonElement(SlideshowDefinition.serializer(), definitionJson)
+
+                call.respond(SlideshowResponse(
+                    id = assetId.toString(),
+                    name = asset.name,
+                    definition = definition
                 ))
             }
 

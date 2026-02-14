@@ -34,6 +34,32 @@ fun Route.adminAssetRoutes(
     assetUploadService: AssetUploadService
 ) {
     route("/admin/assets") {
+        // GET /admin/assets/slideshow/new - Slideshow editor (new)
+        get("/slideshow/new") {
+            val session = call.adminSession ?: run {
+                call.respondRedirect("/admin/login")
+                return@get
+            }
+            call.respondHtml {
+                slideshowEditorView(session = session)
+            }
+        }
+
+        // GET /admin/assets/slideshow/{id}/edit - Slideshow editor (existing)
+        get("/slideshow/{id}/edit") {
+            val session = call.adminSession ?: run {
+                call.respondRedirect("/admin/login")
+                return@get
+            }
+            val assetId = call.parameters["id"] ?: run {
+                call.respondRedirect("/admin/assets")
+                return@get
+            }
+            call.respondHtml {
+                slideshowEditorView(session = session, slideshowId = assetId)
+            }
+        }
+
         // GET /admin/assets/upload - Upload form (must be before /{id} route)
         get("/upload") {
             val session = call.adminSession ?: run {

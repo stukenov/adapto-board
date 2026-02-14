@@ -29,6 +29,9 @@ fun HTML.assetsListView(
             a(href = "/admin/assets/upload", classes = "btn btn-primary") {
                 +"+ Upload"
             }
+            a(href = "/admin/assets/slideshow/new", classes = "btn btn-secondary") {
+                +"+ Slideshow"
+            }
         }
 
         // Storage quota warning

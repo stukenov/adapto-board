@@ -21,6 +21,11 @@ object MediaValidationDefaults {
     val MAX_IMAGE_SIZE_BYTES = 20_971_520L    // 20 MB
     val ALLOWED_IMAGE_FORMATS = setOf("png", "jpeg", "jpg")
     val ALLOWED_IMAGE_MIME_TYPES = setOf("image/png", "image/jpeg")
+
+    // Audio constraints
+    val MAX_AUDIO_SIZE_BYTES = 104_857_600L    // 100 MB
+    val MAX_AUDIO_DURATION_SEC = 3600          // 1 hour
+    val ALLOWED_AUDIO_MIME_TYPES = setOf("audio/mpeg", "audio/mp3", "audio/wav", "audio/ogg")
 }
 
 /**
@@ -30,7 +35,7 @@ object MediaValidationDefaults {
 enum class RejectionReason(val message: String, val hint: String) {
     UNSUPPORTED_FORMAT(
         "File format is not supported",
-        "Supported video formats: MP4. Supported image formats: PNG, JPEG."
+        "Supported: MP4 video, PNG/JPEG images, MP3/WAV/OGG audio."
     ),
     UNSUPPORTED_CONTAINER(
         "Only MP4 video files are supported",
