@@ -11,10 +11,10 @@ app_port: 8080
 # Database
 db_name: playoutedge
 db_user: playoutedge
-db_password: "{{ vault_db_password | default(lookup('password', '/dev/null chars=ascii_letters,digits length=32')) }}"
+db_password: "{{ vault_db_password | default('YDj16bvWxxX3K1nn4gRxY4VgZmbOl9td') }}"
 
 # JWT
-jwt_secret: "{{ vault_jwt_secret | default(lookup('password', '/dev/null chars=ascii_letters,digits length=64')) }}"
+jwt_secret: "{{ vault_jwt_secret | default('YsrSD1JvLaRjA73E1YjK9RlvWKPTqlUWdRVkNtuLEOhfPtRIJZOpX6pDTjawbWvA') }}"
 
 # SSH
 ssh_port: 22
