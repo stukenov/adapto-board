@@ -85,6 +85,13 @@ import com.playoutedge.server.routes.landing.publicLandingRoutes
 import com.playoutedge.server.routes.landing.publicSignupRoutes
 import com.playoutedge.server.routes.embedRoutes
 import com.playoutedge.server.routes.publicPollRoutes
+import com.playoutedge.server.routes.docsRoutes
+import com.playoutedge.server.routes.llmsTxtRoutes
+import com.playoutedge.server.mcp.McpServer
+import com.playoutedge.server.mcp.McpToolRegistry
+import com.playoutedge.server.mcp.mcpRoutes
+import com.playoutedge.server.mcp.registerAllTools
+import com.playoutedge.server.plugins.configureOpenApi
 import com.playoutedge.storage.AssetUploadService
 import com.playoutedge.storage.LocalStorageService
 import com.playoutedge.storage.StorageConfig
@@ -180,6 +187,25 @@ fun Application.module() {
     jobScheduler.register(AsrunCleanupJobHandler(asrunRepository))
     jobScheduler.start()
 
+    // MCP server
+    val mcpToolRegistry = McpToolRegistry()
+    registerAllTools(
+        registry = mcpToolRegistry,
+        channelService = channelService,
+        deviceService = deviceService,
+        deviceActionService = deviceActionService,
+        scheduleService = scheduleService,
+        overlayService = overlayService,
+        auditService = auditService,
+        asrunService = asrunService,
+        alertService = alertService,
+        assetRepository = assetRepository
+    )
+    val mcpServer = McpServer(mcpToolRegistry)
+
+    // OpenAPI spec
+    configureOpenApi()
+
     // Start overlay REST pull polling service
     overlayPollService.start()
 
@@ -202,6 +228,8 @@ fun Application.module() {
         publicSignupRoutes(registrationService, jwtService)
         embedRoutes(channelRepository, playlistService)
         publicPollRoutes(overlayRepository, overlaySubscribers)
+        docsRoutes()
+        llmsTxtRoutes()
 
         // Admin web routes (SSR)
         adminAuthRoutes(userRepository, jwtService, passwordService, tenantRepository, emailService)
@@ -236,6 +264,7 @@ fun Application.module() {
         playerAsrunRoutes(asrunService)
         devicePlayerRoutes(deviceRepository, deviceActionService)
         overlayStreamRoutes(overlayService)
+        mcpRoutes(mcpServer)
     }
 }
 
