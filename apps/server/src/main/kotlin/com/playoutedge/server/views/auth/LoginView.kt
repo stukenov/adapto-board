@@ -69,6 +69,15 @@ fun HTML.loginView(
                         }
                     }
 
+                    div("form-group") {
+                        label("checkbox-label") {
+                            input(type = InputType.checkBox, name = "remember") {
+                                id = "remember"
+                            }
+                            +" Remember me for 30 days"
+                        }
+                    }
+
                     button(type = ButtonType.submit, classes = "btn btn-primary btn-block btn-lg") {
                         +"Sign In"
                     }
@@ -85,12 +94,9 @@ fun HTML.loginView(
 
 /**
  * Forgot password page view.
+ * Since this is an admin-initiated system, users should contact their administrator.
  */
-fun HTML.forgotPasswordView(
-    success: String? = null,
-    error: String? = null,
-    email: String? = null
-) {
+fun HTML.forgotPasswordView() {
     authLayout("Reset Password") {
         div("auth-container") {
             div("auth-card") {
@@ -100,49 +106,15 @@ fun HTML.forgotPasswordView(
                 // Header
                 div("auth-header") {
                     h1 { +"Reset Password" }
-                    p { +"Enter your email and we'll send you a reset link" }
+                    p { +"Password resets are managed by your administrator." }
                 }
 
-                // Success message
-                if (success != null) {
-                    div("alert alert-success") {
-                        unsafe {
-                            +"""<svg class="alert-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>"""
+                div("card") {
+                    div("card-body") {
+                        p {
+                            +"To reset your password, please contact your organization's administrator. "
+                            +"They can reset your password from the Settings > Users page."
                         }
-                        div("alert-content") { +success }
-                    }
-                }
-
-                // Error message
-                if (error != null) {
-                    div("alert alert-error") {
-                        unsafe {
-                            +"""<svg class="alert-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>"""
-                        }
-                        div("alert-content") { +error }
-                    }
-                }
-
-                // Form
-                form(action = "/admin/forgot-password", method = FormMethod.post, classes = "auth-form") {
-                    div("form-group") {
-                        label {
-                            htmlFor = "email"
-                            +"Email Address"
-                        }
-                        input(type = InputType.email, name = "email", classes = "form-control") {
-                            id = "email"
-                            placeholder = "you@example.com"
-                            required = true
-                            autoFocus = true
-                            if (email != null) {
-                                value = email
-                            }
-                        }
-                    }
-
-                    button(type = ButtonType.submit, classes = "btn btn-primary btn-block") {
-                        +"Send Reset Link"
                     }
                 }
 

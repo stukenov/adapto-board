@@ -5,10 +5,13 @@ import com.playoutedge.domain.enums.UserRole
 import com.playoutedge.domain.enums.UserStatus
 import com.playoutedge.server.views.adminLayout
 import com.playoutedge.server.views.alertBox
+import com.playoutedge.server.views.breadcrumb
 import com.playoutedge.server.views.displayName
 import com.playoutedge.server.views.emptyState
 import com.playoutedge.server.views.pageHeader
+import com.playoutedge.server.views.roleLabel
 import com.playoutedge.server.views.statCard
+import kotlinx.datetime.Clock
 import kotlinx.html.*
 
 /**
@@ -33,6 +36,8 @@ fun HTML.settingsMainView(
             a(href = "/admin/settings", classes = "tab active") { +"General" }
             a(href = "/admin/settings/users", classes = "tab") { +"Users" }
             a(href = "/admin/settings/api-keys", classes = "tab") { +"API Keys" }
+            a(href = "/admin/settings/notifications", classes = "tab") { +"Notifications" }
+            a(href = "/admin/settings/security", classes = "tab") { +"Security" }
         }
 
         if (success != null) {
@@ -109,11 +114,11 @@ fun HTML.settingsMainView(
                             select("form-control") {
                                 id = "timezone"
                                 name = "timezone"
-                                TIMEZONES.forEach { tz ->
+                                TIMEZONES.forEach { (tzId, tzLabel) ->
                                     option {
-                                        value = tz
-                                        if (settings.timezone == tz) selected = true
-                                        +tz
+                                        value = tzId
+                                        if (settings.timezone == tzId) selected = true
+                                        +tzLabel
                                     }
                                 }
                             }
@@ -222,6 +227,8 @@ fun HTML.usersListView(
             a(href = "/admin/settings", classes = "tab") { +"General" }
             a(href = "/admin/settings/users", classes = "tab active") { +"Users" }
             a(href = "/admin/settings/api-keys", classes = "tab") { +"API Keys" }
+            a(href = "/admin/settings/notifications", classes = "tab") { +"Notifications" }
+            a(href = "/admin/settings/security", classes = "tab") { +"Security" }
         }
 
         div("card") {
@@ -241,11 +248,14 @@ fun HTML.usersListView(
                             th { +"Email" }
                             th { +"Role" }
                             th { +"Status" }
+                            th { +"Invite" }
                             th { }
                         }
                     }
                     tbody {
                         users.forEach { user ->
+                            val now = Clock.System.now()
+                            val isExpired = user.inviteExpiresAt?.let { it < now } ?: false
                             tr {
                                 td {
                                     span("font-medium") { +user.displayName }
@@ -261,6 +271,24 @@ fun HTML.usersListView(
                                 td {
                                     span("badge badge-${statusBadge(user.status)}") {
                                         +user.status.name.lowercase()
+                                    }
+                                }
+                                td {
+                                    if (user.inviteExpiresAt != null) {
+                                        if (isExpired) {
+                                            span("badge badge-danger") { +"Expired" }
+                                            form(action = "/admin/settings/users/${user.id}/resend-invite", method = FormMethod.post, classes = "inline mt-1") {
+                                                button(type = ButtonType.submit, classes = "btn btn-sm btn-secondary") {
+                                                    +"Resend"
+                                                }
+                                            }
+                                        } else {
+                                            span("text-muted") {
+                                                +"Expires ${user.inviteExpiresAt.toString().substringBefore("T")}"
+                                            }
+                                        }
+                                    } else {
+                                        span("text-muted") { +"-" }
                                     }
                                 }
                                 td {
@@ -334,12 +362,18 @@ fun HTML.inviteUserView(
                             htmlFor = "password"
                             +"Temporary Password"
                         }
-                        input(type = InputType.password, classes = "form-control") {
-                            id = "password"
-                            name = "password"
-                            required = true
-                            minLength = "8"
-                            placeholder = "Minimum 8 characters"
+                        div("input-group") {
+                            input(type = InputType.password, classes = "form-control") {
+                                id = "password"
+                                name = "password"
+                                required = true
+                                minLength = "8"
+                                placeholder = "Minimum 8 characters"
+                            }
+                            button(type = ButtonType.button, classes = "btn btn-secondary") {
+                                attributes["onclick"] = "generatePassword('password')"
+                                +"Generate"
+                            }
                         }
                         small("form-helper") { +"User should change this password on their first login." }
                     }
@@ -494,14 +528,20 @@ fun HTML.editUserView(
                 form(action = "/admin/settings/users/${user.id}/reset-password", method = FormMethod.post) {
                     div("form-group") {
                         label {
-                            htmlFor = "password"
+                            htmlFor = "resetPassword"
                             +"New Password"
                         }
-                        input(type = InputType.password, classes = "form-control") {
-                            id = "password"
-                            name = "password"
-                            minLength = "8"
-                            placeholder = "Minimum 8 characters"
+                        div("input-group") {
+                            input(type = InputType.password, classes = "form-control") {
+                                id = "resetPassword"
+                                name = "password"
+                                minLength = "8"
+                                placeholder = "Minimum 8 characters"
+                            }
+                            button(type = ButtonType.button, classes = "btn btn-secondary") {
+                                attributes["onclick"] = "generatePassword('resetPassword')"
+                                +"Generate"
+                            }
                         }
                         small("form-helper") { +"User will need to use this password on their next login." }
                     }
@@ -539,6 +579,8 @@ fun HTML.apiKeysView(
             a(href = "/admin/settings", classes = "tab") { +"General" }
             a(href = "/admin/settings/users", classes = "tab") { +"Users" }
             a(href = "/admin/settings/api-keys", classes = "tab active") { +"API Keys" }
+            a(href = "/admin/settings/notifications", classes = "tab") { +"Notifications" }
+            a(href = "/admin/settings/security", classes = "tab") { +"Security" }
         }
 
         div("card") {
@@ -740,6 +782,202 @@ fun HTML.newApiKeyView(
                             }
                             a(href = "/admin/settings/api-keys", classes = "btn btn-secondary") {
                                 +"Cancel"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Notification preferences view.
+ */
+fun HTML.notificationPreferencesView(
+    session: AdminClaims,
+    prefs: NotificationPrefsView,
+    success: Boolean = false
+) {
+    adminLayout(
+        title = "Notification Settings",
+        userName = session.displayName,
+        userRole = session.roleLabel,
+        currentPath = "/admin/settings"
+    ) {
+        pageHeader(
+            title = "Settings",
+            subtitle = "Configure your notification preferences"
+        )
+
+        // Tabs
+        div("tabs mb-4") {
+            a(href = "/admin/settings", classes = "tab") { +"General" }
+            a(href = "/admin/settings/users", classes = "tab") { +"Users" }
+            a(href = "/admin/settings/api-keys", classes = "tab") { +"API Keys" }
+            a(href = "/admin/settings/notifications", classes = "tab active") { +"Notifications" }
+            a(href = "/admin/settings/security", classes = "tab") { +"Security" }
+        }
+
+        if (success) {
+            alertBox("Notification preferences saved.", "success")
+        }
+
+        div("card") {
+            div("card-header") {
+                h3 { +"Email Notifications" }
+            }
+            div("card-body") {
+                form(action = "/admin/settings/notifications", method = FormMethod.post) {
+                    div("form-group") {
+                        div("checkbox") {
+                            label {
+                                input(type = InputType.checkBox) {
+                                    name = "emailOnDeviceOffline"
+                                    if (prefs.emailOnDeviceOffline) checked = true
+                                }
+                                +" Device goes offline"
+                            }
+                        }
+                        small("form-helper") { +"Receive an email when a device stops sending heartbeats." }
+                    }
+
+                    div("form-group") {
+                        div("checkbox") {
+                            label {
+                                input(type = InputType.checkBox) {
+                                    name = "emailOnAlert"
+                                    if (prefs.emailOnAlert) checked = true
+                                }
+                                +" System alerts"
+                            }
+                        }
+                        small("form-helper") { +"Receive an email for important system alerts and warnings." }
+                    }
+
+                    div("form-group") {
+                        div("checkbox") {
+                            label {
+                                input(type = InputType.checkBox) {
+                                    name = "emailOnSchedulePublish"
+                                    if (prefs.emailOnSchedulePublish) checked = true
+                                }
+                                +" Schedule published"
+                            }
+                        }
+                        small("form-helper") { +"Receive an email when a schedule is published to a channel." }
+                    }
+
+                    div("form-group") {
+                        div("checkbox") {
+                            label {
+                                input(type = InputType.checkBox) {
+                                    name = "emailDailyDigest"
+                                    if (prefs.emailDailyDigest) checked = true
+                                }
+                                +" Daily digest"
+                            }
+                        }
+                        small("form-helper") { +"Receive a daily summary of device status and activity." }
+                    }
+
+                    div("form-actions") {
+                        button(type = ButtonType.submit, classes = "btn btn-primary") {
+                            +"Save Preferences"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Security / active sessions view.
+ */
+fun HTML.securityView(
+    session: AdminClaims,
+    sessions: List<SessionItem>,
+    success: String? = null
+) {
+    adminLayout(
+        title = "Security",
+        userName = session.displayName,
+        userRole = session.roleLabel,
+        currentPath = "/admin/settings"
+    ) {
+        pageHeader(
+            title = "Settings",
+            subtitle = "Manage active sessions and security"
+        )
+
+        // Tabs
+        div("tabs mb-4") {
+            a(href = "/admin/settings", classes = "tab") { +"General" }
+            a(href = "/admin/settings/users", classes = "tab") { +"Users" }
+            a(href = "/admin/settings/api-keys", classes = "tab") { +"API Keys" }
+            a(href = "/admin/settings/notifications", classes = "tab") { +"Notifications" }
+            a(href = "/admin/settings/security", classes = "tab active") { +"Security" }
+        }
+
+        if (success != null) {
+            alertBox(success, "success")
+        }
+
+        div("card") {
+            div("card-header") {
+                h3 { +"Active Sessions" }
+            }
+            div("card-body") {
+                if (sessions.isEmpty()) {
+                    emptyState(
+                        icon = "🔒",
+                        title = "No active sessions",
+                        description = "No active sessions found for your account."
+                    )
+                } else {
+                    table("table") {
+                        thead {
+                            tr {
+                                th { +"IP Address" }
+                                th { +"Browser / Client" }
+                                th { +"Started" }
+                                th { +"Last Active" }
+                                th { }
+                            }
+                        }
+                        tbody {
+                            sessions.forEach { sess ->
+                                tr {
+                                    td {
+                                        code { +(sess.ipAddress ?: "Unknown") }
+                                    }
+                                    td {
+                                        span("text-muted") {
+                                            +(sess.userAgent?.take(60)?.let { "$it..." } ?: "Unknown")
+                                        }
+                                    }
+                                    td {
+                                        span("text-muted") { +sess.createdAt.toString().substringBefore("T") }
+                                    }
+                                    td {
+                                        span("text-muted") { +sess.lastActiveAt.toString().substringBefore("T") }
+                                    }
+                                    td {
+                                        div("table-actions") {
+                                            if (sess.isCurrent) {
+                                                span("badge badge-success") { +"Current" }
+                                            } else {
+                                                form(action = "/admin/settings/security/terminate/${sess.id}", method = FormMethod.post, classes = "inline") {
+                                                    button(type = ButtonType.submit, classes = "btn btn-sm btn-danger") {
+                                                        attributes["onclick"] = "return confirm('Terminate this session?')"
+                                                        +"Terminate"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }

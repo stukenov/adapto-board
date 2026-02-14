@@ -14,7 +14,8 @@ data class UserListItem(
     val displayName: String,
     val role: UserRole,
     val status: UserStatus,
-    val createdAt: Instant
+    val createdAt: Instant,
+    val inviteExpiresAt: Instant? = null
 )
 
 /**
@@ -26,7 +27,8 @@ data class UserDetail(
     val displayName: String,
     val role: UserRole,
     val status: UserStatus,
-    val createdAt: Instant
+    val createdAt: Instant,
+    val inviteExpiresAt: Instant? = null
 )
 
 /**
@@ -77,6 +79,28 @@ data class DeviceQuotaView(
 )
 
 /**
+ * Notification preferences view model.
+ */
+data class NotificationPrefsView(
+    val emailOnDeviceOffline: Boolean = true,
+    val emailOnAlert: Boolean = true,
+    val emailOnSchedulePublish: Boolean = false,
+    val emailDailyDigest: Boolean = false
+)
+
+/**
+ * Active session view model.
+ */
+data class SessionItem(
+    val id: UUID,
+    val ipAddress: String?,
+    val userAgent: String?,
+    val createdAt: Instant,
+    val lastActiveAt: Instant,
+    val isCurrent: Boolean = false
+)
+
+/**
  * Available roles with descriptions.
  */
 val USER_ROLES = mapOf(
@@ -90,22 +114,13 @@ val USER_ROLES = mapOf(
 val RELEASE_RINGS = listOf("STABLE", "CANARY")
 
 /**
- * Timezones (simplified list).
+ * All IANA timezones.
  */
-val TIMEZONES = listOf(
-    "UTC",
-    "America/New_York",
-    "America/Chicago",
-    "America/Denver",
-    "America/Los_Angeles",
-    "Europe/London",
-    "Europe/Paris",
-    "Europe/Berlin",
-    "Asia/Tokyo",
-    "Asia/Shanghai",
-    "Asia/Singapore",
-    "Australia/Sydney"
-)
+val TIMEZONES: List<Pair<String, String>> by lazy {
+    java.time.ZoneId.getAvailableZoneIds()
+        .sorted()
+        .map { it to it.replace("_", " ") }
+}
 
 private fun formatBytes(bytes: Long): String {
     if (bytes < 1024) return "$bytes B"

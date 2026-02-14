@@ -1,9 +1,11 @@
 package com.playoutedge.server.plugins
 
+import com.auth0.jwt.JWT
 import com.playoutedge.auth.AdminClaims
 import com.playoutedge.auth.AuthConfig
 import com.playoutedge.auth.JwtService
 import com.playoutedge.server.routes.admin.ADMIN_SESSION_COOKIE
+import com.playoutedge.server.routes.admin.ADMIN_SESSION_MAX_AGE
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
@@ -19,13 +21,17 @@ val AdminSessionKey = AttributeKey<AdminClaims>("AdminSession")
  */
 class AdminSessionPluginConfig {
     var jwtService: JwtService? = null
+    var authConfig: AuthConfig? = null
 }
 
 /**
  * Plugin that validates admin session cookies and protects admin routes.
+ * Implements sliding session: auto-refreshes token when < 50% TTL remaining.
  */
 val AdminSessionPlugin = createApplicationPlugin(name = "AdminSessionPlugin", ::AdminSessionPluginConfig) {
     val jwtService = pluginConfig.jwtService ?: error("JwtService not configured")
+    val authConfig = pluginConfig.authConfig
+    val ttlMs = authConfig?.adminAccessTokenTtl?.inWholeMilliseconds
 
     onCall { call ->
         val path = call.request.local.uri
@@ -34,6 +40,10 @@ val AdminSessionPlugin = createApplicationPlugin(name = "AdminSessionPlugin", ::
         if (!path.startsWith("/admin")) return@onCall
         if (path.startsWith("/admin/login")) return@onCall
         if (path.startsWith("/admin/logout")) return@onCall
+        if (path.startsWith("/admin/forgot-password")) return@onCall
+        if (path.startsWith("/admin/reset-password")) return@onCall
+        if (path.startsWith("/admin/signup")) return@onCall
+        if (path.startsWith("/admin/suspended")) return@onCall
         if (path.startsWith("/admin/static")) return@onCall
 
         val sessionCookie = call.request.cookies[ADMIN_SESSION_COOKIE]
@@ -58,6 +68,42 @@ val AdminSessionPlugin = createApplicationPlugin(name = "AdminSessionPlugin", ::
             val next = path.encodeURLParameter()
             call.respondRedirect("/admin/login?error=expired&next=$next")
             return@onCall
+        }
+
+        // Sliding session: refresh token if < 50% TTL remaining
+        try {
+            val decoded = JWT.decode(sessionCookie)
+            val expiresAt = decoded.expiresAt
+            if (expiresAt != null) {
+                val remainingMs = expiresAt.time - System.currentTimeMillis()
+                if (ttlMs != null && remainingMs < ttlMs / 2) {
+                    val newToken = jwtService.generateAdminAccessToken(claims)
+                    call.response.cookies.append(
+                        Cookie(
+                            name = ADMIN_SESSION_COOKIE,
+                            value = newToken,
+                            maxAge = ADMIN_SESSION_MAX_AGE,
+                            path = "/admin",
+                            httpOnly = true,
+                            secure = call.request.local.scheme == "https",
+                            extensions = mapOf("SameSite" to "Lax")
+                        )
+                    )
+                }
+            }
+        } catch (_: Exception) {
+            // Non-critical: if refresh fails, continue with existing token
+        }
+
+        // Add X-Session-Expires header with token expiration epoch seconds
+        try {
+            val decoded = JWT.decode(sessionCookie)
+            val expiresAtDate = decoded.expiresAt
+            if (expiresAtDate != null) {
+                call.response.header("X-Session-Expires", (expiresAtDate.time / 1000).toString())
+            }
+        } catch (_: Exception) {
+            // Non-critical
         }
 
         // Store claims in call attributes for later use

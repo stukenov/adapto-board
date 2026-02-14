@@ -7,6 +7,8 @@ import com.playoutedge.domain.tenant.TenantId
 import com.playoutedge.persistence.repositories.AssetRepository
 import com.playoutedge.persistence.repositories.DeviceRepository
 import com.playoutedge.persistence.repositories.UserRepository
+import com.playoutedge.persistence.tables.NotificationPreferences
+import com.playoutedge.persistence.tables.UserSessions
 import com.playoutedge.server.plugins.adminSession
 import com.playoutedge.server.views.settings.*
 import io.ktor.server.application.*
@@ -14,9 +16,14 @@ import io.ktor.server.html.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.datetime.Clock
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import org.jetbrains.exposed.sql.update
 import java.security.MessageDigest
 import java.util.UUID
 
@@ -110,6 +117,65 @@ fun Route.adminSettingsRoutes(
             call.respondRedirect("/admin/settings?success=Settings+updated")
         }
 
+        // === Profile ===
+
+        // GET /admin/settings/profile
+        get("/profile") {
+            val session = call.adminSession ?: run { call.respondRedirect("/admin/login"); return@get }
+            val forceChange = call.request.queryParameters["force"] == "true"
+            call.respondHtml {
+                profileView(session = session, forceChange = forceChange)
+            }
+        }
+
+        // POST /admin/settings/profile/change-password
+        post("/profile/change-password") {
+            val session = call.adminSession ?: run { call.respondRedirect("/admin/login"); return@post }
+            val params = call.receiveParameters()
+            val currentPassword = params["currentPassword"]
+            val newPassword = params["newPassword"] ?: ""
+            val confirmPassword = params["confirmPassword"] ?: ""
+            val force = params["force"] == "true"
+
+            if (newPassword.length < 8) {
+                call.respondHtml { profileView(session, error = "Password must be at least 8 characters", forceChange = force) }
+                return@post
+            }
+            if (newPassword != confirmPassword) {
+                call.respondHtml { profileView(session, error = "Passwords do not match", forceChange = force) }
+                return@post
+            }
+
+            val user = userRepository.findById(session.subject)
+            if (user == null) {
+                call.respondHtml { profileView(session, error = "User not found", forceChange = force) }
+                return@post
+            }
+
+            if (!force && currentPassword != null) {
+                if (!passwordService.verify(currentPassword, user.passwordHash)) {
+                    call.respondHtml { profileView(session, error = "Current password is incorrect", forceChange = force) }
+                    return@post
+                }
+            }
+
+            val hashedPassword = passwordService.hash(newPassword)
+            userRepository.updatePassword(session.subject, hashedPassword)
+
+            if (force) {
+                call.respondRedirect("/admin")
+            } else {
+                call.respondHtml { profileView(session, success = "Password changed successfully") }
+            }
+        }
+
+        // === API Docs ===
+
+        get("/api-docs") {
+            val session = call.adminSession ?: run { call.respondRedirect("/admin/login"); return@get }
+            call.respondHtml { apiDocsView(session) }
+        }
+
         // === Users ===
 
         route("/users") {
@@ -130,7 +196,8 @@ fun Route.adminSettingsRoutes(
                         displayName = user.displayName,
                         role = userRepository.getRoles(user.id.value).firstOrNull() ?: UserRole.OPERATOR,
                         status = user.status,
-                        createdAt = user.createdAt
+                        createdAt = user.createdAt,
+                        inviteExpiresAt = user.inviteExpiresAt
                     )
                 }
 
@@ -262,6 +329,29 @@ fun Route.adminSettingsRoutes(
                 call.respondRedirect("/admin/settings/users/$userId?success=User+updated")
             }
 
+            // POST /admin/settings/users/:id/resend-invite - Resend invite (reset expiration)
+            post("/{id}/resend-invite") {
+                val session = call.adminSession ?: run {
+                    call.respondRedirect("/admin/login")
+                    return@post
+                }
+
+                val userId = call.parameters["id"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                if (userId == null) {
+                    call.respondRedirect("/admin/settings/users")
+                    return@post
+                }
+
+                newSuspendedTransaction {
+                    val user = com.playoutedge.persistence.entities.UserEntity.findById(userId)
+                    if (user != null) {
+                        user.inviteExpiresAt = Clock.System.now().plus(kotlin.time.Duration.parse("7d"))
+                    }
+                }
+
+                call.respondRedirect("/admin/settings/users")
+            }
+
             // POST /admin/settings/users/:id/reset-password - Reset password
             post("/{id}/reset-password") {
                 val session = call.adminSession ?: run {
@@ -385,6 +475,98 @@ fun Route.adminSettingsRoutes(
 
                 call.respondRedirect("/admin/settings/api-keys")
             }
+        }
+
+        // === Notification Preferences ===
+
+        get("/notifications") {
+            val session = call.adminSession ?: run { call.respondRedirect("/admin/login"); return@get }
+            val success = call.request.queryParameters["success"] == "true"
+            val prefs = newSuspendedTransaction {
+                NotificationPreferences.selectAll()
+                    .where { NotificationPreferences.userId eq session.subject }
+                    .firstOrNull()
+            }
+            val prefsView = if (prefs != null) {
+                NotificationPrefsView(
+                    emailOnDeviceOffline = prefs[NotificationPreferences.emailOnDeviceOffline],
+                    emailOnAlert = prefs[NotificationPreferences.emailOnAlert],
+                    emailOnSchedulePublish = prefs[NotificationPreferences.emailOnSchedulePublish],
+                    emailDailyDigest = prefs[NotificationPreferences.emailDailyDigest]
+                )
+            } else {
+                NotificationPrefsView()
+            }
+            call.respondHtml {
+                notificationPreferencesView(session, prefsView, success)
+            }
+        }
+
+        post("/notifications") {
+            val session = call.adminSession ?: run { call.respondRedirect("/admin/login"); return@post }
+            val params = call.receiveParameters()
+            newSuspendedTransaction {
+                val exists = NotificationPreferences.selectAll()
+                    .where { NotificationPreferences.userId eq session.subject }.count() > 0
+                if (exists) {
+                    NotificationPreferences.update({ NotificationPreferences.userId eq session.subject }) {
+                        it[emailOnDeviceOffline] = params["emailOnDeviceOffline"] != null
+                        it[emailOnAlert] = params["emailOnAlert"] != null
+                        it[emailOnSchedulePublish] = params["emailOnSchedulePublish"] != null
+                        it[emailDailyDigest] = params["emailDailyDigest"] != null
+                        it[updatedAt] = Clock.System.now()
+                    }
+                } else {
+                    NotificationPreferences.insert {
+                        it[userId] = session.subject
+                        it[emailOnDeviceOffline] = params["emailOnDeviceOffline"] != null
+                        it[emailOnAlert] = params["emailOnAlert"] != null
+                        it[emailOnSchedulePublish] = params["emailOnSchedulePublish"] != null
+                        it[emailDailyDigest] = params["emailDailyDigest"] != null
+                        it[createdAt] = Clock.System.now()
+                        it[updatedAt] = Clock.System.now()
+                    }
+                }
+            }
+            call.respondRedirect("/admin/settings/notifications?success=true")
+        }
+
+        // === Security / Sessions ===
+
+        get("/security") {
+            val session = call.adminSession ?: run { call.respondRedirect("/admin/login"); return@get }
+            val success = call.request.queryParameters["success"]
+            val sessions = newSuspendedTransaction {
+                UserSessions.selectAll()
+                    .where { (UserSessions.userId eq session.subject) }
+                    .map { row ->
+                        SessionItem(
+                            id = row[UserSessions.id].value,
+                            ipAddress = row[UserSessions.ipAddress],
+                            userAgent = row[UserSessions.userAgent],
+                            createdAt = row[UserSessions.createdAt],
+                            lastActiveAt = row[UserSessions.lastActiveAt],
+                            isCurrent = false // Could be enhanced with session token matching
+                        )
+                    }
+                    .filter { it.id != UUID(0, 0) } // Filter active only
+            }
+            call.respondHtml {
+                securityView(session, sessions, success)
+            }
+        }
+
+        post("/security/terminate/{sessionId}") {
+            val session = call.adminSession ?: run { call.respondRedirect("/admin/login"); return@post }
+            val sessionId = call.parameters["sessionId"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+            if (sessionId != null) {
+                newSuspendedTransaction {
+                    UserSessions.update({ (UserSessions.id eq sessionId) and (UserSessions.userId eq session.subject) }) {
+                        it[isActive] = false
+                    }
+                }
+            }
+            call.respondRedirect("/admin/settings/security?success=Session+terminated")
         }
     }
 }
