@@ -2489,6 +2489,30 @@ pre.code-block {
     align-items: center;
 }
 
+/* Public nav brand */
+.nav-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    text-decoration: none;
+    color: var(--primary);
+    font-size: var(--font-lg);
+    font-weight: var(--font-weight-bold);
+}
+
+.nav-brand-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--accent);
+    color: white;
+    border-radius: var(--radius-sm);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: var(--font-weight-bold);
+    font-size: var(--font-base);
+}
+
 /* Public main */
 .public-main {
     min-height: calc(100vh - 64px - 300px);
@@ -2969,7 +2993,7 @@ pre.code-block {
 /* Brand panel (left) */
 .signup-brand {
     flex: 0 0 45%;
-    background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #7c3aed 100%);
+    background: linear-gradient(135deg, #1c1917 0%, #292524 50%, #44403c 100%);
     color: white;
     display: flex;
     flex-direction: column;
