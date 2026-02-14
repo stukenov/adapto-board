@@ -4,7 +4,7 @@ import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
 
-object OnboardingStates : UUIDTable("onboarding_states") {
+object OnboardingStates : UUIDTable("onboarding_state") {
     val tenantId = reference("tenant_id", Tenants, onDelete = ReferenceOption.CASCADE)
     val currentStep = varchar("current_step", 100)
     val completedSteps = text("completed_steps")
