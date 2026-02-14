@@ -161,35 +161,41 @@ fun Route.adminOverlayRoutes(
                     return@get
                 }
 
-                val profile = overlayRepository.findProfileById(tenantId, profileId)
-                if (profile == null) {
+                val result = newSuspendedTransaction {
+                    val profile = overlayRepository.findProfileById(tenantId, profileId)
+                        ?: return@newSuspendedTransaction null
+
+                    val bindings = overlayRepository.findBindingsByProfile(tenantId, profileId)
+                    val bindingItems = bindings.map { binding ->
+                        OverlayBindingItem(
+                            id = binding.id.value,
+                            profileId = profile.id.value,
+                            profileName = profile.name,
+                            channelId = binding.channel.id.value,
+                            channelName = binding.channel.name,
+                            sourceType = binding.sourceType,
+                            status = binding.status,
+                            createdAt = binding.createdAt
+                        )
+                    }
+
+                    val profileDetail = OverlayProfileDetail(
+                        id = profile.id.value,
+                        name = profile.name,
+                        definitionJson = formatJson(profile.definitionJson.toString()),
+                        createdAt = profile.createdAt
+                    )
+
+                    Pair(profileDetail, bindingItems)
+                }
+
+                if (result == null) {
                     call.respondRedirect("/admin/overlay/profiles")
                     return@get
                 }
 
-                val bindings = overlayRepository.findBindingsByProfile(tenantId, profileId)
-                val bindingItems = bindings.map { binding ->
-                    OverlayBindingItem(
-                        id = binding.id.value,
-                        profileId = profile.id.value,
-                        profileName = profile.name,
-                        channelId = binding.channel.id.value,
-                        channelName = binding.channel.name,
-                        sourceType = binding.sourceType,
-                        status = binding.status,
-                        createdAt = binding.createdAt
-                    )
-                }
-
-                val profileDetail = OverlayProfileDetail(
-                    id = profile.id.value,
-                    name = profile.name,
-                    definitionJson = formatJson(profile.definitionJson.toString()),
-                    createdAt = profile.createdAt
-                )
-
                 call.respondHtml {
-                    overlayProfileDetailView(session, profileDetail, bindingItems)
+                    overlayProfileDetailView(session, result.first, result.second)
                 }
             }
 
@@ -208,18 +214,21 @@ fun Route.adminOverlayRoutes(
                     return@get
                 }
 
-                val profile = overlayRepository.findProfileById(tenantId, profileId)
-                if (profile == null) {
+                val profileDetail = newSuspendedTransaction {
+                    val profile = overlayRepository.findProfileById(tenantId, profileId)
+                        ?: return@newSuspendedTransaction null
+                    OverlayProfileDetail(
+                        id = profile.id.value,
+                        name = profile.name,
+                        definitionJson = formatJson(profile.definitionJson.toString()),
+                        createdAt = profile.createdAt
+                    )
+                }
+
+                if (profileDetail == null) {
                     call.respondRedirect("/admin/overlay/profiles")
                     return@get
                 }
-
-                val profileDetail = OverlayProfileDetail(
-                    id = profile.id.value,
-                    name = profile.name,
-                    definitionJson = formatJson(profile.definitionJson.toString()),
-                    createdAt = profile.createdAt
-                )
 
                 call.respondHtml {
                     editOverlayProfileView(session, profileDetail)
@@ -246,14 +255,17 @@ fun Route.adminOverlayRoutes(
                 val definitionJson = params["definitionJson"] ?: "{}"
 
                 if (name.isBlank()) {
-                    val profile = overlayRepository.findProfileById(tenantId, profileId)
-                    if (profile != null) {
-                        val profileDetail = OverlayProfileDetail(
+                    val profileDetail = newSuspendedTransaction {
+                        val profile = overlayRepository.findProfileById(tenantId, profileId)
+                            ?: return@newSuspendedTransaction null
+                        OverlayProfileDetail(
                             id = profile.id.value,
                             name = profile.name,
                             definitionJson = definitionJson,
                             createdAt = profile.createdAt
                         )
+                    }
+                    if (profileDetail != null) {
                         call.respondHtml {
                             editOverlayProfileView(session, profileDetail, error = "Name is required")
                         }
@@ -296,35 +308,40 @@ fun Route.adminOverlayRoutes(
                 }
 
                 val tenantId = TenantId(session.tenantId)
-                val bindings = overlayRepository.findAllBindings(tenantId)
-                val profiles = overlayRepository.findAllProfiles(tenantId)
-                val channels = channelRepository.findAll(tenantId)
 
-                val bindingItems = bindings.map { binding ->
-                    OverlayBindingItem(
-                        id = binding.id.value,
-                        profileId = binding.overlayProfile.id.value,
-                        profileName = binding.overlayProfile.name,
-                        channelId = binding.channel.id.value,
-                        channelName = binding.channel.name,
-                        sourceType = binding.sourceType,
-                        status = binding.status,
-                        createdAt = binding.createdAt
-                    )
-                }
+                val (bindingItems, profileItems, channelOptions) = newSuspendedTransaction {
+                    val bindings = overlayRepository.findAllBindings(tenantId)
+                    val profiles = overlayRepository.findAllProfiles(tenantId)
+                    val channels = channelRepository.findAll(tenantId)
 
-                val profileItems = profiles.map { profile ->
-                    OverlayProfileItem(
-                        id = profile.id.value,
-                        name = profile.name,
-                        widgetTypes = emptyList(),
-                        bindingsCount = 0,
-                        createdAt = profile.createdAt
-                    )
-                }
+                    val bi = bindings.map { binding ->
+                        OverlayBindingItem(
+                            id = binding.id.value,
+                            profileId = binding.overlayProfile.id.value,
+                            profileName = binding.overlayProfile.name,
+                            channelId = binding.channel.id.value,
+                            channelName = binding.channel.name,
+                            sourceType = binding.sourceType,
+                            status = binding.status,
+                            createdAt = binding.createdAt
+                        )
+                    }
 
-                val channelOptions = channels.map { channel ->
-                    ChannelOption(id = channel.id.value, name = channel.name)
+                    val pi = profiles.map { profile ->
+                        OverlayProfileItem(
+                            id = profile.id.value,
+                            name = profile.name,
+                            widgetTypes = emptyList(),
+                            bindingsCount = 0,
+                            createdAt = profile.createdAt
+                        )
+                    }
+
+                    val co = channels.map { channel ->
+                        ChannelOption(id = channel.id.value, name = channel.name)
+                    }
+
+                    Triple(bi, pi, co)
                 }
 
                 call.respondHtml {
@@ -340,21 +357,26 @@ fun Route.adminOverlayRoutes(
                 }
 
                 val tenantId = TenantId(session.tenantId)
-                val profiles = overlayRepository.findAllProfiles(tenantId)
-                val channels = channelRepository.findAll(tenantId)
 
-                val profileItems = profiles.map { profile ->
-                    OverlayProfileItem(
-                        id = profile.id.value,
-                        name = profile.name,
-                        widgetTypes = emptyList(),
-                        bindingsCount = 0,
-                        createdAt = profile.createdAt
-                    )
-                }
+                val (profileItems, channelOptions) = newSuspendedTransaction {
+                    val profiles = overlayRepository.findAllProfiles(tenantId)
+                    val channels = channelRepository.findAll(tenantId)
 
-                val channelOptions = channels.map { channel ->
-                    ChannelOption(id = channel.id.value, name = channel.name)
+                    val pi = profiles.map { profile ->
+                        OverlayProfileItem(
+                            id = profile.id.value,
+                            name = profile.name,
+                            widgetTypes = emptyList(),
+                            bindingsCount = 0,
+                            createdAt = profile.createdAt
+                        )
+                    }
+
+                    val co = channels.map { channel ->
+                        ChannelOption(id = channel.id.value, name = channel.name)
+                    }
+
+                    Pair(pi, co)
                 }
 
                 call.respondHtml {
@@ -412,41 +434,47 @@ fun Route.adminOverlayRoutes(
                     return@get
                 }
 
-                val binding = overlayRepository.findBindingById(tenantId, bindingId)
-                if (binding == null) {
+                val result = newSuspendedTransaction {
+                    val binding = overlayRepository.findBindingById(tenantId, bindingId)
+                        ?: return@newSuspendedTransaction null
+
+                    val webhookLogs = if (binding.sourceType == OverlaySourceType.WEBHOOK) {
+                        webhookLogRepository.findByBinding(bindingId, 20).map { log ->
+                            WebhookLogItem(
+                                id = log.id.value,
+                                statusCode = log.statusCode,
+                                latencyMs = log.latencyMs,
+                                payloadSize = log.payloadSize,
+                                error = log.error,
+                                createdAt = log.createdAt
+                            )
+                        }
+                    } else emptyList()
+
+                    val bindingDetail = OverlayBindingDetail(
+                        id = binding.id.value,
+                        profileId = binding.overlayProfile.id.value,
+                        profileName = binding.overlayProfile.name,
+                        channelId = binding.channel.id.value,
+                        channelName = binding.channel.name,
+                        sourceType = binding.sourceType,
+                        sourceConfigJson = formatJson(binding.sourceConfigJson.toString()),
+                        status = binding.status,
+                        webhookSecret = binding.webhookSecret,
+                        webhookUrl = binding.webhookSecret?.let { "${getWebhookBaseUrl()}/api/webhook/${binding.id.value}" },
+                        createdAt = binding.createdAt
+                    )
+
+                    Pair(bindingDetail, webhookLogs)
+                }
+
+                if (result == null) {
                     call.respondRedirect("/admin/overlay/bindings")
                     return@get
                 }
 
-                val webhookLogs = if (binding.sourceType == OverlaySourceType.WEBHOOK) {
-                    webhookLogRepository.findByBinding(bindingId, 20).map { log ->
-                        WebhookLogItem(
-                            id = log.id.value,
-                            statusCode = log.statusCode,
-                            latencyMs = log.latencyMs,
-                            payloadSize = log.payloadSize,
-                            error = log.error,
-                            createdAt = log.createdAt
-                        )
-                    }
-                } else emptyList()
-
-                val bindingDetail = OverlayBindingDetail(
-                    id = binding.id.value,
-                    profileId = binding.overlayProfile.id.value,
-                    profileName = binding.overlayProfile.name,
-                    channelId = binding.channel.id.value,
-                    channelName = binding.channel.name,
-                    sourceType = binding.sourceType,
-                    sourceConfigJson = formatJson(binding.sourceConfigJson.toString()),
-                    status = binding.status,
-                    webhookSecret = binding.webhookSecret,
-                    webhookUrl = binding.webhookSecret?.let { "${getWebhookBaseUrl()}/api/webhook/${binding.id.value}" },
-                    createdAt = binding.createdAt
-                )
-
                 call.respondHtml {
-                    overlayBindingDetailView(session, bindingDetail, webhookLogs)
+                    overlayBindingDetailView(session, result.first, result.second)
                 }
             }
 
@@ -499,8 +527,12 @@ fun Route.adminOverlayRoutes(
                     return@post
                 }
 
-                val binding = overlayRepository.findBindingById(tenantId, bindingId)
-                if (binding == null) {
+                val channelId = newSuspendedTransaction {
+                    val binding = overlayRepository.findBindingById(tenantId, bindingId)
+                        ?: return@newSuspendedTransaction null
+                    binding.channel.id.value
+                }
+                if (channelId == null) {
                     call.respondRedirect("/admin/overlay/bindings")
                     return@post
                 }
@@ -508,7 +540,7 @@ fun Route.adminOverlayRoutes(
                 val params = call.receiveParameters()
                 val stateJson = params["stateJson"] ?: "{}"
 
-                overlayRepository.setState(tenantId, binding.channel.id.value, stateJson)
+                overlayRepository.setState(tenantId, channelId, stateJson)
                 call.respondRedirect("/admin/overlay/bindings/$bindingId")
             }
 
@@ -548,19 +580,24 @@ fun Route.adminOverlayRoutes(
                 val bindingId = call.parameters["id"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
                 if (bindingId == null) { call.respondRedirect("/admin/overlay/bindings"); return@get }
 
-                val binding = overlayRepository.findBindingById(tenantId, bindingId)
-                if (binding == null) { call.respondRedirect("/admin/overlay/bindings"); return@get }
+                val bindingInfo = newSuspendedTransaction {
+                    val binding = overlayRepository.findBindingById(tenantId, bindingId)
+                        ?: return@newSuspendedTransaction null
+                    Triple(binding.channel.name, binding.channel.id.value, binding.id.value)
+                }
+                if (bindingInfo == null) { call.respondRedirect("/admin/overlay/bindings"); return@get }
 
+                val (channelName, channelId, bId) = bindingInfo
                 call.respondHtml {
                     adminLayout(title = "Overlay Preview", userName = session.displayName, currentPath = "/admin/overlay") {
                         pageHeader(
-                            title = "Preview: ${binding.channel.name}",
-                            backHref = "/admin/overlay/bindings/$bindingId",
+                            title = "Preview: $channelName",
+                            backHref = "/admin/overlay/bindings/$bId",
                             backLabel = "Back to Binding"
                         )
                         div("preview-container") {
                             iframe {
-                                src = "/embed/${binding.channel.id.value}"
+                                src = "/embed/$channelId"
                                 style = "width:100%;height:600px;border:1px solid #ddd;border-radius:8px;"
                             }
                         }
@@ -582,10 +619,14 @@ fun Route.adminOverlayRoutes(
                 try { Json.parseToJsonElement(testPayload) }
                 catch (e: Exception) { call.respondRedirect("/admin/overlay/bindings/$bindingId?error=Invalid+JSON+payload"); return@post }
 
-                val binding = overlayRepository.findBindingById(tenantId, bindingId)
-                if (binding == null) { call.respondRedirect("/admin/overlay/bindings"); return@post }
+                val channelId = newSuspendedTransaction {
+                    val binding = overlayRepository.findBindingById(tenantId, bindingId)
+                        ?: return@newSuspendedTransaction null
+                    binding.channel.id.value
+                }
+                if (channelId == null) { call.respondRedirect("/admin/overlay/bindings"); return@post }
 
-                overlayRepository.setState(tenantId, binding.channel.id.value, testPayload)
+                overlayRepository.setState(tenantId, channelId, testPayload)
                 call.respondRedirect("/admin/overlay/bindings/$bindingId?success=Test+payload+sent")
             }
 

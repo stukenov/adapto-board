@@ -16,6 +16,7 @@ import io.ktor.server.html.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.datetime.Clock
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import kotlin.time.Duration.Companion.minutes
 
 /**
@@ -89,13 +90,15 @@ fun Route.adminHomeRoutes(
 
             // Fetch recent audit entries
             val auditEntries = auditRepository.findByTenant(tenantId, AuditFilters(limit = 10))
-            val recentActivity = auditEntries.map { log ->
-                RecentActivity(
-                    action = log.action,
-                    entityType = log.entityType,
-                    actorName = log.actorUser?.displayName,
-                    createdAt = log.createdAt
-                )
+            val recentActivity = newSuspendedTransaction {
+                auditEntries.map { log ->
+                    RecentActivity(
+                        action = log.action,
+                        entityType = log.entityType,
+                        actorName = log.actorUser?.displayName,
+                        createdAt = log.createdAt
+                    )
+                }
             }
 
             call.respondHtml {

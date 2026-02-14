@@ -46,8 +46,8 @@ fun HTML.assetsListView(
         div("bulk-action-bar") {
             id = "bulk-action-bar"
             span("bulk-count") {
-                +"0"
                 id = "bulk-count"
+                +"0"
             }
             span { +" asset(s) selected" }
             form(action = "/admin/assets/bulk-archive", method = FormMethod.post, classes = "no-loading") {

@@ -23,6 +23,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.util.UUID
 
 /**
@@ -87,25 +88,36 @@ fun Route.adminReportsRoutes(
             val devices = deviceRepository.findAll(tenantId)
             val channels = channelRepository.findAll(tenantId)
 
-            // Map to view models
-            val eventItems = events.map { event ->
-                AsrunEventItem(
-                    id = event.id.value,
-                    deviceId = event.device.id.value,
-                    deviceName = event.device.displayName,
-                    channelId = event.channel?.id?.value,
-                    channelName = event.channel?.name,
-                    assetId = event.asset?.id?.value,
-                    assetName = event.asset?.name,
-                    eventType = event.eventType,
-                    at = event.at
-                )
-            }
+            // Map to view models (inside transaction to resolve lazy references)
+            val mappedData = newSuspendedTransaction {
+                val items = events.map { event ->
+                    AsrunEventItem(
+                        id = event.id.value,
+                        deviceId = event.device.id.value,
+                        deviceName = event.device.displayName,
+                        channelId = event.channel?.id?.value,
+                        channelName = event.channel?.name,
+                        assetId = event.asset?.id?.value,
+                        assetName = event.asset?.name,
+                        eventType = event.eventType,
+                        at = event.at
+                    )
+                }
 
-            val assetNames = events
-                .mapNotNull { it.asset }
-                .distinctBy { it.id.value }
-                .associate { it.id.value to it.name }
+                val names = events
+                    .mapNotNull { it.asset }
+                    .distinctBy { it.id.value }
+                    .associate { it.id.value to it.name }
+
+                val devOpts = devices.map { DeviceFilterOption(it.id.value, it.displayName) }
+                val chOpts = channels.map { ChannelFilterOption(it.id.value, it.name) }
+
+                Triple(items, names, devOpts to chOpts)
+            }
+            val eventItems = mappedData.first
+            val assetNames = mappedData.second
+            val deviceOptions = mappedData.third.first
+            val channelOptions = mappedData.third.second
 
             val summaryView = AsrunSummaryView(
                 totalEvents = summary.totalEvents,
@@ -127,9 +139,6 @@ fun Route.adminReportsRoutes(
                 fromDate = fromDate,
                 toDate = toDate
             )
-
-            val deviceOptions = devices.map { DeviceFilterOption(it.id.value, it.displayName) }
-            val channelOptions = channels.map { ChannelFilterOption(it.id.value, it.name) }
 
             // Build chart data - playback by day (last 7 days)
             val tz = TimeZone.UTC
@@ -195,38 +204,42 @@ fun Route.adminReportsRoutes(
             val events = asrunRepository.findByTenant(tenantId, filters)
 
             if (format == "json") {
-                val jsonStr = buildString {
-                    append("[")
-                    events.forEachIndexed { index, event ->
-                        if (index > 0) append(",")
-                        append("{")
-                        append("\"timestamp\":\"${event.at}\",")
-                        append("\"deviceId\":\"${event.device.id.value}\",")
-                        append("\"deviceName\":\"${event.device.displayName.replace("\"", "\\\"")}\",")
-                        append("\"channelId\":\"${event.channel?.id?.value ?: ""}\",")
-                        append("\"channelName\":\"${(event.channel?.name ?: "").replace("\"", "\\\"")}\",")
-                        append("\"assetId\":\"${event.asset?.id?.value ?: ""}\",")
-                        append("\"assetName\":\"${(event.asset?.name ?: "").replace("\"", "\\\"")}\",")
-                        append("\"eventType\":\"${event.eventType.name}\"")
-                        append("}")
+                val jsonStr = newSuspendedTransaction {
+                    buildString {
+                        append("[")
+                        events.forEachIndexed { index, event ->
+                            if (index > 0) append(",")
+                            append("{")
+                            append("\"timestamp\":\"${event.at}\",")
+                            append("\"deviceId\":\"${event.device.id.value}\",")
+                            append("\"deviceName\":\"${event.device.displayName.replace("\"", "\\\"")}\",")
+                            append("\"channelId\":\"${event.channel?.id?.value ?: ""}\",")
+                            append("\"channelName\":\"${(event.channel?.name ?: "").replace("\"", "\\\"")}\",")
+                            append("\"assetId\":\"${event.asset?.id?.value ?: ""}\",")
+                            append("\"assetName\":\"${(event.asset?.name ?: "").replace("\"", "\\\"")}\",")
+                            append("\"eventType\":\"${event.eventType.name}\"")
+                            append("}")
+                        }
+                        append("]")
                     }
-                    append("]")
                 }
                 call.respondText(jsonStr, ContentType.Application.Json)
             } else {
-                val csv = buildString {
-                    appendLine("timestamp,device_id,device_name,channel_id,channel_name,asset_id,asset_name,event_type")
-                    events.forEach { event ->
-                        appendLine(listOf(
-                            event.at.toString(),
-                            event.device.id.value.toString(),
-                            escapeCsv(event.device.displayName),
-                            event.channel?.id?.value?.toString() ?: "",
-                            escapeCsv(event.channel?.name ?: ""),
-                            event.asset?.id?.value?.toString() ?: "",
-                            escapeCsv(event.asset?.name ?: ""),
-                            event.eventType.name
-                        ).joinToString(","))
+                val csv = newSuspendedTransaction {
+                    buildString {
+                        appendLine("timestamp,device_id,device_name,channel_id,channel_name,asset_id,asset_name,event_type")
+                        events.forEach { event ->
+                            appendLine(listOf(
+                                event.at.toString(),
+                                event.device.id.value.toString(),
+                                escapeCsv(event.device.displayName),
+                                event.channel?.id?.value?.toString() ?: "",
+                                escapeCsv(event.channel?.name ?: ""),
+                                event.asset?.id?.value?.toString() ?: "",
+                                escapeCsv(event.asset?.name ?: ""),
+                                event.eventType.name
+                            ).joinToString(","))
+                        }
                     }
                 }
 
@@ -270,10 +283,12 @@ fun Route.adminReportsRoutes(
             }
             val maxDayValue = dayMap.values.maxOrNull() ?: 1L
 
-            val assetNames = events
-                .mapNotNull { it.asset }
-                .distinctBy { it.id.value }
-                .associate { it.id.value to it.name }
+            val assetNames = newSuspendedTransaction {
+                events
+                    .mapNotNull { it.asset }
+                    .distinctBy { it.id.value }
+                    .associate { it.id.value to it.name }
+            }
 
             val maxAssetCount = summary.byAsset.maxOfOrNull { it.value.playCount } ?: 1L
 
@@ -332,17 +347,19 @@ fun Route.adminReportsRoutes(
 
             val logs = auditRepository.findByTenant(tenantId, filters)
 
-            val logItems = logs.map { log ->
-                AuditLogItem(
-                    id = log.id.value,
-                    actorName = log.actorUser?.displayName,
-                    actorType = log.actorType.name,
-                    action = log.action,
-                    entityType = log.entityType,
-                    entityId = log.entityId,
-                    hasDiff = log.diffJson != null,
-                    createdAt = log.createdAt
-                )
+            val logItems = newSuspendedTransaction {
+                logs.map { log ->
+                    AuditLogItem(
+                        id = log.id.value,
+                        actorName = log.actorUser?.displayName,
+                        actorType = log.actorType.name,
+                        action = log.action,
+                        entityType = log.entityType,
+                        entityId = log.entityId,
+                        hasDiff = log.diffJson != null,
+                        createdAt = log.createdAt
+                    )
+                }
             }
 
             val filtersView = AuditLogFilters(
@@ -382,17 +399,19 @@ fun Route.adminReportsRoutes(
 
             val logs = auditRepository.findByTenant(tenantId, filters)
 
-            val csv = buildString {
-                appendLine("timestamp,actor,actor_type,action,entity_type,entity_id")
-                logs.forEach { log ->
-                    appendLine(listOf(
-                        log.createdAt.toString(),
-                        escapeCsv(log.actorUser?.displayName ?: "System"),
-                        log.actorType.name,
-                        log.action,
-                        log.entityType,
-                        log.entityId.toString()
-                    ).joinToString(","))
+            val csv = newSuspendedTransaction {
+                buildString {
+                    appendLine("timestamp,actor,actor_type,action,entity_type,entity_id")
+                    logs.forEach { log ->
+                        appendLine(listOf(
+                            log.createdAt.toString(),
+                            escapeCsv(log.actorUser?.displayName ?: "System"),
+                            log.actorType.name,
+                            log.action,
+                            log.entityType,
+                            log.entityId.toString()
+                        ).joinToString(","))
+                    }
                 }
             }
 
