@@ -3,11 +3,7 @@ package com.playoutedge.server.views.overlay
 import com.playoutedge.auth.AdminClaims
 import com.playoutedge.domain.enums.BindingStatus
 import com.playoutedge.domain.enums.OverlaySourceType
-import com.playoutedge.server.views.adminLayout
-import com.playoutedge.server.views.alertBox
-import com.playoutedge.server.views.displayName
-import com.playoutedge.server.views.emptyState
-import com.playoutedge.server.views.pageHeader
+import com.playoutedge.server.views.*
 import kotlinx.html.*
 import java.util.UUID
 
@@ -31,10 +27,10 @@ fun HTML.overlayBindingsListView(
         }
 
         // Navigation tabs
-        div("tabs mb-4") {
-            a(href = "/admin/overlay/profiles", classes = "tab") { +"Profiles" }
-            a(href = "/admin/overlay/bindings", classes = "tab active") { +"Bindings" }
-        }
+        pageTabs(listOf(
+            TabDef("Profiles", "/admin/overlay/profiles"),
+            TabDef("Bindings", "/admin/overlay/bindings", bindings.size)
+        ), "/admin/overlay/bindings")
 
         div("card") {
             if (bindings.isEmpty()) {

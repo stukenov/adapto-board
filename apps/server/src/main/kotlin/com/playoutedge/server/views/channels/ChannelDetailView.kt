@@ -2,10 +2,7 @@ package com.playoutedge.server.views.channels
 
 import com.playoutedge.auth.AdminClaims
 import com.playoutedge.domain.enums.ChannelStatus
-import com.playoutedge.server.views.adminLayout
-import com.playoutedge.server.views.displayName
-import com.playoutedge.server.views.emptyState
-import com.playoutedge.server.views.pageHeader
+import com.playoutedge.server.views.*
 import kotlinx.html.*
 
 /**
@@ -37,143 +34,134 @@ fun HTML.channelDetailView(
             }
         }
 
-        // Stats row
-        div("stats-grid mb-4") {
-            // Devices card
-            div("stat-card") {
-                val onlineCount = devices.count { it.isOnline }
-                div("stat-icon icon-success") { +"📺" }
-                span("stat-label") { +"Devices" }
-                span("stat-value") {
-                    +"$onlineCount"
-                    span("text-muted font-normal text-lg") { +" / ${devices.size}" }
-                }
-                if (devices.isNotEmpty()) {
-                    span("text-sm text-muted") { +"$onlineCount online" }
-                }
-            }
+        // Tabs
+        pageTabs(listOf(
+            TabDef("Overview", "/admin/channels/${channel.id}"),
+            TabDef("Schedule", "/admin/channels/${channel.id}/schedule", scheduleItems.size),
+            TabDef("Devices", "/admin/channels/${channel.id}", devices.size)
+        ), "/admin/channels/${channel.id}")
 
-            // Schedule items card
-            div("stat-card") {
-                div("stat-icon icon-primary") { +"📋" }
-                span("stat-label") { +"Schedule" }
-                span("stat-value") { +"${scheduleItems.size}" }
-                span("text-sm text-muted") { +"items" }
-            }
-
-            // Duration card
-            div("stat-card") {
-                div("stat-icon icon-info") { +"⏱" }
-                span("stat-label") { +"Total Duration" }
-                span("stat-value") { +calculateTotalDuration(scheduleItems) }
-            }
-        }
-
-        // Schedule section
-        div("card mb-4") {
-            div("card-header") {
-                h3 { +"Schedule" }
-                a(href = "/admin/channels/${channel.id}/schedule", classes = "btn btn-secondary btn-sm") {
-                    +"Edit Schedule"
+        // Two-column layout
+        detailLayout(
+            main = {
+                // Schedule section
+                sectionCard("Schedule", actions = {
+                    a(href = "/admin/channels/${channel.id}/schedule", classes = "btn btn-secondary btn-sm") {
+                        +"Edit Schedule"
+                    }
+                }) {
+                    if (scheduleItems.isEmpty()) {
+                        emptyState(
+                            icon = "📋",
+                            title = "No schedule items",
+                            description = "Add videos or images to this channel's schedule.",
+                            actionHref = "/admin/channels/${channel.id}/schedule",
+                            actionLabel = "Add Items"
+                        )
+                    } else {
+                        scheduleTable(scheduleItems, channel.id)
+                    }
                 }
-            }
-            if (scheduleItems.isEmpty()) {
-                div("card-body") {
-                    emptyState(
-                        icon = "📋",
-                        title = "No schedule items",
-                        description = "Add videos or images to this channel's schedule.",
-                        actionHref = "/admin/channels/${channel.id}/schedule",
-                        actionLabel = "Add Items"
-                    )
-                }
-            } else {
-                scheduleTable(scheduleItems, channel.id)
-            }
-        }
 
-        // Schedule Validation Warnings
-        if (validationWarnings.isNotEmpty()) {
-            div("card mb-4") {
-                div("card-header") {
-                    h3 { +"Schedule Warnings" }
-                }
-                div("card-body") {
-                    div("alert alert-warning") {
-                        strong { +"${validationWarnings.size} issue(s) found:" }
-                        ul {
-                            style = "margin:0.5rem 0 0;padding-left:1.2rem;"
-                            validationWarnings.forEach { w ->
-                                li { +w }
+                // Validation warnings
+                if (validationWarnings.isNotEmpty()) {
+                    sectionCard("Schedule Warnings") {
+                        div("alert alert-warning") {
+                            strong { +"${validationWarnings.size} issue(s) found:" }
+                            ul {
+                                style = "margin:0.5rem 0 0;padding-left:1.2rem;"
+                                validationWarnings.forEach { w -> li { +w } }
                             }
                         }
                     }
                 }
-            }
-        }
 
-        // Embed Player section
-        div("card mb-4") {
-            div("card-header") {
-                h3 { +"Embed Player" }
-                button(classes = "btn btn-secondary btn-sm") {
-                    id = "copy-embed-btn"
-                    +"Copy Embed Code"
-                }
-            }
-            div("card-body") {
-                div("embed-preview-container") {
-                    iframe {
-                        id = "embed-preview-iframe"
-                        src = "/embed/${channel.id}"
-                        attributes["width"] = "100%"
-                        attributes["height"] = "400"
-                        attributes["frameborder"] = "0"
-                        attributes["allowfullscreen"] = "true"
-                        attributes["style"] = "border-radius: var(--radius); background: #000;"
+                // Embed Player
+                sectionCard("Embed Player", actions = {
+                    button(classes = "btn btn-secondary btn-sm") {
+                        id = "copy-embed-btn"
+                        +"Copy Embed Code"
                     }
-                }
-
-                // Embed customization controls
-                div("mt-3 mb-3") {
-                    h4("text-sm font-medium mb-2") { +"Customize Embed" }
-                    div("filter-row") {
-                        div("form-group") {
-                            label { +"Background Color" }
-                            input(type = InputType.color, classes = "form-control") {
-                                id = "embed-bg-color"
-                                value = "#000000"
-                            }
+                }) {
+                    div("embed-preview-container") {
+                        iframe {
+                            id = "embed-preview-iframe"
+                            src = "/embed/${channel.id}"
+                            attributes["width"] = "100%"
+                            attributes["height"] = "400"
+                            attributes["frameborder"] = "0"
+                            attributes["allowfullscreen"] = "true"
+                            attributes["style"] = "border-radius: var(--radius); background: #000;"
                         }
-                        div("form-group") {
-                            label("day-checkbox") {
-                                input(type = InputType.checkBox) {
-                                    id = "embed-muted"
-                                    checked = true
+                    }
+                    div("mt-3 mb-3") {
+                        h4("text-sm font-medium mb-2") { +"Customize Embed" }
+                        div("filter-row") {
+                            div("form-group") {
+                                label { +"Background Color" }
+                                input(type = InputType.color, classes = "form-control") {
+                                    id = "embed-bg-color"
+                                    value = "#000000"
                                 }
-                                +"Muted"
                             }
-                        }
-                        div("form-group") {
-                            label("day-checkbox") {
-                                input(type = InputType.checkBox) {
-                                    id = "embed-controls"
+                            div("form-group") {
+                                label("day-checkbox") {
+                                    input(type = InputType.checkBox) { id = "embed-muted"; checked = true }
+                                    +"Muted"
                                 }
-                                +"Show Controls"
+                            }
+                            div("form-group") {
+                                label("day-checkbox") {
+                                    input(type = InputType.checkBox) { id = "embed-controls" }
+                                    +"Show Controls"
+                                }
                             }
                         }
+                    }
+                    div("embed-code-box mt-3") {
+                        id = "embed-code"
+                        code {
+                            id = "embed-code-text"
+                            +"""<iframe src="https://$embedHost/embed/${channel.id}" width="1920" height="1080" frameborder="0" allowfullscreen></iframe>"""
+                        }
+                    }
+                }
+            },
+            sidebar = {
+                // Channel Info
+                sectionCard("Channel Info") {
+                    dl("info-list") {
+                        dt { +"Status" }
+                        dd {
+                            span("badge badge-${channelStatusBadge(channel.status)}") {
+                                +channel.status.name.lowercase()
+                            }
+                        }
+                        dt { +"Schedule Items" }
+                        dd { +"${scheduleItems.size}" }
+                        dt { +"Total Duration" }
+                        dd { +calculateTotalDuration(scheduleItems) }
                     }
                 }
 
-                div("embed-code-box mt-3") {
-                    id = "embed-code"
-                    code {
-                        id = "embed-code-text"
-                        +"""<iframe src="https://$embedHost/embed/${channel.id}" width="1920" height="1080" frameborder="0" allowfullscreen></iframe>"""
+                // Devices
+                sectionCard("Assigned Devices", actions = {
+                    a(href = "/admin/devices?channel=${channel.id}", classes = "btn btn-secondary btn-sm") { +"Manage" }
+                }) {
+                    if (devices.isEmpty()) {
+                        emptyState(
+                            icon = "📺",
+                            title = "No devices assigned",
+                            description = "Assign devices to this channel.",
+                            actionHref = "/admin/devices/enroll",
+                            actionLabel = "Add Device"
+                        )
+                    } else {
+                        deviceTable(devices)
                     }
                 }
             }
-        }
+        )
 
         script {
             unsafe {
@@ -210,29 +198,6 @@ fun HTML.channelDetailView(
                     });
                 })();
                 """.trimIndent()
-            }
-        }
-
-        // Devices section
-        div("card") {
-            div("card-header") {
-                h3 { +"Assigned Devices" }
-                a(href = "/admin/devices?channel=${channel.id}", classes = "btn btn-secondary btn-sm") {
-                    +"Manage"
-                }
-            }
-            if (devices.isEmpty()) {
-                div("card-body") {
-                    emptyState(
-                        icon = "📺",
-                        title = "No devices assigned",
-                        description = "Assign devices to this channel to start playback.",
-                        actionHref = "/admin/devices/enroll",
-                        actionLabel = "Add Device"
-                    )
-                }
-            } else {
-                deviceTable(devices)
             }
         }
     }

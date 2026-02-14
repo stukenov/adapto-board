@@ -3,11 +3,7 @@ package com.playoutedge.server.views.channels
 import com.playoutedge.auth.AdminClaims
 import com.playoutedge.domain.enums.ChannelStatus
 import com.playoutedge.server.views.PaginationInfo
-import com.playoutedge.server.views.adminLayout
-import com.playoutedge.server.views.displayName
-import com.playoutedge.server.views.emptyState
-import com.playoutedge.server.views.pageHeader
-import com.playoutedge.server.views.paginationNav
+import com.playoutedge.server.views.*
 import kotlinx.html.*
 
 /**
@@ -35,6 +31,13 @@ fun HTML.channelsListView(
                 +"+ Create Channel"
             }
         }
+
+        // Tabs
+        pageTabs(listOf(
+            TabDef("All", "/admin/channels"),
+            TabDef("Active", "/admin/channels?status=ACTIVE"),
+            TabDef("Paused", "/admin/channels?status=PAUSED")
+        ), "/admin/channels${if (filters.status != null) "?status=${filters.status.name}" else ""}")
 
         // Filters
         div("card mb-4") {

@@ -1,9 +1,7 @@
 package com.playoutedge.server.views.devices
 
 import com.playoutedge.auth.AdminClaims
-import com.playoutedge.server.views.adminLayout
-import com.playoutedge.server.views.displayName
-import com.playoutedge.server.views.pageHeader
+import com.playoutedge.server.views.*
 import kotlinx.datetime.Clock
 import kotlinx.html.*
 import kotlin.time.Duration.Companion.hours
@@ -30,38 +28,16 @@ fun HTML.deviceDetailView(
             }
         }
 
-        // Info cards row 1
-        div("stats-grid mb-4") {
-            // Status card
-            div("card") {
-                div("card-header") {
-                    h3 { +"Status" }
-                }
-                div("card-body") {
-                    dl("info-list") {
-                        dt { +"Enrollment" }
-                        dd {
-                            span("badge badge-${enrollStatusBadge(device.status)}") {
-                                +device.status.name.lowercase()
-                            }
-                        }
+        // Tabs
+        pageTabs(listOf(
+            TabDef("Overview", "/admin/devices/${device.id}"),
+            TabDef("Logs", "/admin/devices/${device.id}/logs")
+        ), "/admin/devices/${device.id}")
 
-                        dt { +"Last Seen" }
-                        dd {
-                            device.lastSeen?.let {
-                                +it.toString().replace("T", " ").substringBeforeLast(":")
-                            } ?: span("text-muted") { +"Never" }
-                        }
-                    }
-                }
-            }
-
-            // Health Metrics card
-            div("card") {
-                div("card-header") {
-                    h3 { +"Health Metrics" }
-                }
-                div("card-body") {
+        detailLayout(
+            main = {
+                // Health Metrics
+                sectionCard("Health Metrics") {
                     dl("info-list") {
                         dt { +"Last Heartbeat" }
                         dd {
@@ -75,7 +51,6 @@ fun HTML.deviceDetailView(
                                 +agoStr
                             } ?: span("text-muted") { +"Never" }
                         }
-
                         dt { +"Uptime Estimate" }
                         dd {
                             val now = Clock.System.now()
@@ -88,19 +63,69 @@ fun HTML.deviceDetailView(
                         }
                     }
                 }
-            }
 
-            // Channel card
-            div("card") {
-                div("card-header") {
-                    h3 { +"Channel Assignment" }
+                // System Info
+                sectionCard("System Info") {
+                    dl("info-list") {
+                        dt { +"App Version" }
+                        dd {
+                            device.appVersion?.let {
+                                span("badge badge-gray badge-plain") { +it }
+                            } ?: span("text-muted") { +"\u2014" }
+                        }
+                        dt { +"Android Version" }
+                        dd { +(device.androidVersion ?: "\u2014") }
+                        dt { +"Device Model" }
+                        dd { +(device.androidModel ?: "\u2014") }
+                        dt { +"Device ID" }
+                        dd { code { +device.id.toString() } }
+                        dt { +"Enrolled At" }
+                        dd { +device.createdAt.toString().replace("T", " ").substringBeforeLast(":") }
+                    }
                 }
-                div("card-body") {
+
+                // Logs + Remote Actions
+                sectionCard("Device Logs") {
+                    p("text-muted mb-3") { +"View error logs and diagnostics reported by this device." }
+                    a(href = "/admin/devices/${device.id}/logs", classes = "btn btn-secondary") { +"View Logs" }
+                }
+
+                sectionCard("Remote Actions") {
+                    p("text-muted mb-3") { +"Send commands to this device." }
+                    form(action = "/admin/devices/${device.id}/reboot", method = FormMethod.post, classes = "inline-form") {
+                        button(type = ButtonType.submit, classes = "btn btn-danger") {
+                            attributes["onclick"] = "return confirm('Are you sure you want to reboot this device?')"
+                            +"Reboot Device"
+                        }
+                    }
+                }
+            },
+            sidebar = {
+                // Status
+                sectionCard("Status") {
+                    dl("info-list") {
+                        dt { +"Enrollment" }
+                        dd {
+                            span("badge badge-${enrollStatusBadge(device.status)}") {
+                                +device.status.name.lowercase()
+                            }
+                        }
+                        dt { +"Last Seen" }
+                        dd {
+                            device.lastSeen?.let {
+                                +it.toString().replace("T", " ").substringBeforeLast(":")
+                            } ?: span("text-muted") { +"Never" }
+                        }
+                    }
+                }
+
+                // Channel Assignment
+                sectionCard("Channel Assignment") {
                     if (device.channelId != null) {
                         div("mb-3") {
                             span("text-muted text-sm") { +"Currently assigned to:" }
                             div("mt-1") {
-                                a(href = "/admin/channels/${device.channelId}", classes = "font-medium text-lg") {
+                                a(href = "/admin/channels/${device.channelId}", classes = "font-medium") {
                                     +(device.channelName ?: "Unknown")
                                 }
                             }
@@ -108,7 +133,6 @@ fun HTML.deviceDetailView(
                     } else {
                         p("text-muted mb-3") { +"Not assigned to any channel" }
                     }
-
                     form(action = "/admin/devices/${device.id}/assign", method = FormMethod.post, classes = "inline-form") {
                         select("form-control") {
                             name = "channelId"
@@ -125,45 +149,12 @@ fun HTML.deviceDetailView(
                                 }
                             }
                         }
-                        button(type = ButtonType.submit, classes = "btn btn-primary") {
-                            +"Update"
-                        }
+                        button(type = ButtonType.submit, classes = "btn btn-primary") { +"Update" }
                     }
                 }
-            }
-        }
 
-        // Info cards row 2
-        div("stats-grid mb-4") {
-            // System info card
-            div("card") {
-                div("card-header") {
-                    h3 { +"System Info" }
-                }
-                div("card-body") {
-                    dl("info-list") {
-                        dt { +"App Version" }
-                        dd {
-                            device.appVersion?.let {
-                                span("badge badge-gray badge-plain") { +it }
-                            } ?: span("text-muted") { +"\u2014" }
-                        }
-
-                        dt { +"Android Version" }
-                        dd { +(device.androidVersion ?: "\u2014") }
-
-                        dt { +"Device Model" }
-                        dd { +(device.androidModel ?: "\u2014") }
-                    }
-                }
-            }
-
-            // Location card
-            div("card") {
-                div("card-header") {
-                    h3 { +"Location" }
-                }
-                div("card-body") {
+                // Location
+                sectionCard("Location") {
                     if (device.latitude != null && device.longitude != null) {
                         dl("info-list") {
                             dt { +"Coordinates" }
@@ -173,10 +164,7 @@ fun HTML.deviceDetailView(
                                 a(
                                     href = "https://www.google.com/maps?q=${device.latitude},${device.longitude}",
                                     classes = "btn btn-secondary btn-sm"
-                                ) {
-                                    target = "_blank"
-                                    +"View on Map"
-                                }
+                                ) { target = "_blank"; +"Map" }
                             }
                             if (device.locationName != null) {
                                 dt { +"Location Name" }
@@ -186,36 +174,26 @@ fun HTML.deviceDetailView(
                     } else {
                         p("text-muted mb-3") { +"No location set" }
                     }
-
-                    // Edit location form
                     details {
                         summary { +"Edit Location" }
                         form(action = "/admin/devices/${device.id}/location", method = FormMethod.post, classes = "mt-2") {
                             div("form-group") {
                                 label { htmlFor = "locationName"; +"Location Name" }
                                 input(type = InputType.text, name = "locationName", classes = "form-control") {
-                                    id = "locationName"
-                                    placeholder = "e.g. Main Lobby"
-                                    value = device.locationName ?: ""
+                                    id = "locationName"; placeholder = "e.g. Main Lobby"; value = device.locationName ?: ""
                                 }
                             }
-                            div("form-row") {
+                            formGrid {
                                 div("form-group") {
                                     label { htmlFor = "latitude"; +"Latitude" }
                                     input(type = InputType.number, name = "latitude", classes = "form-control") {
-                                        id = "latitude"
-                                        placeholder = "e.g. 40.7128"
-                                        attributes["step"] = "any"
-                                        value = device.latitude?.toString() ?: ""
+                                        id = "latitude"; placeholder = "40.7128"; attributes["step"] = "any"; value = device.latitude?.toString() ?: ""
                                     }
                                 }
                                 div("form-group") {
                                     label { htmlFor = "longitude"; +"Longitude" }
                                     input(type = InputType.number, name = "longitude", classes = "form-control") {
-                                        id = "longitude"
-                                        placeholder = "e.g. -74.0060"
-                                        attributes["step"] = "any"
-                                        value = device.longitude?.toString() ?: ""
+                                        id = "longitude"; placeholder = "-74.0060"; attributes["step"] = "any"; value = device.longitude?.toString() ?: ""
                                     }
                                 }
                             }
@@ -223,14 +201,9 @@ fun HTML.deviceDetailView(
                         }
                     }
                 }
-            }
 
-            // Power Schedule card
-            div("card") {
-                div("card-header") {
-                    h3 { +"Power Schedule" }
-                }
-                div("card-body") {
+                // Power Schedule
+                sectionCard("Power Schedule") {
                     if (device.powerOnTime != null || device.powerOffTime != null) {
                         dl("info-list") {
                             dt { +"Power On" }
@@ -241,23 +214,20 @@ fun HTML.deviceDetailView(
                     } else {
                         p("text-muted mb-3") { +"No power schedule configured" }
                     }
-
                     details {
                         summary { +"Edit Power Schedule" }
                         form(action = "/admin/devices/${device.id}/power-schedule", method = FormMethod.post, classes = "mt-2") {
-                            div("form-row") {
+                            formGrid {
                                 div("form-group") {
                                     label { htmlFor = "powerOnTime"; +"Power On Time" }
                                     input(type = InputType.time, name = "powerOnTime", classes = "form-control") {
-                                        id = "powerOnTime"
-                                        value = device.powerOnTime ?: ""
+                                        id = "powerOnTime"; value = device.powerOnTime ?: ""
                                     }
                                 }
                                 div("form-group") {
                                     label { htmlFor = "powerOffTime"; +"Power Off Time" }
                                     input(type = InputType.time, name = "powerOffTime", classes = "form-control") {
-                                        id = "powerOffTime"
-                                        value = device.powerOffTime ?: ""
+                                        id = "powerOffTime"; value = device.powerOffTime ?: ""
                                     }
                                 }
                             }
@@ -266,57 +236,7 @@ fun HTML.deviceDetailView(
                     }
                 }
             }
-        }
-
-        // Bottom section: Device Details, Logs link, Remote Actions
-        div("stats-grid mb-4") {
-            // Device details
-            div("card") {
-                div("card-header") {
-                    h3 { +"Device Details" }
-                }
-                div("card-body") {
-                    dl("info-list") {
-                        dt { +"Device ID" }
-                        dd {
-                            code { +device.id.toString() }
-                        }
-
-                        dt { +"Enrolled At" }
-                        dd { +device.createdAt.toString().replace("T", " ").substringBeforeLast(":") }
-                    }
-                }
-            }
-
-            // Logs section
-            div("card") {
-                div("card-header") {
-                    h3 { +"Device Logs" }
-                }
-                div("card-body") {
-                    p("text-muted mb-3") { +"View error logs and diagnostics reported by this device." }
-                    a(href = "/admin/devices/${device.id}/logs", classes = "btn btn-secondary") {
-                        +"View Logs"
-                    }
-                }
-            }
-
-            // Remote Actions section
-            div("card") {
-                div("card-header") {
-                    h3 { +"Remote Actions" }
-                }
-                div("card-body") {
-                    p("text-muted mb-3") { +"Send commands to this device. The device will execute the action on its next heartbeat." }
-                    form(action = "/admin/devices/${device.id}/reboot", method = FormMethod.post, classes = "inline-form") {
-                        button(type = ButtonType.submit, classes = "btn btn-danger") {
-                            attributes["onclick"] = "return confirm('Are you sure you want to reboot this device?')"
-                            +"Reboot Device"
-                        }
-                    }
-                }
-            }
-        }
+        )
     }
 }
 

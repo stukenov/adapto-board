@@ -18,6 +18,7 @@ import io.ktor.server.routing.*
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 import kotlinx.serialization.Serializable
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.util.UUID
 
 @Serializable
@@ -216,27 +217,30 @@ fun Route.schedulesRoutes(scheduleService: ScheduleService) {
 
                 val items = scheduleService.getItemsByVersion(tenantId, versionId)
 
-                call.respond(ScheduleVersionDetailResponse(
-                    id = version.id.value.toString(),
-                    channelId = version.channel.id.value.toString(),
-                    version = version.version,
-                    state = version.state.name,
-                    publishedAt = version.publishedAt?.toString(),
-                    createdAt = version.createdAt.toString(),
-                    items = items.map { item ->
-                        ScheduleItemResponse(
-                            id = item.id.value.toString(),
-                            assetId = item.asset.id.value.toString(),
-                            orderIndex = item.orderIndex,
-                            validFrom = item.validFrom?.toString(),
-                            validTo = item.validTo?.toString(),
-                            daysOfWeek = item.daysOfWeek,
-                            timeStart = item.timeStart?.toString(),
-                            timeEnd = item.timeEnd?.toString(),
-                            weight = item.weight
-                        )
-                    }
-                ))
+                val response = newSuspendedTransaction {
+                    ScheduleVersionDetailResponse(
+                        id = version.id.value.toString(),
+                        channelId = version.channel.id.value.toString(),
+                        version = version.version,
+                        state = version.state.name,
+                        publishedAt = version.publishedAt?.toString(),
+                        createdAt = version.createdAt.toString(),
+                        items = items.map { item ->
+                            ScheduleItemResponse(
+                                id = item.id.value.toString(),
+                                assetId = item.asset.id.value.toString(),
+                                orderIndex = item.orderIndex,
+                                validFrom = item.validFrom?.toString(),
+                                validTo = item.validTo?.toString(),
+                                daysOfWeek = item.daysOfWeek,
+                                timeStart = item.timeStart?.toString(),
+                                timeEnd = item.timeEnd?.toString(),
+                                weight = item.weight
+                            )
+                        }
+                    )
+                }
+                call.respond(response)
             }
 
             // PUT /items - Replace items
@@ -278,19 +282,22 @@ fun Route.schedulesRoutes(scheduleService: ScheduleService) {
                     }
                 )
 
-                call.respond(items.map { item ->
-                    ScheduleItemResponse(
-                        id = item.id.value.toString(),
-                        assetId = item.asset.id.value.toString(),
-                        orderIndex = item.orderIndex,
-                        validFrom = item.validFrom?.toString(),
-                        validTo = item.validTo?.toString(),
-                        daysOfWeek = item.daysOfWeek,
-                        timeStart = item.timeStart?.toString(),
-                        timeEnd = item.timeEnd?.toString(),
-                        weight = item.weight
-                    )
-                })
+                val response = newSuspendedTransaction {
+                    items.map { item ->
+                        ScheduleItemResponse(
+                            id = item.id.value.toString(),
+                            assetId = item.asset.id.value.toString(),
+                            orderIndex = item.orderIndex,
+                            validFrom = item.validFrom?.toString(),
+                            validTo = item.validTo?.toString(),
+                            daysOfWeek = item.daysOfWeek,
+                            timeStart = item.timeStart?.toString(),
+                            timeEnd = item.timeEnd?.toString(),
+                            weight = item.weight
+                        )
+                    }
+                }
+                call.respond(response)
             }
 
             // POST /publish - Publish schedule

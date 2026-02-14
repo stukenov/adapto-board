@@ -3,14 +3,7 @@ package com.playoutedge.server.views.settings
 import com.playoutedge.auth.AdminClaims
 import com.playoutedge.domain.enums.UserRole
 import com.playoutedge.domain.enums.UserStatus
-import com.playoutedge.server.views.adminLayout
-import com.playoutedge.server.views.alertBox
-import com.playoutedge.server.views.breadcrumb
-import com.playoutedge.server.views.displayName
-import com.playoutedge.server.views.emptyState
-import com.playoutedge.server.views.pageHeader
-import com.playoutedge.server.views.roleLabel
-import com.playoutedge.server.views.statCard
+import com.playoutedge.server.views.*
 import kotlinx.datetime.Clock
 import kotlinx.html.*
 
@@ -32,13 +25,7 @@ fun HTML.settingsMainView(
         )
 
         // Tabs
-        div("tabs mb-4") {
-            a(href = "/admin/settings", classes = "tab active") { +"General" }
-            a(href = "/admin/settings/users", classes = "tab") { +"Users" }
-            a(href = "/admin/settings/api-keys", classes = "tab") { +"API Keys" }
-            a(href = "/admin/settings/notifications", classes = "tab") { +"Notifications" }
-            a(href = "/admin/settings/security", classes = "tab") { +"Security" }
-        }
+        settingsTabs("/admin/settings")
 
         if (success != null) {
             alertBox(success, "success")
@@ -223,13 +210,7 @@ fun HTML.usersListView(
         }
 
         // Tabs
-        div("tabs mb-4") {
-            a(href = "/admin/settings", classes = "tab") { +"General" }
-            a(href = "/admin/settings/users", classes = "tab active") { +"Users" }
-            a(href = "/admin/settings/api-keys", classes = "tab") { +"API Keys" }
-            a(href = "/admin/settings/notifications", classes = "tab") { +"Notifications" }
-            a(href = "/admin/settings/security", classes = "tab") { +"Security" }
-        }
+        settingsTabs("/admin/settings/users")
 
         div("card") {
             if (users.isEmpty()) {
@@ -575,13 +556,7 @@ fun HTML.apiKeysView(
         }
 
         // Tabs
-        div("tabs mb-4") {
-            a(href = "/admin/settings", classes = "tab") { +"General" }
-            a(href = "/admin/settings/users", classes = "tab") { +"Users" }
-            a(href = "/admin/settings/api-keys", classes = "tab active") { +"API Keys" }
-            a(href = "/admin/settings/notifications", classes = "tab") { +"Notifications" }
-            a(href = "/admin/settings/security", classes = "tab") { +"Security" }
-        }
+        settingsTabs("/admin/settings/api-keys")
 
         div("card") {
             if (apiKeys.isEmpty()) {
@@ -811,13 +786,7 @@ fun HTML.notificationPreferencesView(
         )
 
         // Tabs
-        div("tabs mb-4") {
-            a(href = "/admin/settings", classes = "tab") { +"General" }
-            a(href = "/admin/settings/users", classes = "tab") { +"Users" }
-            a(href = "/admin/settings/api-keys", classes = "tab") { +"API Keys" }
-            a(href = "/admin/settings/notifications", classes = "tab active") { +"Notifications" }
-            a(href = "/admin/settings/security", classes = "tab") { +"Security" }
-        }
+        settingsTabs("/admin/settings/notifications")
 
         if (success) {
             alertBox("Notification preferences saved.", "success")
@@ -912,13 +881,7 @@ fun HTML.securityView(
         )
 
         // Tabs
-        div("tabs mb-4") {
-            a(href = "/admin/settings", classes = "tab") { +"General" }
-            a(href = "/admin/settings/users", classes = "tab") { +"Users" }
-            a(href = "/admin/settings/api-keys", classes = "tab") { +"API Keys" }
-            a(href = "/admin/settings/notifications", classes = "tab") { +"Notifications" }
-            a(href = "/admin/settings/security", classes = "tab active") { +"Security" }
-        }
+        settingsTabs("/admin/settings/security")
 
         if (success != null) {
             alertBox(success, "success")
@@ -998,4 +961,16 @@ private fun statusBadge(status: UserStatus): String = when (status) {
     UserStatus.ACTIVE -> "success"
     UserStatus.INACTIVE -> "warning"
     UserStatus.LOCKED -> "danger"
+}
+
+private val SETTINGS_TABS = listOf(
+    TabDef("General", "/admin/settings"),
+    TabDef("Users", "/admin/settings/users"),
+    TabDef("API Keys", "/admin/settings/api-keys"),
+    TabDef("Notifications", "/admin/settings/notifications"),
+    TabDef("Security", "/admin/settings/security")
+)
+
+fun FlowContent.settingsTabs(currentPath: String) {
+    pageTabs(SETTINGS_TABS, currentPath)
 }

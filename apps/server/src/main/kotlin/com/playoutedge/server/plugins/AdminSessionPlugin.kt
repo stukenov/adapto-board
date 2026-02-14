@@ -83,7 +83,7 @@ val AdminSessionPlugin = createApplicationPlugin(name = "AdminSessionPlugin", ::
                             name = ADMIN_SESSION_COOKIE,
                             value = newToken,
                             maxAge = ADMIN_SESSION_MAX_AGE,
-                            path = "/admin",
+                            path = "/",
                             httpOnly = true,
                             secure = call.request.local.scheme == "https",
                             extensions = mapOf("SameSite" to "Lax")

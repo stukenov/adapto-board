@@ -2,6 +2,7 @@ package com.playoutedge.server.views.home
 
 import com.playoutedge.auth.AdminClaims
 import com.playoutedge.server.views.adminLayout
+import com.playoutedge.server.views.detailLayout
 import com.playoutedge.server.views.displayName
 import com.playoutedge.server.views.pageHeader
 import kotlinx.html.*
@@ -82,20 +83,17 @@ fun HTML.homeView(
             }
         }
 
-        // Main content grid
-        div("dashboard-grid") {
-            // Fleet Health Widget (larger)
-            fleetHealthWidget(fleetHealth)
-
-            // Alerts Widget
-            alertsWidget(alerts)
-
-            // Recent Activity Widget
-            recentActivityWidget(recentActivity)
-
-            // Quick Actions Widget
-            quickActionsWidget()
-        }
+        // Main content: 2-column layout
+        detailLayout(
+            main = {
+                fleetHealthWidget(fleetHealth)
+                recentActivityWidget(recentActivity)
+            },
+            sidebar = {
+                alertsWidget(alerts)
+                quickActionsWidget()
+            }
+        )
     }
 }
 

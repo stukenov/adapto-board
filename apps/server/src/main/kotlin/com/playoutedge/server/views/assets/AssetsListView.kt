@@ -3,12 +3,7 @@ package com.playoutedge.server.views.assets
 import com.playoutedge.auth.AdminClaims
 import com.playoutedge.domain.enums.AssetStatus
 import com.playoutedge.domain.enums.AssetType
-import com.playoutedge.server.views.PaginationInfo
-import com.playoutedge.server.views.adminLayout
-import com.playoutedge.server.views.displayName
-import com.playoutedge.server.views.emptyState
-import com.playoutedge.server.views.pageHeader
-import com.playoutedge.server.views.paginationNav
+import com.playoutedge.server.views.*
 import kotlinx.html.*
 
 /**
@@ -33,6 +28,15 @@ fun HTML.assetsListView(
                 +"+ Slideshow"
             }
         }
+
+        // Tabs
+        pageTabs(listOf(
+            TabDef("All", "/admin/assets"),
+            TabDef("Video", "/admin/assets?type=VIDEO"),
+            TabDef("Image", "/admin/assets?type=IMAGE"),
+            TabDef("Audio", "/admin/assets?type=AUDIO"),
+            TabDef("Slideshow", "/admin/assets?type=SLIDESHOW")
+        ), "/admin/assets${if (filters.type != null) "?type=${filters.type.name}" else ""}")
 
         // Storage quota warning
         if (quota.usedPercent >= 80) {

@@ -7,34 +7,43 @@ import io.ktor.util.*
 
 private val TenantContextKey = AttributeKey<TenantContext>("TenantContext")
 
+/**
+ * TenantPlugin is kept for compatibility but tenant context is now resolved lazily
+ * on first access (after JWT auth has run) rather than eagerly in onCall (which runs
+ * before authentication and therefore always sees null claims).
+ */
 val TenantPlugin = createApplicationPlugin(name = "TenantPlugin") {
-    onCall { call ->
-        // Try to get tenant context from admin claims first, then device claims
-        val adminClaims = call.adminClaims
-        val deviceClaims = call.deviceClaims
+    // Intentionally empty — tenant context is resolved lazily via the extension properties below.
+}
 
-        val context = when {
-            adminClaims != null -> TenantContext(
-                tenantId = TenantId(adminClaims.tenantId),
-                userId = adminClaims.subject,
-                roles = setOf(adminClaims.role)
-            )
-            deviceClaims != null -> TenantContext(
-                tenantId = TenantId(deviceClaims.tenantId),
-                userId = null,
-                roles = emptySet()
-            )
-            else -> null
-        }
+private fun ApplicationCall.resolveTenantContext(): TenantContext? {
+    attributes.getOrNull(TenantContextKey)?.let { return it }
 
-        if (context != null) {
-            call.attributes.put(TenantContextKey, context)
-        }
+    val adminClaims = this.adminClaims
+    val deviceClaims = this.deviceClaims
+
+    val context = when {
+        adminClaims != null -> TenantContext(
+            tenantId = TenantId(adminClaims.tenantId),
+            userId = adminClaims.subject,
+            roles = setOf(adminClaims.role)
+        )
+        deviceClaims != null -> TenantContext(
+            tenantId = TenantId(deviceClaims.tenantId),
+            userId = null,
+            roles = emptySet()
+        )
+        else -> null
     }
+
+    if (context != null) {
+        attributes.put(TenantContextKey, context)
+    }
+    return context
 }
 
 val ApplicationCall.tenantContext: TenantContext?
-    get() = attributes.getOrNull(TenantContextKey)
+    get() = resolveTenantContext()
 
 val ApplicationCall.tenantContextOrThrow: TenantContext
     get() = tenantContext ?: throw IllegalStateException("TenantContext not available - authentication required")

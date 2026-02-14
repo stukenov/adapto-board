@@ -1,13 +1,7 @@
 package com.playoutedge.server.views.overlay
 
 import com.playoutedge.auth.AdminClaims
-import com.playoutedge.server.views.PaginationInfo
-import com.playoutedge.server.views.adminLayout
-import com.playoutedge.server.views.alertBox
-import com.playoutedge.server.views.displayName
-import com.playoutedge.server.views.emptyState
-import com.playoutedge.server.views.pageHeader
-import com.playoutedge.server.views.paginationNav
+import com.playoutedge.server.views.*
 import kotlinx.html.*
 
 /**
@@ -29,10 +23,10 @@ fun HTML.overlayProfilesListView(
         }
 
         // Navigation tabs
-        div("tabs mb-4") {
-            a(href = "/admin/overlay/profiles", classes = "tab active") { +"Profiles" }
-            a(href = "/admin/overlay/bindings", classes = "tab") { +"Bindings" }
-        }
+        pageTabs(listOf(
+            TabDef("Profiles", "/admin/overlay/profiles", profiles.size),
+            TabDef("Bindings", "/admin/overlay/bindings")
+        ), "/admin/overlay/profiles")
 
         if (profiles.isEmpty()) {
             div("card") {

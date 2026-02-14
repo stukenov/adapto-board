@@ -3,12 +3,7 @@ package com.playoutedge.server.views.assets
 import com.playoutedge.auth.AdminClaims
 import com.playoutedge.domain.enums.AssetStatus
 import com.playoutedge.domain.enums.AssetType
-import com.playoutedge.server.views.adminLayout
-import com.playoutedge.server.views.alertBox
-import com.playoutedge.server.views.dangerItem
-import com.playoutedge.server.views.dangerZone
-import com.playoutedge.server.views.displayName
-import com.playoutedge.server.views.pageHeader
+import com.playoutedge.server.views.*
 import kotlinx.html.*
 
 /**
@@ -192,14 +187,10 @@ fun HTML.assetDetailView(
             }
         }
 
-        // Info cards
-        div("stats-grid mb-4") {
-            // Basic info card
-            div("card") {
-                div("card-header") {
-                    h3 { +"Information" }
-                }
-                div("card-body") {
+        // Two-column layout: preview already above, metadata in sidebar
+        detailLayout(
+            main = {
+                sectionCard("Information") {
                     dl("info-list") {
                         dt { +"Type" }
                         dd {
@@ -209,100 +200,47 @@ fun HTML.assetDetailView(
                                 AssetType.AUDIO -> "🎵"
                                 AssetType.SLIDESHOW -> "📽"
                             }
-                            span("badge badge-gray badge-plain") {
-                                +"$typeIcon ${asset.type.name.lowercase()}"
-                            }
+                            span("badge badge-gray badge-plain") { +"$typeIcon ${asset.type.name.lowercase()}" }
                         }
-
                         dt { +"MIME Type" }
-                        dd {
-                            asset.mimeType?.let {
-                                code { +it }
-                            } ?: span("text-muted") { +"—" }
-                        }
-
+                        dd { asset.mimeType?.let { code { +it } } ?: span("text-muted") { +"—" } }
                         dt { +"File Size" }
                         dd { +asset.fileSizeFormatted }
-
-                        dt { +"Created" }
-                        dd {
-                            +asset.createdAt.toString().replace("T", " ").substringBeforeLast(":")
-                        }
-                    }
-                }
-            }
-
-            // Media info card
-            div("card") {
-                div("card-header") {
-                    h3 { +"Media Details" }
-                }
-                div("card-body") {
-                    dl("info-list") {
                         dt { +"Resolution" }
-                        dd {
-                            asset.resolution?.let { +it } ?: span("text-muted") { +"—" }
-                        }
-
+                        dd { asset.resolution?.let { +it } ?: span("text-muted") { +"—" } }
                         dt { +"Duration" }
-                        dd {
-                            asset.durationFormatted?.let { +it } ?: span("text-muted") { +"—" }
-                        }
-
-                        // Additional video info would go here if available in the model
+                        dd { asset.durationFormatted?.let { +it } ?: span("text-muted") { +"—" } }
+                        dt { +"Created" }
+                        dd { +asset.createdAt.toString().replace("T", " ").substringBeforeLast(":") }
+                        dt { +"Asset ID" }
+                        dd { code { +asset.id.toString() } }
                     }
                 }
-            }
-
-            // Usage card
-            div("card") {
-                div("card-header") {
-                    h3 { +"Usage" }
-                }
-                div("card-body") {
+            },
+            sidebar = {
+                sectionCard("Usage") {
                     p("text-muted") { +"View channels to see where this asset is used." }
                 }
-            }
-        }
 
-        // Asset ID
-        div("card mb-4") {
-            div("card-header") {
-                h3 { +"Technical Details" }
-            }
-            div("card-body") {
-                dl("info-list") {
-                    dt { +"Asset ID" }
-                    dd {
-                        code { +asset.id.toString() }
-                    }
-                }
-            }
-        }
-
-        // Actions
-        if (asset.status != AssetStatus.ARCHIVED) {
-            div("card") {
-                div("card-header") {
-                    h3 { +"Danger Zone" }
-                }
-                div("card-body") {
-                    dangerZone {
-                        dangerItem(
-                            title = "Archive Asset",
-                            description = "Remove this asset from active use. It will no longer appear in channel schedules."
-                        ) {
-                            form(action = "/admin/assets/${asset.id}/archive", method = FormMethod.post) {
-                                button(type = ButtonType.submit, classes = "btn btn-danger") {
-                                    attributes["onclick"] = "return confirm('Are you sure you want to archive this asset?')"
-                                    +"Archive"
+                if (asset.status != AssetStatus.ARCHIVED) {
+                    sectionCard("Danger Zone") {
+                        dangerZone {
+                            dangerItem(
+                                title = "Archive Asset",
+                                description = "Remove this asset from active use."
+                            ) {
+                                form(action = "/admin/assets/${asset.id}/archive", method = FormMethod.post) {
+                                    button(type = ButtonType.submit, classes = "btn btn-danger") {
+                                        attributes["onclick"] = "return confirm('Are you sure you want to archive this asset?')"
+                                        +"Archive"
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
-        }
+        )
     }
 }
 

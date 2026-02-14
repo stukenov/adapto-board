@@ -503,6 +503,75 @@ fun FlowContent.dangerItem(
 }
 
 /**
+ * Tab definition for page tabs.
+ */
+data class TabDef(
+    val label: String,
+    val href: String,
+    val count: Int? = null
+)
+
+/**
+ * Page tabs navigation.
+ */
+fun FlowContent.pageTabs(tabs: List<TabDef>, currentPath: String) {
+    div("page-tabs") {
+        tabs.forEach { tab ->
+            val isActive = currentPath == tab.href || currentPath.startsWith(tab.href + "/")
+            a(href = tab.href, classes = "tab${if (isActive) " active" else ""}") {
+                +tab.label
+                if (tab.count != null) {
+                    span("tab-count") { +"${tab.count}" }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Two-column detail layout (main + sidebar).
+ */
+fun FlowContent.detailLayout(
+    main: DIV.() -> Unit,
+    sidebar: DIV.() -> Unit
+) {
+    div("layout-detail") {
+        div("stack-md") { main() }
+        div("stack-md") { sidebar() }
+    }
+}
+
+/**
+ * Section card with title and optional actions.
+ */
+fun FlowContent.sectionCard(
+    title: String,
+    actions: (DIV.() -> Unit)? = null,
+    content: DIV.() -> Unit
+) {
+    div("card section-card") {
+        div("card-header") {
+            h3 { +title }
+            if (actions != null) {
+                div { actions() }
+            }
+        }
+        div("card-body") {
+            content()
+        }
+    }
+}
+
+/**
+ * Two-column form grid.
+ */
+fun FlowContent.formGrid(content: DIV.() -> Unit) {
+    div("form-grid-2") {
+        content()
+    }
+}
+
+/**
  * Pagination info model.
  */
 data class PaginationInfo(

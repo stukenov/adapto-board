@@ -1,13 +1,7 @@
 package com.playoutedge.server.views.devices
 
 import com.playoutedge.auth.AdminClaims
-import com.playoutedge.server.views.PaginationInfo
-import com.playoutedge.server.views.adminLayout
-import com.playoutedge.server.views.displayName
-import com.playoutedge.server.views.emptyState
-import com.playoutedge.server.views.pageHeader
-import com.playoutedge.server.views.paginationNav
-import com.playoutedge.server.views.statCard
+import com.playoutedge.server.views.*
 import kotlinx.datetime.Clock
 import kotlinx.html.*
 import kotlin.time.Duration.Companion.hours
@@ -33,6 +27,13 @@ fun HTML.devicesListView(
                 +"+ Add Device"
             }
         }
+
+        // Tabs
+        pageTabs(listOf(
+            TabDef("All", "/admin/devices", stats.total),
+            TabDef("Online", "/admin/devices?status=online", stats.online),
+            TabDef("Offline", "/admin/devices?status=offline", stats.offline)
+        ), "/admin/devices${if (filters.status != null) "?status=${filters.status}" else ""}")
 
         // Stats cards
         div("stats-grid mb-4") {

@@ -2,11 +2,7 @@ package com.playoutedge.server.views.reports
 
 import com.playoutedge.auth.AdminClaims
 import com.playoutedge.domain.enums.AsrunEventType
-import com.playoutedge.server.views.adminLayout
-import com.playoutedge.server.views.displayName
-import com.playoutedge.server.views.emptyState
-import com.playoutedge.server.views.pageHeader
-import com.playoutedge.server.views.statCard
+import com.playoutedge.server.views.*
 import kotlinx.html.*
 
 /**
@@ -23,14 +19,10 @@ fun HTML.reportsMainView(
         )
 
         // Tabs
-        div("tabs mb-4") {
-            a(href = "/admin/reports/asrun", classes = "tab${if (activeTab == "asrun") " active" else ""}") {
-                +"As-Run Reports"
-            }
-            a(href = "/admin/reports/audit", classes = "tab${if (activeTab == "audit") " active" else ""}") {
-                +"Audit Log"
-            }
-        }
+        pageTabs(listOf(
+            TabDef("As-Run Reports", "/admin/reports/asrun"),
+            TabDef("Audit Log", "/admin/reports/audit")
+        ), "/admin/reports/$activeTab")
     }
 }
 
@@ -59,10 +51,10 @@ fun HTML.asrunReportsView(
         }
 
         // Tabs
-        div("tabs mb-4") {
-            a(href = "/admin/reports/asrun", classes = "tab active") { +"As-Run Reports" }
-            a(href = "/admin/reports/audit", classes = "tab") { +"Audit Log" }
-        }
+        pageTabs(listOf(
+            TabDef("As-Run Reports", "/admin/reports/asrun"),
+            TabDef("Audit Log", "/admin/reports/audit")
+        ), "/admin/reports/asrun")
 
         // Date preset buttons
         div("date-presets") {
@@ -371,10 +363,10 @@ fun HTML.auditLogView(
         }
 
         // Tabs
-        div("tabs mb-4") {
-            a(href = "/admin/reports/asrun", classes = "tab") { +"As-Run Reports" }
-            a(href = "/admin/reports/audit", classes = "tab active") { +"Audit Log" }
-        }
+        pageTabs(listOf(
+            TabDef("As-Run Reports", "/admin/reports/asrun"),
+            TabDef("Audit Log", "/admin/reports/audit")
+        ), "/admin/reports/audit")
 
         // Filters
         div("card mb-4") {

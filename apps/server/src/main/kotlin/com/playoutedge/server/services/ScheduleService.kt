@@ -251,12 +251,15 @@ class ScheduleService(
             ?: return RollbackResult.VersionNotFound
 
         val items = scheduleRepo.findItemsByVersion(tenantId, targetVersion.id.value)
+        val itemAssetIds = newSuspendedTransaction {
+            items.map { it.asset.id.value }
+        }
         val unavailableAssets = mutableListOf<UUID>()
 
-        for (item in items) {
-            val asset = assetRepo.findById(tenantId, item.asset.id.value)
+        for (assetId in itemAssetIds) {
+            val asset = assetRepo.findById(tenantId, assetId)
             if (asset == null || asset.status == AssetStatus.ARCHIVED) {
-                unavailableAssets.add(item.asset.id.value)
+                unavailableAssets.add(assetId)
             }
         }
 

@@ -71,7 +71,15 @@ server {
         add_header Cache-Control "public, immutable";
     }
 
-    # Block access to dotfiles
+    # Allow .well-known paths (proxy to app, ^~ to override regex dotfile block)
+    location ^~ /.well-known/ {
+        proxy_pass http://127.0.0.1:{{ app_port }};
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    # Block access to dotfiles (except .well-known above)
     location ~ /\. {
         deny all;
         return 404;
