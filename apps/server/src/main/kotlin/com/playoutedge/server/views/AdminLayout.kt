@@ -37,6 +37,24 @@ val mainNavItems = listOf(
     NavItem("/admin/overlay", "Overlay", "M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01")
 )
 
+data class NavGroup(val label: String, val items: List<NavItem>)
+
+val navGroups = listOf(
+    NavGroup("Core", listOf(
+        NavItem("/admin", "Dashboard", "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"),
+        NavItem("/admin/channels", "Channels", "M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"),
+        NavItem("/admin/devices", "Devices", "M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"),
+        NavItem("/admin/assets", "Assets", "M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z")
+    )),
+    NavGroup("Broadcast", listOf(
+        NavItem("/admin/channels", "Schedules", "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"),
+        NavItem("/admin/overlay", "Overlays", "M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01")
+    )),
+    NavGroup("Monitor", listOf(
+        NavItem("/admin/reports", "Reports", "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z")
+    ))
+)
+
 /**
  * Base layout for admin pages.
  */
@@ -75,84 +93,121 @@ fun HTML.adminLayout(
         a(href = "#main-content", classes = "skip-link") { +"Skip to main content" }
 
         if (userName != null) {
-            nav("admin-nav") {
+            // Sidebar overlay for mobile
+            div("sidebar-overlay") {
+                attributes["onclick"] = "closeSidebar()"
+            }
+
+            // Sidebar
+            aside("sidebar") {
                 attributes["role"] = "navigation"
                 attributes["aria-label"] = "Main navigation"
-                div("nav-brand") {
-                    a(href = "/admin") {
-                        div("nav-brand-icon") { +"P" }
-                        +"Playout Edge"
-                    }
+
+                a(href = "/admin", classes = "sidebar-brand") {
+                    div("sidebar-brand-icon") { +"P" }
+                    +"Playout Edge"
+                    span("sidebar-brand-dot") {}
                 }
-                // Hamburger button for mobile
-                button(classes = "nav-hamburger") {
-                    +"☰"
-                }
-                div("nav-links") {
-                    mainNavItems.forEach { item ->
-                        val isActive = when {
-                            item.href == "/admin" -> currentPath == "/admin" || currentPath.isEmpty()
-                            else -> currentPath.startsWith(item.href)
-                        }
-                        a(href = item.href, classes = "nav-link${if (isActive) " active" else ""}") {
-                            if (isActive) attributes["aria-current"] = "page"
-                            navIcon(item.icon)
-                            +item.label
-                        }
-                    }
-                }
-                div("nav-user") {
-                    // Global search
-                    div("global-search") {
-                        span("search-icon") {
-                            unsafe { +"""<svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>""" }
-                        }
-                        input(type = InputType.search, classes = "form-control") {
-                            placeholder = "Search..."
-                            attributes["aria-label"] = "Global search"
-                            attributes["onkeydown"] = "if(event.key==='Enter'){window.location='/admin/assets?q='+encodeURIComponent(this.value)}"
-                        }
-                    }
-                    // Notification bell
-                    div("notification-bell") {
-                        unsafe { +"""<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>""" }
-                        span("badge-dot") {}
-                        div("notification-dropdown") {
-                            div("notification-item") {
-                                p { +"No new notifications" }
+
+                navGroups.forEach { group ->
+                    div("nav-group") {
+                        div("nav-group-label") { +group.label }
+                        group.items.forEach { item ->
+                            val isActive = when {
+                                item.href == "/admin" -> currentPath == "/admin" || currentPath.isEmpty()
+                                else -> currentPath.startsWith(item.href)
+                            }
+                            a(href = item.href, classes = "nav-link${if (isActive) " active" else ""}") {
+                                if (isActive) attributes["aria-current"] = "page"
+                                navIcon(item.icon)
+                                +item.label
                             }
                         }
                     }
-                    // Dark mode toggle
-                    button(classes = "dark-mode-toggle") {
-                        attributes["onclick"] = "toggleDarkMode()"
-                        attributes["aria-label"] = "Toggle dark mode"
-                        attributes["title"] = "Toggle dark mode (? for shortcuts)"
-                        +"◑"
-                    }
-                    userDropdown(userName, userEmail, userRole)
                 }
-            }
-        }
-        main("admin-main") {
-            // Render breadcrumbs if provided
-            if (breadcrumbs != null && breadcrumbs.isNotEmpty()) {
-                nav("breadcrumbs") {
-                    attributes["aria-label"] = "Breadcrumb"
-                    val allCrumbs = listOf(Pair("Home", "/admin")) + breadcrumbs
-                    allCrumbs.forEachIndexed { index, (label, url) ->
-                        if (index > 0) {
-                            span("separator") { +"/" }
-                        }
-                        if (url != null && index < allCrumbs.size - 1) {
-                            a(href = url) { +label }
-                        } else {
-                            span { attributes["aria-current"] = "page"; +label }
+
+                // Settings at bottom
+                div("sidebar-footer") {
+                    a(href = "/admin/settings", classes = "nav-link${if (currentPath.startsWith("/admin/settings")) " active" else ""}") {
+                        navIcon("M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z")
+                        +"Settings"
+                    }
+
+                    div("sidebar-user") {
+                        span("sidebar-user-avatar") { +userName.take(1).uppercase() }
+                        div("sidebar-user-info") {
+                            div("sidebar-user-name") { +userName }
+                            if (userRole != null) {
+                                div("sidebar-user-role") { +userRole }
+                            }
                         }
                     }
                 }
             }
-            content()
+
+            // Main wrapper
+            div("main-wrapper") {
+                // Topbar
+                header("topbar") {
+                    div("topbar-left") {
+                        button(classes = "sidebar-toggle") {
+                            attributes["onclick"] = "toggleSidebar()"
+                            +"☰"
+                        }
+                        // Breadcrumbs
+                        if (breadcrumbs != null && breadcrumbs.isNotEmpty()) {
+                            nav("breadcrumbs") {
+                                attributes["aria-label"] = "Breadcrumb"
+                                val allCrumbs = listOf(Pair("Home", "/admin")) + breadcrumbs
+                                allCrumbs.forEachIndexed { index, (label, url) ->
+                                    if (index > 0) {
+                                        span("separator") { +"/" }
+                                    }
+                                    if (url != null && index < allCrumbs.size - 1) {
+                                        a(href = url) { +label }
+                                    } else {
+                                        span { attributes["aria-current"] = "page"; +label }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    div("topbar-right") {
+                        // Search
+                        div("global-search") {
+                            span("search-icon") {
+                                unsafe { +"""<svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>""" }
+                            }
+                            input(type = InputType.search, classes = "form-control") {
+                                placeholder = "Search..."
+                                attributes["aria-label"] = "Global search"
+                                attributes["onkeydown"] = "if(event.key==='Enter'){window.location='/admin/assets?q='+encodeURIComponent(this.value)}"
+                            }
+                        }
+                        // Notification bell
+                        div("notification-bell") {
+                            unsafe { +"""<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>""" }
+                            span("badge-dot") {}
+                        }
+                        // Dark mode
+                        button(classes = "dark-mode-toggle") {
+                            attributes["onclick"] = "toggleDarkMode()"
+                            attributes["aria-label"] = "Toggle dark mode"
+                            +"◑"
+                        }
+                    }
+                }
+
+                main("admin-main") {
+                    id = "main-content"
+                    content()
+                }
+            }
+        } else {
+            main("admin-main") {
+                id = "main-content"
+                content()
+            }
         }
         // Include admin utilities JS
         script(src = "/admin/static/admin.js") {}
