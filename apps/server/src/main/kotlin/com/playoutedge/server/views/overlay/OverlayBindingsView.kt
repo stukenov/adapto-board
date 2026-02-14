@@ -294,6 +294,24 @@ fun HTML.overlayBindingDetailView(
             }
         }
 
+        // Live preview
+        div("card mb-4") {
+            div("card-header") {
+                h3 { +"Live Preview" }
+                small("text-muted") { +" Updates every 5 seconds" }
+            }
+            div("card-body") {
+                div {
+                    style = "position:relative;width:100%;padding-top:56.25%;background:#000;border-radius:8px;overflow:hidden;"
+                    iframe {
+                        src = "/embed/${binding.channelId}"
+                        style = "position:absolute;top:0;left:0;width:100%;height:100%;border:none;"
+                        attributes["allow"] = "autoplay"
+                    }
+                }
+            }
+        }
+
         // Source configuration
         when (binding.sourceType) {
             OverlaySourceType.MANUAL -> manualEditorCard(binding)

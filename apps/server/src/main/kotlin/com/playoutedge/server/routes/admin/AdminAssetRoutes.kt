@@ -435,7 +435,7 @@ fun Route.adminAssetRoutes(
             val asset = assetRepository.findById(tenantId, assetId)
             if (asset == null) { call.respondRedirect("/admin/assets"); return@get }
             // For local storage, redirect to the storage URL
-            call.respondRedirect("/storage/${asset.storageKey}")
+            call.respondRedirect("/storage/${asset.id.value}")
         }
 
         // GET /admin/assets - List assets

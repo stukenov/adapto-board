@@ -245,7 +245,7 @@ fun HTML.assetsListView(
                                         // Thumbnail or type icon
                                         if (asset.type == AssetType.IMAGE && asset.storageKey != null) {
                                             img(classes = "asset-thumbnail") {
-                                                src = "/storage/${asset.storageKey}"
+                                                src = "/storage/${asset.id}"
                                                 alt = asset.name
                                                 attributes["loading"] = "lazy"
                                             }
@@ -341,7 +341,7 @@ fun HTML.assetsListView(
                             if (asset.type == AssetType.IMAGE && asset.storageKey != null) {
                                 div("asset-grid-thumb") {
                                     img {
-                                        src = "/storage/${asset.storageKey}"
+                                        src = "/storage/${asset.id}"
                                         alt = asset.name
                                         attributes["loading"] = "lazy"
                                         style = "width:100%;height:100%;object-fit:cover"

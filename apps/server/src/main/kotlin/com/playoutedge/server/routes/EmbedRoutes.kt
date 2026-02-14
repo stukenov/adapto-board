@@ -2,6 +2,7 @@ package com.playoutedge.server.routes
 
 import com.playoutedge.domain.tenant.TenantId
 import com.playoutedge.persistence.repositories.ChannelRepository
+import com.playoutedge.persistence.repositories.OverlayRepository
 import com.playoutedge.server.services.PlaylistService
 import com.playoutedge.server.views.embedPlayerView
 import io.ktor.http.*
@@ -34,7 +35,8 @@ private data class EmbedManifest(
 
 fun Route.embedRoutes(
     channelRepository: ChannelRepository,
-    playlistService: PlaylistService
+    playlistService: PlaylistService,
+    overlayRepository: OverlayRepository? = null
 ) {
     route("/embed") {
         get("/{channelId}") {
@@ -131,6 +133,38 @@ fun Route.embedRoutes(
                 Json.encodeToString(response),
                 contentType = ContentType.Application.Json
             )
+        }
+
+        // Public overlay state for embed player
+        get("/{channelId}/overlay.json") {
+            val channelId = call.parameters["channelId"]?.let {
+                runCatching { UUID.fromString(it) }.getOrNull()
+            }
+            if (channelId == null || overlayRepository == null) {
+                call.respondText("{}", contentType = ContentType.Application.Json, status = HttpStatusCode.NotFound)
+                return@get
+            }
+
+            // Verify channel exists and has embed enabled
+            val channelData = newSuspendedTransaction {
+                val ch = channelRepository.findByIdAnyTenant(channelId) ?: return@newSuspendedTransaction null
+                if (!ch.embedEnabled) return@newSuspendedTransaction null
+                Pair(ch.tenant.id.value, ch.name)
+            }
+            if (channelData == null) {
+                call.respondText("{}", contentType = ContentType.Application.Json, status = HttpStatusCode.NotFound)
+                return@get
+            }
+
+            val tenantId = TenantId(channelData.first)
+            val state = newSuspendedTransaction {
+                overlayRepository.getState(tenantId, channelId)?.let {
+                    it.stateJson.toString()
+                }
+            } ?: "{}"
+
+            call.response.headers.append("Cache-Control", "no-cache")
+            call.respondText(state, contentType = ContentType.Application.Json)
         }
     }
 }

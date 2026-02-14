@@ -53,7 +53,7 @@ fun HTML.assetDetailView(
                             AssetType.IMAGE -> {
                                 img {
                                     id = "preview-img"
-                                    src = "/storage/${asset.storageKey}"
+                                    src = "/storage/${asset.id}"
                                     alt = asset.name
                                     style = "max-width:100%;max-height:500px;border-radius:8px;display:block"
                                 }
@@ -64,7 +64,7 @@ fun HTML.assetDetailView(
                                     controls = true
                                     style = "max-width:100%;max-height:500px;border-radius:8px;background:#000"
                                     source {
-                                        src = "/storage/${asset.storageKey}"
+                                        src = "/storage/${asset.id}"
                                         type = asset.mimeType ?: "video/mp4"
                                     }
                                     +"Your browser does not support video playback."
@@ -82,7 +82,7 @@ fun HTML.assetDetailView(
                                         controls = true
                                         style = "width:100%;max-width:500px"
                                         source {
-                                            src = "/storage/${asset.storageKey}"
+                                            src = "/storage/${asset.id}"
                                             type = asset.mimeType ?: "audio/mpeg"
                                         }
                                         +"Your browser does not support audio playback."

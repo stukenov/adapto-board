@@ -150,7 +150,7 @@ fun HTML.slideshowEditorView(
         var cookies = document.cookie.split(';');
         for (var i = 0; i < cookies.length; i++) {
             var c = cookies[i].trim();
-            if (c.indexOf('admin_token=') === 0) return c.substring(12);
+            if (c.indexOf('admin_session=') === 0) return c.substring(14);
         }
         return '';
     }

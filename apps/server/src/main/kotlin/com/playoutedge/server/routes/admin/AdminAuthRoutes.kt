@@ -91,7 +91,7 @@ fun Route.adminAuthRoutes(
                     name = ADMIN_SESSION_COOKIE,
                     value = token,
                     maxAge = maxAge,
-                    path = "/admin",
+                    path = "/",
                     httpOnly = true,
                     secure = call.request.local.scheme == "https",
                     extensions = mapOf("SameSite" to "Lax")
