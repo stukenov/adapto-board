@@ -1,6 +1,7 @@
 package com.playoutedge.server.views
 
 import com.playoutedge.auth.AdminClaims
+import com.playoutedge.domain.enums.UserRole
 import kotlinx.html.*
 
 /**
@@ -9,6 +10,12 @@ import kotlinx.html.*
  */
 val AdminClaims.displayName: String
     get() = "Admin"
+
+/**
+ * Extension to get role display string.
+ */
+val AdminClaims.roleLabel: String
+    get() = role.name.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() }
 
 /**
  * Navigation item definition.
@@ -33,10 +40,27 @@ val mainNavItems = listOf(
 /**
  * Base layout for admin pages.
  */
+/**
+ * Sortable table header helper.
+ * Renders a <th> with data-sort attribute and active sort indicator.
+ */
+fun TR.sortableHeader(label: String, sortField: String, currentSort: String? = null, currentDir: String? = null) {
+    th {
+        attributes["data-sort"] = sortField
+        if (currentSort == sortField) {
+            classes = classes + setOf(if (currentDir == "asc") "sort-asc" else "sort-desc")
+        }
+        +label
+    }
+}
+
 fun HTML.adminLayout(
     title: String,
     userName: String? = null,
+    userEmail: String? = null,
+    userRole: String? = null,
     currentPath: String = "",
+    breadcrumbs: List<Pair<String, String?>>? = null,
     content: MAIN.() -> Unit
 ) {
     head {
@@ -47,13 +71,25 @@ fun HTML.adminLayout(
         link(rel = "icon", type = "image/svg+xml", href = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%232563eb' rx='20' width='100' height='100'/><text y='.9em' x='50%' text-anchor='middle' font-size='60' fill='white'>P</text></svg>")
     }
     body {
+        // Skip to main content link (a11y)
+        a(href = "#main-content", classes = "skip-link") { +"Skip to main content" }
+
         if (userName != null) {
             nav("admin-nav") {
+                attributes["role"] = "navigation"
+                attributes["aria-label"] = "Main navigation"
                 div("nav-brand") {
                     a(href = "/admin") {
                         div("nav-brand-icon") { +"P" }
                         +"Playout Edge"
                     }
+                }
+                // Hamburger button for mobile
+                button(classes = "nav-hamburger") {
+                    id = "nav-hamburger"
+                    attributes["aria-label"] = "Toggle navigation"
+                    attributes["aria-expanded"] = "false"
+                    +"☰"
                 }
                 div("nav-links") {
                     mainNavItems.forEach { item ->
@@ -62,18 +98,127 @@ fun HTML.adminLayout(
                             else -> currentPath.startsWith(item.href)
                         }
                         a(href = item.href, classes = "nav-link${if (isActive) " active" else ""}") {
+                            if (isActive) attributes["aria-current"] = "page"
                             navIcon(item.icon)
                             +item.label
                         }
                     }
                 }
                 div("nav-user") {
-                    userDropdown(userName)
+                    // Global search
+                    div("global-search") {
+                        span("search-icon") {
+                            unsafe { +"""<svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>""" }
+                        }
+                        input(type = InputType.search, classes = "form-control") {
+                            placeholder = "Search..."
+                            attributes["aria-label"] = "Global search"
+                            attributes["onkeydown"] = "if(event.key==='Enter'){window.location='/admin/assets?q='+encodeURIComponent(this.value)}"
+                        }
+                    }
+                    // Notification bell
+                    div("notification-bell") {
+                        id = "notification-bell"
+                        attributes["aria-label"] = "Notifications"
+                        attributes["role"] = "button"
+                        unsafe { +"""<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>""" }
+                        span("badge-dot") {}
+                        div("notification-dropdown") {
+                            id = "notification-dropdown"
+                            div("notification-item") {
+                                p { +"No new notifications" }
+                            }
+                        }
+                    }
+                    // Dark mode toggle
+                    button(classes = "dark-mode-toggle") {
+                        attributes["onclick"] = "toggleDarkMode()"
+                        attributes["aria-label"] = "Toggle dark mode"
+                        attributes["title"] = "Toggle dark mode (? for shortcuts)"
+                        +"◑"
+                    }
+                    userDropdown(userName, userEmail, userRole)
                 }
             }
         }
         main("admin-main") {
+            id = "main-content"
+            role = "main"
+            attributes["aria-label"] = "Main content"
+            // Render breadcrumbs if provided
+            if (breadcrumbs != null && breadcrumbs.isNotEmpty()) {
+                nav("breadcrumbs") {
+                    attributes["aria-label"] = "Breadcrumb"
+                    val allCrumbs = listOf(Pair("Home", "/admin")) + breadcrumbs
+                    allCrumbs.forEachIndexed { index, (label, url) ->
+                        if (index > 0) {
+                            span("separator") { +"/" }
+                        }
+                        if (url != null && index < allCrumbs.size - 1) {
+                            a(href = url) { +label }
+                        } else {
+                            span { attributes["aria-current"] = "page"; +label }
+                        }
+                    }
+                }
+            }
             content()
+        }
+        // Include admin utilities JS
+        script(src = "/admin/static/admin.js") {}
+
+        // Session expiry warning
+        script {
+            unsafe {
+                +"""
+                (function() {
+                    var sessionExpires = null;
+                    var warningShown = false;
+
+                    // Check X-Session-Expires on HTMX responses
+                    document.body.addEventListener('htmx:afterRequest', function(evt) {
+                        var header = evt.detail.xhr && evt.detail.xhr.getResponseHeader('X-Session-Expires');
+                        if (header) sessionExpires = parseInt(header, 10);
+                    });
+
+                    // Also check on fetch responses via interceptor
+                    var origFetch = window.fetch;
+                    window.fetch = function() {
+                        return origFetch.apply(this, arguments).then(function(resp) {
+                            var header = resp.headers.get('X-Session-Expires');
+                            if (header) sessionExpires = parseInt(header, 10);
+                            return resp;
+                        });
+                    };
+
+                    setInterval(function() {
+                        if (!sessionExpires) return;
+                        var now = Math.floor(Date.now() / 1000);
+                        var remaining = sessionExpires - now;
+
+                        if (remaining <= 0) {
+                            window.location.href = '/admin/login?error=expired';
+                            return;
+                        }
+
+                        if (remaining <= 300 && !warningShown) {
+                            warningShown = true;
+                            var banner = document.createElement('div');
+                            banner.id = 'session-expiry-banner';
+                            banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#f59e0b;color:#000;text-align:center;padding:8px 16px;font-size:14px;';
+                            banner.textContent = 'Your session will expire in less than 5 minutes. Please save your work.';
+                            document.body.appendChild(banner);
+                        }
+
+                        if (remaining > 300) {
+                            warningShown = false;
+                            var existing = document.getElementById('session-expiry-banner');
+                            if (existing) existing.remove();
+                        }
+                    }, 10000);
+                })();
+                """.trimIndent()
+            }
         }
     }
 }
@@ -107,24 +252,46 @@ fun HTML.authLayout(
         main("auth-main") {
             content()
         }
+        script(src = "/admin/static/admin.js") {}
     }
 }
 
 /**
  * User dropdown menu with avatar.
  */
-fun FlowContent.userDropdown(userName: String) {
+fun FlowContent.userDropdown(userName: String, userEmail: String? = null, userRole: String? = null) {
     div("dropdown") {
         button(classes = "dropdown-toggle") {
+            attributes["aria-haspopup"] = "true"
             span("user-avatar") { +userName.take(1).uppercase() }
             +userName
             span("dropdown-caret") { +"▼" }
         }
         div("dropdown-menu") {
+            attributes["role"] = "menu"
+            if (userEmail != null || userRole != null) {
+                div("dropdown-user-info") {
+                    if (userEmail != null) {
+                        div("dropdown-user-email") { +userEmail }
+                    }
+                    if (userRole != null) {
+                        div("dropdown-user-role") {
+                            span("badge badge-primary badge-plain") { +userRole }
+                        }
+                    }
+                }
+                div("dropdown-divider")
+            }
+            a(href = "/admin/settings/profile", classes = "dropdown-item") {
+                attributes["role"] = "menuitem"
+                +"Profile"
+            }
             a(href = "/admin/settings", classes = "dropdown-item") {
+                attributes["role"] = "menuitem"
                 +"Settings"
             }
             a(href = "/admin/reports", classes = "dropdown-item") {
+                attributes["role"] = "menuitem"
                 +"Reports"
             }
             div("dropdown-divider")
@@ -286,6 +453,45 @@ fun FlowContent.dangerItem(
         }
         div {
             content()
+        }
+    }
+}
+
+/**
+ * Pagination info model.
+ */
+data class PaginationInfo(
+    val currentPage: Int,
+    val totalPages: Int,
+    val totalItems: Long,
+    val basePath: String,
+    val queryParams: String = ""
+) {
+    val hasPrevious: Boolean get() = currentPage > 1
+    val hasNext: Boolean get() = currentPage < totalPages
+}
+
+/**
+ * Pagination navigation component.
+ */
+fun FlowContent.paginationNav(pagination: PaginationInfo) {
+    if (pagination.totalPages <= 1) return
+    val sep = if (pagination.queryParams.isEmpty()) "?" else "${pagination.queryParams}&"
+    nav("pagination-nav") {
+        div("pagination-info") {
+            +"Page ${pagination.currentPage} of ${pagination.totalPages} (${pagination.totalItems} items)"
+        }
+        div("pagination-buttons") {
+            if (pagination.hasPrevious) {
+                a(href = "${pagination.basePath}${sep}page=${pagination.currentPage - 1}", classes = "btn btn-secondary btn-sm") {
+                    +"Previous"
+                }
+            }
+            if (pagination.hasNext) {
+                a(href = "${pagination.basePath}${sep}page=${pagination.currentPage + 1}", classes = "btn btn-secondary btn-sm") {
+                    +"Next"
+                }
+            }
         }
     }
 }
