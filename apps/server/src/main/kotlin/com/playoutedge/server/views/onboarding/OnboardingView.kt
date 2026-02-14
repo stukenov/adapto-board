@@ -103,11 +103,11 @@ private fun MAIN.tenantSettingsStep(session: AdminClaims) {
                         select("form-control") {
                             id = "timezone"
                             name = "timezone"
-                            TIMEZONES.forEach { tz ->
+                            TIMEZONES.forEach { (id, label) ->
                                 option {
-                                    value = tz
-                                    if (tz == "UTC") selected = true
-                                    +tz
+                                    value = id
+                                    if (id == "UTC") selected = true
+                                    +label
                                 }
                             }
                         }
@@ -251,6 +251,9 @@ private fun MAIN.contentPoliciesStep() {
                 }
 
                 div("form-actions") {
+                    a(href = "/admin/onboarding?step=TENANT_SETTINGS", classes = "btn btn-secondary") {
+                        +"← Previous"
+                    }
                     button(type = ButtonType.submit, classes = "btn btn-primary btn-lg") {
                         +"Continue"
                     }
@@ -273,6 +276,12 @@ private fun MAIN.firstAssetStep() {
         }
         div("card-body") {
             p("lead") { +"Upload a video or image to get started. You can use one of our sample files." }
+
+            div("form-actions mb-4") {
+                a(href = "/admin/onboarding?step=CONTENT_POLICIES", classes = "btn btn-secondary") {
+                    +"← Previous"
+                }
+            }
 
             form(action = "/admin/onboarding/step/first-asset", method = FormMethod.post, encType = FormEncType.multipartFormData) {
                 div("upload-zone mb-4") {
@@ -367,6 +376,9 @@ private fun MAIN.firstChannelStep(state: WizardState) {
                 }
 
                 div("form-actions") {
+                    a(href = "/admin/onboarding?step=FIRST_ASSET", classes = "btn btn-secondary") {
+                        +"← Previous"
+                    }
                     button(type = ButtonType.submit, classes = "btn btn-primary btn-lg") {
                         +"Create Channel"
                     }
@@ -402,9 +414,10 @@ private fun MAIN.firstDeviceStep(state: WizardState) {
 
                 div("qr-code-container mb-4") {
                     div("qr-code") {
-                        // Would show QR code here
-                        div("qr-placeholder") {
-                            +"[QR Code]"
+                        img(src = "https://api.qrserver.com/v1/create-qr-code/?data=${state.enrollCode}&size=200x200") {
+                            alt = "QR Code"
+                            width = "200"
+                            height = "200"
                         }
                     }
                     p("text-muted text-center") { +"Scan with your device camera" }
@@ -450,6 +463,9 @@ private fun MAIN.firstDeviceStep(state: WizardState) {
                 }
 
                 div("form-actions") {
+                    a(href = "/admin/onboarding?step=FIRST_CHANNEL", classes = "btn btn-secondary") {
+                        +"← Previous"
+                    }
                     if (state.enrollCode == null) {
                         button(type = ButtonType.submit, classes = "btn btn-primary btn-lg") {
                             +"Generate Enroll Code"

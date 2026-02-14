@@ -38,6 +38,13 @@ data class ScheduleItemInput(
     val weight: Int = 1
 )
 
+private data class ScheduleValidationItem(
+    val assetName: String,
+    val timeStart: LocalTime?,
+    val timeEnd: LocalTime?,
+    val daysOfWeek: Int
+)
+
 class ScheduleService(
     private val scheduleRepo: ScheduleRepository,
     private val assetRepo: AssetRepository
@@ -138,6 +145,100 @@ class ScheduleService(
 
         val published = scheduleRepo.updateVersionState(tenantId, versionId, ScheduleState.PUBLISHED)
         return PublishResult.Success(published!!)
+    }
+
+    /**
+     * Validate a schedule version for time overlaps and gaps.
+     */
+    suspend fun validateSchedule(tenantId: TenantId, versionId: UUID): List<String> {
+        val items = newSuspendedTransaction {
+            scheduleRepo.findItemsByVersion(tenantId, versionId).map { item ->
+                ScheduleValidationItem(
+                    assetName = item.asset.name,
+                    timeStart = item.timeStart,
+                    timeEnd = item.timeEnd,
+                    daysOfWeek = item.daysOfWeek ?: 127
+                )
+            }
+        }
+
+        val warnings = mutableListOf<String>()
+
+        if (items.isEmpty()) {
+            warnings.add("Schedule is empty.")
+            return warnings
+        }
+
+        // Check for time overlaps between items on the same days
+        for (i in items.indices) {
+            for (j in i + 1 until items.size) {
+                val a = items[i]
+                val b = items[j]
+                // Check if they share any day
+                if (a.daysOfWeek and b.daysOfWeek == 0) continue
+                // Check time overlap
+                val aStart = a.timeStart ?: LocalTime(0, 0)
+                val aEnd = a.timeEnd ?: LocalTime(23, 59)
+                val bStart = b.timeStart ?: LocalTime(0, 0)
+                val bEnd = b.timeEnd ?: LocalTime(23, 59)
+                if (aStart < bEnd && bStart < aEnd) {
+                    warnings.add("Overlap: \"${a.assetName}\" (${aStart}-${aEnd}) and \"${b.assetName}\" (${bStart}-${bEnd})")
+                }
+            }
+        }
+
+        // Check for gaps in 24-hour coverage (only for items with explicit times)
+        val timedItems = items.filter { it.timeStart != null || it.timeEnd != null }
+        if (timedItems.isNotEmpty()) {
+            val sortedByStart = timedItems.sortedBy { it.timeStart ?: LocalTime(0, 0) }
+            var lastEnd = LocalTime(0, 0)
+            for (item in sortedByStart) {
+                val start = item.timeStart ?: LocalTime(0, 0)
+                if (start > lastEnd) {
+                    warnings.add("Gap: No content scheduled between $lastEnd and $start")
+                }
+                val end = item.timeEnd ?: LocalTime(23, 59)
+                if (end > lastEnd) lastEnd = end
+            }
+            if (lastEnd < LocalTime(23, 59)) {
+                warnings.add("Gap: No content scheduled after $lastEnd until end of day")
+            }
+        }
+
+        return warnings
+    }
+
+    /**
+     * Copy the active schedule from one channel to another, creating a draft on the target.
+     */
+    suspend fun copySchedule(tenantId: TenantId, fromChannelId: UUID, toChannelId: UUID, createdBy: UUID?): UUID? {
+        return newSuspendedTransaction {
+            val sourceVersion = scheduleRepo.findActiveVersion(tenantId, fromChannelId)
+                ?: return@newSuspendedTransaction null
+
+            val sourceItems = scheduleRepo.findItemsByVersion(tenantId, sourceVersion.id.value)
+
+            val draft = scheduleRepo.createVersion(tenantId, toChannelId, createdBy)
+
+            sourceItems.forEach { item ->
+                scheduleRepo.addItem(
+                    tenantId,
+                    draft.id.value,
+                    CreateScheduleItemRequest(
+                        assetId = item.asset.id.value,
+                        orderIndex = item.orderIndex,
+                        validFrom = item.validFrom,
+                        validTo = item.validTo,
+                        daysOfWeek = item.daysOfWeek,
+                        timeStart = item.timeStart,
+                        timeEnd = item.timeEnd,
+                        weight = item.weight
+                    )
+                )
+            }
+
+            draft.id.value
+        }
     }
 
     suspend fun rollback(

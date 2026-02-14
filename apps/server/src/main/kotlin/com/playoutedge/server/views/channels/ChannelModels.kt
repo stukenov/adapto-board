@@ -54,5 +54,6 @@ data class DeviceListItem(
  */
 data class ChannelFilters(
     val status: ChannelStatus? = null,
-    val search: String? = null
+    val search: String? = null,
+    val groupId: UUID? = null
 )

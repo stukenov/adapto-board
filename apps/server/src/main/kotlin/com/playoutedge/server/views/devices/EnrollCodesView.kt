@@ -34,6 +34,13 @@ fun HTML.enrollCodesView(
                 div("card-body") {
                     div("enroll-code-display mb-4") {
                         div("code-box") { +generatedCode }
+                        div("mt-3") {
+                            style = "text-align: center;"
+                            img(src = "https://api.qrserver.com/v1/create-qr-code/?data=$generatedCode&size=200x200") {
+                                alt = "QR Code for $generatedCode"
+                                classes = setOf("qr-code-img")
+                            }
+                        }
                     }
                     alertBox(
                         "Share this code with the device operator. Enter it in the Playout Edge app to enroll the device. The code expires in 24 hours.",

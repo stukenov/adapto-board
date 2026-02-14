@@ -14,7 +14,9 @@ data class DeviceViewItem(
     val isOnline: Boolean,
     val channelName: String?,
     val appVersion: String?,
-    val lastSeen: Instant?
+    val lastSeen: Instant?,
+    val latitude: Double? = null,
+    val longitude: Double? = null
 )
 
 /**
@@ -41,7 +43,12 @@ data class DeviceDetailModel(
     val androidModel: String?,
     val androidVersion: String?,
     val lastSeen: Instant?,
-    val createdAt: Instant
+    val createdAt: Instant,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val locationName: String? = null,
+    val powerOnTime: String? = null,
+    val powerOffTime: String? = null
 )
 
 /**

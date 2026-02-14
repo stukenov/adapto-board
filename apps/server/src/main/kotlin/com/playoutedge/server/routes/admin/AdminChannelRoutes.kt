@@ -8,6 +8,7 @@ import com.playoutedge.persistence.repositories.UpdateChannelRequest
 import com.playoutedge.persistence.repositories.DeviceRepository
 import com.playoutedge.persistence.repositories.ScheduleRepository
 import com.playoutedge.server.plugins.adminSession
+import com.playoutedge.server.services.ScheduleService
 import com.playoutedge.server.views.channels.*
 import io.ktor.server.application.*
 import io.ktor.server.html.*
@@ -31,7 +32,8 @@ fun Route.adminChannelRoutes(
     channelRepository: ChannelRepository,
     deviceRepository: DeviceRepository,
     scheduleRepository: ScheduleRepository,
-    storageService: StorageService
+    storageService: StorageService,
+    scheduleService: ScheduleService? = null
 ) {
     route("/admin/channels") {
         // GET /admin/channels - List channels
@@ -46,15 +48,18 @@ fun Route.adminChannelRoutes(
             // Parse filters
             val statusParam = call.request.queryParameters["status"]
             val search = call.request.queryParameters["search"]
+            val page = call.request.queryParameters["page"]?.toIntOrNull()?.coerceAtLeast(1) ?: 1
+            val pageSize = 50
             val filters = ChannelFilters(
                 status = statusParam?.let { runCatching { ChannelStatus.valueOf(it) }.getOrNull() },
                 search = search?.takeIf { it.isNotBlank() }
             )
 
-            // Fetch channels
-            var channels = channelRepository.findAll(tenantId)
+            // Fetch channels with pagination
+            val (allChannels, totalCount) = channelRepository.findAllPaged(tenantId, pageSize, (page - 1) * pageSize)
 
             // Apply filters
+            var channels = allChannels
             if (filters.status != null) {
                 channels = channels.filter { it.status == filters.status }
             }
@@ -76,11 +81,26 @@ fun Route.adminChannelRoutes(
                 )
             }
 
+            val totalPages = ((totalCount + pageSize - 1) / pageSize).toInt().coerceAtLeast(1)
+            val queryParams = buildString {
+                if (filters.status != null) append("&status=${filters.status!!.name}")
+                if (filters.search != null) append("&search=${filters.search}")
+            }.let { if (it.isNotEmpty()) "?${it.removePrefix("&")}" else "" }
+
+            val pagination = com.playoutedge.server.views.PaginationInfo(
+                currentPage = page,
+                totalPages = totalPages,
+                totalItems = totalCount,
+                basePath = "/admin/channels",
+                queryParams = queryParams
+            )
+
             call.respondHtml {
                 channelsListView(
                     session = session,
                     channels = channelItems,
-                    filters = filters
+                    filters = filters,
+                    pagination = pagination
                 )
             }
         }
@@ -178,12 +198,27 @@ fun Route.adminChannelRoutes(
                 Triple(devices, scheduleItems, channelDetail)
             }
 
+            // Validate active schedule if service available
+            val validationWarnings = if (scheduleService != null) {
+                val activeVersion = scheduleRepository.findActiveVersion(tenantId, channelId)
+                if (activeVersion != null) {
+                    scheduleService.validateSchedule(tenantId, activeVersion.id.value)
+                } else emptyList()
+            } else emptyList()
+
+            val embedHost = call.request.host().let { host ->
+                val port = call.request.port()
+                if (port != 80 && port != 443) "$host:$port" else host
+            }
+
             call.respondHtml {
                 channelDetailView(
                     session = session,
                     channel = channelDetail,
                     scheduleItems = scheduleItems,
-                    devices = devices
+                    devices = devices,
+                    validationWarnings = validationWarnings,
+                    embedHost = embedHost
                 )
             }
         }

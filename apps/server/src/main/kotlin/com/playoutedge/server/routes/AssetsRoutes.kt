@@ -22,6 +22,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
+import java.io.File
 import java.util.UUID
 
 @Serializable
@@ -78,28 +79,35 @@ fun Route.assetsRoutes(
                 val multipart = call.receiveMultipart()
                 var filename: String? = null
                 var mimeType: String? = null
-                var fileBytes: ByteArray? = null
+                var tempFile: File? = null
 
+                try {
                 multipart.forEachPart { part ->
                     when (part) {
                         is PartData.FileItem -> {
                             filename = part.originalFileName ?: "unnamed"
                             mimeType = part.contentType?.toString() ?: "application/octet-stream"
-                            fileBytes = part.streamProvider().readBytes()
+                            tempFile = File.createTempFile("upload-", ".tmp").also { tf ->
+                                part.streamProvider().use { input ->
+                                    tf.outputStream().use { output ->
+                                        input.copyTo(output)
+                                    }
+                                }
+                            }
                         }
                         else -> {}
                     }
                     part.dispose()
                 }
 
-                if (filename == null || fileBytes == null) {
+                if (filename == null || tempFile == null || tempFile!!.length() == 0L) {
                     throw ApiException.badRequest(
                         ErrorCode.VALIDATION_ERROR,
                         "No file provided"
                     )
                 }
 
-                val contentLength = fileBytes!!.size.toLong()
+                val contentLength = tempFile!!.length()
 
                 // Check quota
                 val quotaCheck = quotaService.checkStorageQuota(tenantId, contentLength)
@@ -133,7 +141,7 @@ fun Route.assetsRoutes(
                 // Upload to storage
                 val uploadResult = assetUploadService.upload(
                     uploadRequest,
-                    fileBytes!!.inputStream()
+                    tempFile!!.inputStream()
                 )
 
                 uploadResult.validationError?.let { error ->
@@ -169,6 +177,9 @@ fun Route.assetsRoutes(
                     checksum = uploadResult.checksumSha256,
                     sizeBytes = uploadResult.sizeBytes
                 ))
+                } finally {
+                    tempFile?.delete()
+                }
             }
 
             // GET /api/admin/assets - List assets

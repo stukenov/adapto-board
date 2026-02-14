@@ -3,10 +3,12 @@ package com.playoutedge.server.views.assets
 import com.playoutedge.auth.AdminClaims
 import com.playoutedge.domain.enums.AssetStatus
 import com.playoutedge.domain.enums.AssetType
+import com.playoutedge.server.views.PaginationInfo
 import com.playoutedge.server.views.adminLayout
 import com.playoutedge.server.views.displayName
 import com.playoutedge.server.views.emptyState
 import com.playoutedge.server.views.pageHeader
+import com.playoutedge.server.views.paginationNav
 import kotlinx.html.*
 
 /**
@@ -16,7 +18,8 @@ fun HTML.assetsListView(
     session: AdminClaims,
     assets: List<AssetViewItem>,
     quota: QuotaInfo,
-    filters: AssetFilters
+    filters: AssetFilters,
+    pagination: PaginationInfo? = null
 ) {
     adminLayout(title = "Assets", userName = session.displayName, currentPath = "/admin/assets") {
         pageHeader(
@@ -25,6 +28,40 @@ fun HTML.assetsListView(
         ) {
             a(href = "/admin/assets/upload", classes = "btn btn-primary") {
                 +"+ Upload"
+            }
+        }
+
+        // Storage quota warning
+        if (quota.usedPercent >= 80) {
+            div("alert alert-warning mb-4") {
+                if (quota.usedPercent >= 90) {
+                    +"Storage usage is critically high (${quota.usedPercent}%). Consider archiving or deleting unused assets."
+                } else {
+                    +"Storage usage is above 80% (${quota.usedPercent}%). Consider cleaning up unused assets."
+                }
+            }
+        }
+
+        // Bulk action bar (hidden by default, shown via JS when checkboxes selected)
+        div("bulk-action-bar") {
+            id = "bulk-action-bar"
+            span("bulk-count") {
+                +"0"
+                id = "bulk-count"
+            }
+            span { +" asset(s) selected" }
+            form(action = "/admin/assets/bulk-archive", method = FormMethod.post, classes = "no-loading") {
+                id = "bulk-archive-form"
+                input(type = InputType.hidden, name = "ids") { id = "bulk-archive-ids" }
+                button(type = ButtonType.submit, classes = "btn btn-secondary btn-sm") { +"Archive Selected" }
+            }
+            form(action = "/admin/assets/bulk-delete", method = FormMethod.post, classes = "no-loading") {
+                id = "bulk-delete-form"
+                input(type = InputType.hidden, name = "ids") { id = "bulk-delete-ids" }
+                button(type = ButtonType.submit, classes = "btn btn-danger btn-sm") {
+                    attributes["onclick"] = "return confirm('Are you sure you want to delete the selected assets?')"
+                    +"Delete Selected"
+                }
             }
         }
 
@@ -172,6 +209,13 @@ fun HTML.assetsListView(
                     table("table") {
                         thead {
                             tr {
+                                th {
+                                    input(type = InputType.checkBox) {
+                                        id = "select-all-assets"
+                                        title = "Select all"
+                                    }
+                                }
+                                th { }  // Thumbnail
                                 th { +"Name" }
                                 th { +"Type" }
                                 th { +"Status" }
@@ -188,9 +232,52 @@ fun HTML.assetsListView(
                                     attributes["data-name"] = asset.name
                                     attributes["data-date"] = asset.createdAt.toString()
                                     attributes["data-size"] = asset.fileSize.toString()
+                                    attributes["data-id"] = asset.id.toString()
+                                    td {
+                                        input(type = InputType.checkBox, classes = "asset-checkbox") {
+                                            value = asset.id.toString()
+                                        }
+                                    }
+                                    td {
+                                        // Thumbnail or type icon
+                                        if (asset.thumbnailStorageKey != null) {
+                                            img(classes = "asset-thumbnail") {
+                                                src = "/storage/${asset.thumbnailStorageKey}"
+                                                alt = asset.name
+                                            }
+                                        } else {
+                                            div("asset-thumbnail-placeholder") {
+                                                +when (asset.type) {
+                                                    AssetType.VIDEO -> "🎬"
+                                                    AssetType.IMAGE -> "🖼"
+                                                    else -> "📄"
+                                                }
+                                            }
+                                        }
+                                    }
                                     td {
                                         a(href = "/admin/assets/${asset.id}", classes = "font-medium") {
                                             +asset.name
+                                        }
+                                        // Approval status badge (if not APPROVED)
+                                        if (asset.approvalStatus != "APPROVED") {
+                                            val badgeClass = when (asset.approvalStatus) {
+                                                "PENDING_REVIEW" -> "badge-pending-review"
+                                                "REJECTED" -> "badge-rejected"
+                                                else -> "badge-gray"
+                                            }
+                                            span("badge $badgeClass") {
+                                                style = "margin-left: 6px; font-size: 0.75rem;"
+                                                +asset.approvalStatus.lowercase().replace('_', ' ')
+                                            }
+                                        }
+                                        // Aspect ratio for video/image
+                                        if (asset.width != null && asset.height != null &&
+                                            (asset.type == AssetType.VIDEO || asset.type == AssetType.IMAGE)) {
+                                            span("text-muted") {
+                                                style = "display: block; font-size: 0.75rem;"
+                                                +"${asset.width} x ${asset.height}"
+                                            }
                                         }
                                     }
                                     td {
@@ -261,6 +348,11 @@ fun HTML.assetsListView(
                     }
                 }
             }
+        }
+
+        // Pagination
+        if (pagination != null) {
+            paginationNav(pagination)
         }
 
         // JS for view toggle and sorting

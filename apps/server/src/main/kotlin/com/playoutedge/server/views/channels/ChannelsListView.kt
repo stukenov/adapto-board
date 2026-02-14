@@ -2,19 +2,28 @@ package com.playoutedge.server.views.channels
 
 import com.playoutedge.auth.AdminClaims
 import com.playoutedge.domain.enums.ChannelStatus
+import com.playoutedge.server.views.PaginationInfo
 import com.playoutedge.server.views.adminLayout
 import com.playoutedge.server.views.displayName
 import com.playoutedge.server.views.emptyState
 import com.playoutedge.server.views.pageHeader
+import com.playoutedge.server.views.paginationNav
 import kotlinx.html.*
 
 /**
  * Channels list view with improved UX.
  */
+data class ChannelGroup(
+    val id: java.util.UUID,
+    val name: String
+)
+
 fun HTML.channelsListView(
     session: AdminClaims,
     channels: List<ChannelListItem>,
-    filters: ChannelFilters
+    filters: ChannelFilters,
+    pagination: PaginationInfo? = null,
+    groups: List<ChannelGroup> = emptyList()
 ) {
     adminLayout(title = "Channels", userName = session.displayName, currentPath = "/admin/channels") {
         // Page header
@@ -49,6 +58,30 @@ fun HTML.channelsListView(
                                     value = status.name
                                     if (filters.status == status) selected = true
                                     +status.name.lowercase().replaceFirstChar { it.uppercase() }
+                                }
+                            }
+                        }
+                    }
+                    if (groups.isNotEmpty()) {
+                        div("form-group") {
+                            label {
+                                htmlFor = "filter-group"
+                                +"Group"
+                            }
+                            select("form-control") {
+                                id = "filter-group"
+                                name = "group"
+                                option {
+                                    value = ""
+                                    if (filters.groupId == null) selected = true
+                                    +"All Groups"
+                                }
+                                groups.forEach { group ->
+                                    option {
+                                        value = group.id.toString()
+                                        if (filters.groupId == group.id) selected = true
+                                        +group.name
+                                    }
                                 }
                             }
                         }
@@ -96,6 +129,11 @@ fun HTML.channelsListView(
                 channelTable(channels)
             }
         }
+
+        // Pagination
+        if (pagination != null) {
+            paginationNav(pagination)
+        }
     }
 }
 
@@ -123,8 +161,12 @@ fun FlowContent.channelTable(channels: List<ChannelListItem>) {
                         }
                     }
                     td {
-                        span("badge badge-${channelStatusBadge(channel.status)}") {
-                            +channel.status.name.lowercase()
+                        val (badgeClass, icon) = when (channel.status) {
+                            ChannelStatus.ACTIVE -> "badge-success" to "●"
+                            ChannelStatus.PAUSED -> "badge-warning" to "⏸"
+                        }
+                        span("badge $badgeClass") {
+                            +"$icon ${channel.status.name.lowercase()}"
                         }
                     }
                     td {
@@ -171,4 +213,4 @@ private fun formatDateTime(dateTime: Any): String {
 /**
  * Extension to check if filters are active.
  */
-fun ChannelFilters.hasActiveFilters(): Boolean = status != null || !search.isNullOrBlank()
+fun ChannelFilters.hasActiveFilters(): Boolean = status != null || !search.isNullOrBlank() || groupId != null

@@ -15,10 +15,14 @@ import io.ktor.server.application.*
 import io.ktor.server.html.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.minus
+import kotlinx.datetime.toLocalDateTime
 import java.util.UUID
 
 /**
@@ -57,8 +61,16 @@ fun Route.adminReportsRoutes(
             val eventType = call.request.queryParameters["eventType"]?.let {
                 runCatching { AsrunEventType.valueOf(it) }.getOrNull()
             }
-            val fromDate = call.request.queryParameters["fromDate"]
-            val toDate = call.request.queryParameters["toDate"]
+
+            // Date presets
+            val preset = call.request.queryParameters["preset"]
+            val (resolvedFromDate, resolvedToDate) = resolveDatePreset(
+                preset,
+                call.request.queryParameters["fromDate"],
+                call.request.queryParameters["toDate"]
+            )
+            val fromDate = resolvedFromDate
+            val toDate = resolvedToDate
 
             val filters = AsrunFilters(
                 deviceId = deviceId,
@@ -119,12 +131,36 @@ fun Route.adminReportsRoutes(
             val deviceOptions = devices.map { DeviceFilterOption(it.id.value, it.displayName) }
             val channelOptions = channels.map { ChannelFilterOption(it.id.value, it.name) }
 
+            // Build chart data - playback by day (last 7 days)
+            val tz = TimeZone.UTC
+            val dayMap = mutableMapOf<String, Long>()
+            eventItems.forEach { event ->
+                val dayLabel = event.at.toLocalDateTime(tz).date.toString()
+                dayMap[dayLabel] = (dayMap[dayLabel] ?: 0) + 1
+            }
+            val maxDayValue = dayMap.values.maxOrNull() ?: 1L
+            val playbackByDay = dayMap.entries
+                .sortedBy { it.key }
+                .takeLast(7)
+                .map { (day, count) ->
+                    ChartDataPoint(day, count, (count.toDouble() / maxDayValue) * 100.0)
+                }
+
+            // Top 5 assets by play count
+            val maxAssetCount = summaryView.byAsset.maxOfOrNull { it.playCount } ?: 1L
+            val topAssets = summaryView.byAsset
+                .sortedByDescending { it.playCount }
+                .take(5)
+                .map { asset ->
+                    ChartDataPoint(asset.assetName, asset.playCount, (asset.playCount.toDouble() / maxAssetCount) * 100.0)
+                }
+
             call.respondHtml {
-                asrunReportsView(session, eventItems, summaryView, filtersView, deviceOptions, channelOptions)
+                asrunReportsView(session, eventItems, summaryView, filtersView, deviceOptions, channelOptions, playbackByDay, topAssets, preset)
             }
         }
 
-        // GET /admin/reports/asrun/export - Export as-run to CSV
+        // GET /admin/reports/asrun/export - Export as-run to CSV or JSON
         get("/asrun/export") {
             val session = call.adminSession ?: run {
                 call.respondRedirect("/admin/login")
@@ -155,32 +191,118 @@ fun Route.adminReportsRoutes(
                 limit = 10000
             )
 
+            val format = call.request.queryParameters["format"] ?: "csv"
             val events = asrunRepository.findByTenant(tenantId, filters)
 
-            val csv = buildString {
-                appendLine("timestamp,device_id,device_name,channel_id,channel_name,asset_id,asset_name,event_type")
-                events.forEach { event ->
-                    appendLine(listOf(
-                        event.at.toString(),
-                        event.device.id.value.toString(),
-                        escapeCsv(event.device.displayName),
-                        event.channel?.id?.value?.toString() ?: "",
-                        escapeCsv(event.channel?.name ?: ""),
-                        event.asset?.id?.value?.toString() ?: "",
-                        escapeCsv(event.asset?.name ?: ""),
-                        event.eventType.name
-                    ).joinToString(","))
+            if (format == "json") {
+                val jsonStr = buildString {
+                    append("[")
+                    events.forEachIndexed { index, event ->
+                        if (index > 0) append(",")
+                        append("{")
+                        append("\"timestamp\":\"${event.at}\",")
+                        append("\"deviceId\":\"${event.device.id.value}\",")
+                        append("\"deviceName\":\"${event.device.displayName.replace("\"", "\\\"")}\",")
+                        append("\"channelId\":\"${event.channel?.id?.value ?: ""}\",")
+                        append("\"channelName\":\"${(event.channel?.name ?: "").replace("\"", "\\\"")}\",")
+                        append("\"assetId\":\"${event.asset?.id?.value ?: ""}\",")
+                        append("\"assetName\":\"${(event.asset?.name ?: "").replace("\"", "\\\"")}\",")
+                        append("\"eventType\":\"${event.eventType.name}\"")
+                        append("}")
+                    }
+                    append("]")
                 }
+                call.respondText(jsonStr, ContentType.Application.Json)
+            } else {
+                val csv = buildString {
+                    appendLine("timestamp,device_id,device_name,channel_id,channel_name,asset_id,asset_name,event_type")
+                    events.forEach { event ->
+                        appendLine(listOf(
+                            event.at.toString(),
+                            event.device.id.value.toString(),
+                            escapeCsv(event.device.displayName),
+                            event.channel?.id?.value?.toString() ?: "",
+                            escapeCsv(event.channel?.name ?: ""),
+                            event.asset?.id?.value?.toString() ?: "",
+                            escapeCsv(event.asset?.name ?: ""),
+                            event.eventType.name
+                        ).joinToString(","))
+                    }
+                }
+
+                call.response.header(
+                    HttpHeaders.ContentDisposition,
+                    ContentDisposition.Attachment.withParameter(
+                        ContentDisposition.Parameters.FileName,
+                        "asrun-report-${System.currentTimeMillis()}.csv"
+                    ).toString()
+                )
+                call.respondText(csv, ContentType.Text.CSV)
+            }
+        }
+
+        // GET /admin/reports/asrun/chart-data - Chart data as HTML fragment
+        get("/asrun/chart-data") {
+            val session = call.adminSession ?: run {
+                call.respondRedirect("/admin/login")
+                return@get
             }
 
-            call.response.header(
-                HttpHeaders.ContentDisposition,
-                ContentDisposition.Attachment.withParameter(
-                    ContentDisposition.Parameters.FileName,
-                    "asrun-report-${System.currentTimeMillis()}.csv"
-                ).toString()
+            val tenantId = TenantId(session.tenantId)
+
+            val preset = call.request.queryParameters["preset"] ?: "last7days"
+            val (resolvedFrom, resolvedTo) = resolveDatePreset(preset, null, null)
+
+            val filters = AsrunFilters(
+                from = resolvedFrom?.let { parseDate(it) },
+                to = resolvedTo?.let { parseDate(it) },
+                limit = 10000
             )
-            call.respondText(csv, ContentType.Text.CSV)
+
+            val events = asrunRepository.findByTenant(tenantId, filters)
+            val summary = asrunRepository.getSummary(tenantId, filters)
+
+            val tz = TimeZone.UTC
+            val dayMap = mutableMapOf<String, Long>()
+            events.forEach { event ->
+                val dayLabel = event.at.toLocalDateTime(tz).date.toString()
+                dayMap[dayLabel] = (dayMap[dayLabel] ?: 0) + 1
+            }
+            val maxDayValue = dayMap.values.maxOrNull() ?: 1L
+
+            val assetNames = events
+                .mapNotNull { it.asset }
+                .distinctBy { it.id.value }
+                .associate { it.id.value to it.name }
+
+            val maxAssetCount = summary.byAsset.maxOfOrNull { it.value.playCount } ?: 1L
+
+            val html = buildString {
+                append("<div class='chart-container'><h4>Playback by Day</h4>")
+                dayMap.entries.sortedBy { it.key }.takeLast(7).forEach { (day, count) ->
+                    val pct = (count.toDouble() / maxDayValue) * 100.0
+                    append("<div class='chart-bar-row'>")
+                    append("<span class='chart-bar-label'>$day</span>")
+                    append("<div class='chart-bar-track'><div class='chart-bar-fill' style='width:${pct}%'></div></div>")
+                    append("<span class='chart-bar-value'>$count</span>")
+                    append("</div>")
+                }
+                append("</div>")
+
+                append("<div class='chart-container'><h4>Top Assets</h4>")
+                summary.byAsset.entries.sortedByDescending { it.value.playCount }.take(5).forEach { (assetId, assetSummary) ->
+                    val name = assetNames[assetId] ?: "Unknown"
+                    val pct = (assetSummary.playCount.toDouble() / maxAssetCount) * 100.0
+                    append("<div class='chart-bar-row'>")
+                    append("<span class='chart-bar-label'>$name</span>")
+                    append("<div class='chart-bar-track'><div class='chart-bar-fill' style='width:${pct}%'></div></div>")
+                    append("<span class='chart-bar-value'>${assetSummary.playCount}</span>")
+                    append("</div>")
+                }
+                append("</div>")
+            }
+
+            call.respondText(html, ContentType.Text.Html)
         }
 
         // === Audit Log ===
@@ -306,4 +428,39 @@ private fun formatDuration(seconds: Long): String {
     val hours = seconds / 3600
     val minutes = (seconds % 3600) / 60
     return "${hours}h ${minutes}m"
+}
+
+/**
+ * Resolve date preset to fromDate/toDate strings (yyyy-MM-dd).
+ */
+private fun resolveDatePreset(
+    preset: String?,
+    fromDate: String?,
+    toDate: String?
+): Pair<String?, String?> {
+    if (preset == null) return Pair(fromDate, toDate)
+
+    val tz = TimeZone.UTC
+    val today = Clock.System.now().toLocalDateTime(tz).date
+    return when (preset) {
+        "last7days" -> {
+            val from = today.minus(7, DateTimeUnit.DAY)
+            Pair(from.toString(), today.toString())
+        }
+        "last30days" -> {
+            val from = today.minus(30, DateTimeUnit.DAY)
+            Pair(from.toString(), today.toString())
+        }
+        "thisMonth" -> {
+            val from = LocalDate(today.year, today.monthNumber, 1)
+            Pair(from.toString(), today.toString())
+        }
+        "lastMonth" -> {
+            val firstOfThisMonth = LocalDate(today.year, today.monthNumber, 1)
+            val lastMonthEnd = firstOfThisMonth.minus(1, DateTimeUnit.DAY)
+            val lastMonthStart = LocalDate(lastMonthEnd.year, lastMonthEnd.monthNumber, 1)
+            Pair(lastMonthStart.toString(), lastMonthEnd.toString())
+        }
+        else -> Pair(fromDate, toDate)
+    }
 }

@@ -1,14 +1,19 @@
 package com.playoutedge.server.routes.admin
 
+import com.playoutedge.domain.enums.ActionStatus
+import com.playoutedge.domain.enums.ActionType
 import com.playoutedge.domain.enums.DeviceEnrollStatus
 import com.playoutedge.domain.enums.EnrollCodeStatus
 import com.playoutedge.domain.tenant.TenantId
+import com.playoutedge.persistence.entities.DeviceActionEntity
 import com.playoutedge.persistence.entities.EnrollCodeEntity
 import com.playoutedge.persistence.entities.TenantEntity
 import com.playoutedge.persistence.entities.UserEntity
 import com.playoutedge.persistence.repositories.ChannelRepository
+import com.playoutedge.persistence.repositories.DeviceLogRepository
 import com.playoutedge.persistence.repositories.DeviceRepository
 import com.playoutedge.persistence.repositories.UpdateDeviceRequest
+import com.playoutedge.persistence.tables.Devices
 import com.playoutedge.persistence.tables.EnrollCodes
 import com.playoutedge.server.plugins.adminSession
 import com.playoutedge.server.views.devices.*
@@ -19,8 +24,10 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.datetime.Clock
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.update
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.util.UUID
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 
 /**
@@ -28,7 +35,8 @@ import kotlin.time.Duration.Companion.minutes
  */
 fun Route.adminDeviceRoutes(
     deviceRepository: DeviceRepository,
-    channelRepository: ChannelRepository
+    channelRepository: ChannelRepository,
+    deviceLogRepository: DeviceLogRepository? = null
 ) {
     route("/admin/devices") {
         // GET /admin/devices - List devices
@@ -46,6 +54,8 @@ fun Route.adminDeviceRoutes(
             val statusFilter = call.request.queryParameters["status"]
             val channelIdParam = call.request.queryParameters["channel"]
             val search = call.request.queryParameters["search"]
+            val page = call.request.queryParameters["page"]?.toIntOrNull()?.coerceAtLeast(1) ?: 1
+            val pageSize = 50
 
             val channelId = channelIdParam?.let { runCatching { UUID.fromString(it) }.getOrNull() }
             val filters = DeviceFilters(
@@ -54,8 +64,9 @@ fun Route.adminDeviceRoutes(
                 search = search?.takeIf { it.isNotBlank() }
             )
 
-            // Fetch devices
-            var devices = deviceRepository.findAll(tenantId)
+            // Fetch devices with pagination
+            val (pagedDevices, totalCount) = deviceRepository.findAllPaged(tenantId, pageSize, (page - 1) * pageSize)
+            var devices = pagedDevices
 
             // Apply filters
             if (filters.channelId != null) {
@@ -84,7 +95,9 @@ fun Route.adminDeviceRoutes(
                     isOnline = isOnline,
                     channelName = channelName,
                     appVersion = device.appVersion,
-                    lastSeen = device.lastSeenAt
+                    lastSeen = device.lastSeenAt,
+                    latitude = device.latitude,
+                    longitude = device.longitude
                 )
             }.let { items ->
                 // Filter by online/offline status after mapping
@@ -104,13 +117,29 @@ fun Route.adminDeviceRoutes(
                 pending = allDevices.count { it.enrollStatus == DeviceEnrollStatus.PENDING }
             )
 
+            val totalPages = ((totalCount + pageSize - 1) / pageSize).toInt().coerceAtLeast(1)
+            val queryParams = buildString {
+                if (filters.status != null) append("&status=${filters.status}")
+                if (filters.channelId != null) append("&channel=${filters.channelId}")
+                if (filters.search != null) append("&search=${filters.search}")
+            }.let { if (it.isNotEmpty()) "?${it.removePrefix("&")}" else "" }
+
+            val pagination = com.playoutedge.server.views.PaginationInfo(
+                currentPage = page,
+                totalPages = totalPages,
+                totalItems = totalCount,
+                basePath = "/admin/devices",
+                queryParams = queryParams
+            )
+
             call.respondHtml {
                 devicesListView(
                     session = session,
                     devices = deviceItems,
                     stats = stats,
                     filters = filters,
-                    channels = channels
+                    channels = channels,
+                    pagination = pagination
                 )
             }
         }
@@ -152,7 +181,7 @@ fun Route.adminDeviceRoutes(
 
             // Generate code and store in database
             val code = com.playoutedge.server.routes.generateEnrollCode()
-            val expiresAt = Clock.System.now().plus(30.minutes)
+            val expiresAt = Clock.System.now().plus(24.hours)
 
             newSuspendedTransaction {
                 EnrollCodeEntity.new {
@@ -240,7 +269,12 @@ fun Route.adminDeviceRoutes(
                 androidModel = device.androidModel,
                 androidVersion = device.androidVersion,
                 lastSeen = device.lastSeenAt,
-                createdAt = device.createdAt
+                createdAt = device.createdAt,
+                latitude = device.latitude,
+                longitude = device.longitude,
+                locationName = device.locationName,
+                powerOnTime = device.powerOnTime,
+                powerOffTime = device.powerOffTime
             )
 
             call.respondHtml {
@@ -250,6 +284,20 @@ fun Route.adminDeviceRoutes(
                     channels = channels
                 )
             }
+        }
+
+        // POST /admin/devices/bulk-assign - Bulk assign channel to devices
+        post("/bulk-assign") {
+            val session = call.adminSession ?: run { call.respondRedirect("/admin/login"); return@post }
+            val tenantId = TenantId(session.tenantId)
+            val params = call.receiveParameters()
+            val deviceIds = params.getAll("deviceIds")?.mapNotNull { runCatching { UUID.fromString(it) }.getOrNull() } ?: emptyList()
+            val channelId = params["channelId"]?.takeIf { it.isNotBlank() }?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+
+            deviceIds.forEach { deviceId ->
+                deviceRepository.update(tenantId, deviceId, UpdateDeviceRequest(assignedChannelId = channelId))
+            }
+            call.respondRedirect("/admin/devices")
         }
 
         // POST /admin/devices/:id/assign - Assign channel
@@ -275,6 +323,103 @@ fun Route.adminDeviceRoutes(
 
             deviceRepository.update(tenantId, deviceId, UpdateDeviceRequest(assignedChannelId = channelId))
             call.respondRedirect("/admin/devices/$deviceId")
+        }
+
+        // POST /admin/devices/:id/location - Save device location
+        post("/{id}/location") {
+            val session = call.adminSession!!
+            val id = UUID.fromString(call.parameters["id"]!!)
+            val params = call.receiveParameters()
+            newSuspendedTransaction {
+                Devices.update({ (Devices.id eq id) and (Devices.tenantId eq session.tenantId) }) {
+                    it[latitude] = params["latitude"]?.toDoubleOrNull()
+                    it[longitude] = params["longitude"]?.toDoubleOrNull()
+                    it[locationName] = params["locationName"]?.takeIf { n -> n.isNotBlank() }
+                }
+            }
+            call.respondRedirect("/admin/devices/$id")
+        }
+
+        // POST /admin/devices/:id/power-schedule - Save power schedule
+        post("/{id}/power-schedule") {
+            val session = call.adminSession!!
+            val id = UUID.fromString(call.parameters["id"]!!)
+            val params = call.receiveParameters()
+            newSuspendedTransaction {
+                Devices.update({ (Devices.id eq id) and (Devices.tenantId eq session.tenantId) }) {
+                    it[powerOnTime] = params["powerOnTime"]?.takeIf { t -> t.matches(Regex("\\d{2}:\\d{2}")) }
+                    it[powerOffTime] = params["powerOffTime"]?.takeIf { t -> t.matches(Regex("\\d{2}:\\d{2}")) }
+                }
+            }
+            call.respondRedirect("/admin/devices/$id")
+        }
+
+        // GET /admin/devices/:id/logs - Device logs page
+        get("/{id}/logs") {
+            val session = call.adminSession ?: run {
+                call.respondRedirect("/admin/login")
+                return@get
+            }
+
+            val tenantId = TenantId(session.tenantId)
+            val deviceId = call.parameters["id"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+
+            if (deviceId == null) {
+                call.respondRedirect("/admin/devices")
+                return@get
+            }
+
+            val device = deviceRepository.findById(tenantId, deviceId)
+            if (device == null) {
+                call.respondRedirect("/admin/devices")
+                return@get
+            }
+
+            val page = call.request.queryParameters["page"]?.toIntOrNull()?.coerceAtLeast(1) ?: 1
+            val pageSize = 50
+            val logs = deviceLogRepository?.findByDevice(deviceId, pageSize, (page - 1) * pageSize) ?: emptyList()
+            val totalLogs = deviceLogRepository?.countByDevice(deviceId) ?: 0L
+
+            call.respondHtml {
+                deviceLogsView(
+                    session = session,
+                    deviceId = deviceId,
+                    deviceName = device.displayName,
+                    logs = logs,
+                    currentPage = page,
+                    totalLogs = totalLogs,
+                    pageSize = pageSize
+                )
+            }
+        }
+
+        // POST /admin/devices/:id/reboot - Request device reboot
+        post("/{id}/reboot") {
+            val session = call.adminSession!!
+            val id = UUID.fromString(call.parameters["id"]!!)
+            val tenantId = TenantId(session.tenantId)
+
+            // Verify device belongs to tenant
+            val device = deviceRepository.findById(tenantId, id)
+            if (device == null) {
+                call.respondRedirect("/admin/devices")
+                return@post
+            }
+
+            newSuspendedTransaction {
+                DeviceActionEntity.new {
+                    this.tenant = TenantEntity[session.tenantId]
+                    this.device = device
+                    this.action = ActionType.REBOOT
+                    this.status = ActionStatus.PENDING
+                    this.paramsJson = null
+                    this.createdBy = UserEntity[session.subject]
+                    this.createdAt = Clock.System.now()
+                    this.expiresAt = Clock.System.now().plus(1.hours)
+                }
+            }
+
+            call.respondRedirect("/admin/devices/$id")
         }
     }
 }

@@ -2,12 +2,14 @@ package com.playoutedge.server
 
 import com.playoutedge.auth.AuthConfig
 import com.playoutedge.auth.JwtService
+import com.playoutedge.auth.NoOpEmailService
 import com.playoutedge.auth.PasswordService
 import com.playoutedge.server.services.AlertService
 import com.playoutedge.server.services.AsrunService
 import com.playoutedge.server.services.AuditService
 import com.playoutedge.server.services.ChannelService
 import com.playoutedge.server.services.DeviceActionService
+import com.playoutedge.server.services.DeviceHealthCheckService
 import com.playoutedge.server.services.DeviceService
 import com.playoutedge.server.services.MaintenanceService
 import com.playoutedge.server.services.RegistrationService
@@ -37,6 +39,8 @@ import com.playoutedge.persistence.repositories.impl.TenantRepositoryImpl
 import com.playoutedge.persistence.repositories.impl.WebhookLogRepositoryImpl
 import com.playoutedge.persistence.repositories.impl.RefreshTokenRepositoryImpl
 import com.playoutedge.persistence.repositories.impl.ApiKeyRepositoryImpl
+import com.playoutedge.persistence.repositories.impl.DeviceLogRepositoryImpl
+import com.playoutedge.persistence.repositories.impl.OnboardingStateRepositoryImpl
 import com.playoutedge.server.jobs.AsrunCleanupJobHandler
 import com.playoutedge.server.jobs.CleanupJobHandler
 import com.playoutedge.server.jobs.JobScheduler
@@ -129,6 +133,8 @@ fun Application.module() {
     val quotaService = QuotaServiceImpl(assetRepository, deviceRepository)
     val refreshTokenRepository = RefreshTokenRepositoryImpl()
     val apiKeyRepository = ApiKeyRepositoryImpl()
+    val onboardingStateRepository = OnboardingStateRepositoryImpl()
+    val deviceLogRepository = DeviceLogRepositoryImpl()
 
     // Domain services
     val channelService = ChannelService(channelRepository)
@@ -142,11 +148,13 @@ fun Application.module() {
     val auditService = AuditService(auditRepository)
     val asrunService = AsrunService(asrunRepository)
     val alertService = AlertService(alertRepository)
+    val emailService = NoOpEmailService()
     val registrationService = RegistrationService(tenantRepository, userRepository, passwordService)
     val maintenanceService = MaintenanceService()
     val ttsService = TtsService(storageService)
     val scheduleTemplateService = ScheduleTemplateService()
     val overlayPollService = OverlayPollService(overlayRepository, overlaySubscribers)
+    val deviceHealthCheckService = DeviceHealthCheckService(deviceRepository, alertService)
 
     // Install plugins
     install(RequestIdPlugin)
@@ -160,6 +168,7 @@ fun Application.module() {
     }
     install(AdminSessionPlugin) {
         this.jwtService = jwtService
+        this.authConfig = authConfig
     }
 
     // Initialize database
@@ -174,9 +183,14 @@ fun Application.module() {
     // Start overlay REST pull polling service
     overlayPollService.start()
 
+    // Start device health check service
+    deviceHealthCheckService.start()
+
     // Graceful shutdown for all background services
     environment.monitor.subscribe(ApplicationStopped) {
         overlayPollService.stop()
+        deviceHealthCheckService.stop()
+        ttsService.close()
         kotlinx.coroutines.runBlocking { jobScheduler.stop() }
         DatabaseFactory.close()
     }
@@ -190,15 +204,15 @@ fun Application.module() {
         publicPollRoutes(overlayRepository, overlaySubscribers)
 
         // Admin web routes (SSR)
-        adminAuthRoutes(userRepository, jwtService, passwordService)
-        adminHomeRoutes(deviceRepository, alertRepository)
-        adminChannelRoutes(channelRepository, deviceRepository, scheduleRepository, storageService)
-        adminDeviceRoutes(deviceRepository, channelRepository)
+        adminAuthRoutes(userRepository, jwtService, passwordService, tenantRepository, emailService)
+        adminHomeRoutes(deviceRepository, alertRepository, channelRepository, assetRepository, auditRepository)
+        adminChannelRoutes(channelRepository, deviceRepository, scheduleRepository, storageService, scheduleService)
+        adminDeviceRoutes(deviceRepository, channelRepository, deviceLogRepository)
         adminAssetRoutes(assetRepository, quotaService, assetUploadService)
-        adminOverlayRoutes(overlayRepository, channelRepository, webhookLogRepository)
+        adminOverlayRoutes(overlayRepository, channelRepository, webhookLogRepository, webhookService)
         adminReportsRoutes(asrunRepository, auditRepository, deviceRepository, channelRepository)
         adminSettingsRoutes(userRepository, assetRepository, deviceRepository, passwordService, tenantRepository, apiKeyRepository)
-        adminOnboardingRoutes(assetRepository, channelRepository, deviceRepository)
+        adminOnboardingRoutes(assetRepository, channelRepository, deviceRepository, tenantRepository, assetUploadService, scheduleRepository, onboardingStateRepository)
         adminScheduleRoutes(channelRepository, scheduleRepository, assetRepository, scheduleService, ttsService)
         adminStaticRoutes()
 

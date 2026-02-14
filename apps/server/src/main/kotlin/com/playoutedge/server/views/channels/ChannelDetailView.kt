@@ -15,7 +15,9 @@ fun HTML.channelDetailView(
     session: AdminClaims,
     channel: ChannelDetail,
     scheduleItems: List<ScheduleItemView>,
-    devices: List<DeviceListItem>
+    devices: List<DeviceListItem>,
+    validationWarnings: List<String> = emptyList(),
+    embedHost: String = "tv.adapto.kz"
 ) {
     adminLayout(title = channel.name, userName = session.displayName, currentPath = "/admin/channels") {
         // Page header with breadcrumb
@@ -90,6 +92,26 @@ fun HTML.channelDetailView(
             }
         }
 
+        // Schedule Validation Warnings
+        if (validationWarnings.isNotEmpty()) {
+            div("card mb-4") {
+                div("card-header") {
+                    h3 { +"Schedule Warnings" }
+                }
+                div("card-body") {
+                    div("alert alert-warning") {
+                        strong { +"${validationWarnings.size} issue(s) found:" }
+                        ul {
+                            style = "margin:0.5rem 0 0;padding-left:1.2rem;"
+                            validationWarnings.forEach { w ->
+                                li { +w }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // Embed Player section
         div("card mb-4") {
             div("card-header") {
@@ -102,6 +124,7 @@ fun HTML.channelDetailView(
             div("card-body") {
                 div("embed-preview-container") {
                     iframe {
+                        id = "embed-preview-iframe"
                         src = "/embed/${channel.id}"
                         attributes["width"] = "100%"
                         attributes["height"] = "400"
@@ -110,10 +133,43 @@ fun HTML.channelDetailView(
                         attributes["style"] = "border-radius: var(--radius); background: #000;"
                     }
                 }
+
+                // Embed customization controls
+                div("mt-3 mb-3") {
+                    h4("text-sm font-medium mb-2") { +"Customize Embed" }
+                    div("filter-row") {
+                        div("form-group") {
+                            label { +"Background Color" }
+                            input(type = InputType.color, classes = "form-control") {
+                                id = "embed-bg-color"
+                                value = "#000000"
+                            }
+                        }
+                        div("form-group") {
+                            label("day-checkbox") {
+                                input(type = InputType.checkBox) {
+                                    id = "embed-muted"
+                                    checked = true
+                                }
+                                +"Muted"
+                            }
+                        }
+                        div("form-group") {
+                            label("day-checkbox") {
+                                input(type = InputType.checkBox) {
+                                    id = "embed-controls"
+                                }
+                                +"Show Controls"
+                            }
+                        }
+                    }
+                }
+
                 div("embed-code-box mt-3") {
                     id = "embed-code"
                     code {
-                        +"""<iframe src="${"https://tv.adapto.kz/embed/${channel.id}"}" width="1920" height="1080" frameborder="0" allowfullscreen></iframe>"""
+                        id = "embed-code-text"
+                        +"""<iframe src="https://$embedHost/embed/${channel.id}" width="1920" height="1080" frameborder="0" allowfullscreen></iframe>"""
                     }
                 }
             }
@@ -122,14 +178,37 @@ fun HTML.channelDetailView(
         script {
             unsafe {
                 +"""
-                document.getElementById('copy-embed-btn')?.addEventListener('click', function() {
-                    const code = document.getElementById('embed-code')?.textContent || '';
-                    navigator.clipboard.writeText(code).then(function() {
-                        const btn = document.getElementById('copy-embed-btn');
-                        btn.textContent = 'Copied!';
-                        setTimeout(function() { btn.textContent = 'Copy Embed Code'; }, 2000);
+                (function() {
+                    var channelId = '${channel.id}';
+                    var embedHost = '${embedHost}';
+                    var codeEl = document.getElementById('embed-code-text');
+                    var bgInput = document.getElementById('embed-bg-color');
+                    var mutedInput = document.getElementById('embed-muted');
+                    var controlsInput = document.getElementById('embed-controls');
+
+                    function updateEmbedCode() {
+                        var params = [];
+                        if (bgInput.value !== '#000000') params.push('bg=' + encodeURIComponent(bgInput.value));
+                        if (!mutedInput.checked) params.push('muted=false');
+                        if (controlsInput.checked) params.push('controls=true');
+                        var qs = params.length > 0 ? '?' + params.join('&') : '';
+                        var url = 'https://' + embedHost + '/embed/' + channelId + qs;
+                        codeEl.textContent = '<iframe src="' + url + '" width="1920" height="1080" frameborder="0" allowfullscreen></iframe>';
+                    }
+
+                    bgInput.addEventListener('input', updateEmbedCode);
+                    mutedInput.addEventListener('change', updateEmbedCode);
+                    controlsInput.addEventListener('change', updateEmbedCode);
+
+                    document.getElementById('copy-embed-btn').addEventListener('click', function() {
+                        var code = codeEl.textContent || '';
+                        navigator.clipboard.writeText(code).then(function() {
+                            var btn = document.getElementById('copy-embed-btn');
+                            btn.textContent = 'Copied!';
+                            setTimeout(function() { btn.textContent = 'Copy Embed Code'; }, 2000);
+                        });
                     });
-                });
+                })();
                 """.trimIndent()
             }
         }

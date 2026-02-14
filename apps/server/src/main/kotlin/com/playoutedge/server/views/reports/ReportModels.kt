@@ -91,6 +91,26 @@ data class ChannelFilterOption(
 )
 
 /**
+ * Chart data point for bar charts.
+ */
+data class ChartDataPoint(
+    val label: String,
+    val value: Long,
+    val percentage: Double = 0.0
+)
+
+/**
+ * Asset performance metrics.
+ */
+data class AssetPerformance(
+    val assetId: UUID,
+    val assetName: String,
+    val playCount: Long,
+    val totalDurationMs: Long,
+    val avgCompletionRate: Double
+)
+
+/**
  * Entity types for audit log filter.
  */
 val ENTITY_TYPES = listOf(

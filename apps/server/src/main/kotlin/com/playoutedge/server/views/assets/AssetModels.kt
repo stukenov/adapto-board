@@ -15,7 +15,11 @@ data class AssetViewItem(
     val status: AssetStatus,
     val fileSize: Long,
     val duration: Int?,
-    val createdAt: Instant
+    val createdAt: Instant,
+    val thumbnailStorageKey: String? = null,
+    val approvalStatus: String = "APPROVED",
+    val width: Int? = null,
+    val height: Int? = null
 ) {
     val fileSizeFormatted: String
         get() = formatFileSize(fileSize)

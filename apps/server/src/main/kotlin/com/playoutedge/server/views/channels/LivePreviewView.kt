@@ -82,6 +82,26 @@ fun HTML.livePreviewView(
                         attributes["style"] = "display:none"
                     }
                 }
+                div("preview-player-actions") {
+                    button(classes = "btn btn-sm btn-secondary") {
+                        id = "btn-preview-unmute"
+                        attributes["onclick"] = """
+                            var v = document.getElementById('preview-video');
+                            v.muted = !v.muted;
+                            this.textContent = v.muted ? '🔇 Unmute' : '🔊 Mute';
+                        """.trimIndent()
+                        +"🔇 Unmute"
+                    }
+                    button(classes = "btn btn-sm btn-secondary") {
+                        id = "btn-preview-fullscreen"
+                        attributes["onclick"] = """
+                            var screen = document.getElementById('player-screen');
+                            if (!document.fullscreenElement) { screen.requestFullscreen().catch(function(){}); }
+                            else { document.exitFullscreen().catch(function(){}); }
+                        """.trimIndent()
+                        +"⛶ Fullscreen"
+                    }
+                }
                 div("preview-player-controls") {
                     div("preview-player-info") {
                         span("now-playing-badge") { +"NOW PLAYING" }

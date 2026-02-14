@@ -73,6 +73,12 @@ fun HTML.scheduleGridView(
                     // Items on timeline
                     div("timeline-track") {
                         id = "timeline-track"
+                        style = "position:relative;"
+                        // Current time indicator
+                        div("timeline-current-time") {
+                            id = "timeline-now"
+                            style = "position:absolute;top:0;bottom:0;width:2px;background:red;z-index:10;pointer-events:none;"
+                        }
                         items.forEach { item ->
                             val startMinute = parseTimeToMinutes(item.timeStart) ?: 0
                             val endMinute = parseTimeToMinutes(item.timeEnd) ?: 1440
@@ -80,8 +86,8 @@ fun HTML.scheduleGridView(
                             val widthPct = ((endMinute - startMinute).toDouble() / 1440.0 * 100).coerceAtLeast(1.0)
                             val colorClass = if (item.assetType == AssetType.VIDEO) "grid-item-video" else "grid-item-image"
 
-                            div("timeline-item $colorClass") {
-                                style = "left:${leftPct}%;width:${widthPct}%"
+                            a(href = "/admin/channels/$channelId/schedule", classes = "timeline-item $colorClass") {
+                                style = "left:${leftPct}%;width:${widthPct}%;display:block;text-decoration:none;color:inherit;"
                                 title = "${item.assetName} (${item.timeStart ?: "00:00"} - ${item.timeEnd ?: "23:59"})"
                                 span("timeline-item-label") { +item.assetName }
                             }
@@ -117,6 +123,8 @@ fun HTML.scheduleGridView(
                                     td("schedule-grid-cell") {
                                         attributes["data-day"] = dayBit.toString()
                                         attributes["data-hour"] = h.toString()
+                                        style = "cursor:pointer;"
+                                        attributes["onclick"] = "window.location.href='/admin/channels/$channelId/schedule'"
                                         // Find items that overlap this hour and day
                                         val overlapping = items.filter { item ->
                                             val days = item.daysOfWeek ?: 127
@@ -161,10 +169,10 @@ private fun parseTimeToHour(time: String?): Int? {
 
 private fun scheduleGridScript(): String = """
 (function() {
-    const btnTimeline = document.getElementById('btn-timeline');
-    const btnWeekgrid = document.getElementById('btn-weekgrid');
-    const timelineView = document.getElementById('timeline-view');
-    const weekgridView = document.getElementById('weekgrid-view');
+    var btnTimeline = document.getElementById('btn-timeline');
+    var btnWeekgrid = document.getElementById('btn-weekgrid');
+    var timelineView = document.getElementById('timeline-view');
+    var weekgridView = document.getElementById('weekgrid-view');
 
     btnTimeline.addEventListener('click', function() {
         timelineView.style.display = '';
@@ -179,5 +187,18 @@ private fun scheduleGridScript(): String = """
         btnWeekgrid.className = 'btn btn-sm btn-primary grid-view-btn';
         btnTimeline.className = 'btn btn-sm btn-secondary grid-view-btn';
     });
+
+    // Current time indicator
+    function updateTimeIndicator() {
+        var now = new Date();
+        var minutesSinceMidnight = now.getHours() * 60 + now.getMinutes();
+        var pct = (minutesSinceMidnight / 1440) * 100;
+        var indicator = document.getElementById('timeline-now');
+        if (indicator) {
+            indicator.style.left = pct + '%';
+        }
+    }
+    updateTimeIndicator();
+    setInterval(updateTimeIndicator, 60000);
 })();
 """

@@ -41,3 +41,29 @@ data class AlertSummary(
     val message: String,
     val createdAt: Instant
 )
+
+/**
+ * Dashboard content stats.
+ */
+data class ContentStats(
+    val channelCount: Int,
+    val assetCount: Int,
+    val storageUsedBytes: Long
+) {
+    val storageDisplay: String
+        get() {
+            val gb = storageUsedBytes / (1024.0 * 1024.0 * 1024.0)
+            val mb = storageUsedBytes / (1024.0 * 1024.0)
+            return if (gb >= 1.0) "%.1f GB".format(gb) else "%.0f MB".format(mb)
+        }
+}
+
+/**
+ * Recent activity item for dashboard.
+ */
+data class RecentActivity(
+    val action: String,
+    val entityType: String,
+    val actorName: String?,
+    val createdAt: Instant
+)

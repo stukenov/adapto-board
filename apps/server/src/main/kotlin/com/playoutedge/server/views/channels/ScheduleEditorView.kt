@@ -38,6 +38,11 @@ data class LibraryAsset(
 /**
  * Schedule editor view with drag & drop.
  */
+data class CopySourceChannel(
+    val id: UUID,
+    val name: String
+)
+
 fun HTML.scheduleEditorView(
     session: AdminClaims,
     channelId: UUID,
@@ -47,7 +52,8 @@ fun HTML.scheduleEditorView(
     draftVersionId: UUID?,
     activeVersionNumber: Int?,
     error: String? = null,
-    success: String? = null
+    success: String? = null,
+    otherChannels: List<CopySourceChannel> = emptyList()
 ) {
     adminLayout(title = "Edit Schedule - $channelName", userName = session.displayName, currentPath = "/admin/channels") {
         pageHeader(
@@ -71,6 +77,19 @@ fun HTML.scheduleEditorView(
             alertBox(success, "success")
         }
 
+        // Overlap warning bar
+        div("alert alert-warning") {
+            id = "overlap-warning"
+            style = "display:none;"
+            strong { +"Warning:" }
+            +" Some items have overlapping time windows."
+        }
+
+        // Validation results container
+        div {
+            id = "validation-results"
+        }
+
         // Toolbar
         div("schedule-toolbar") {
             div("schedule-toolbar-left") {
@@ -82,10 +101,37 @@ fun HTML.scheduleEditorView(
                     id = "total-duration"
                     +formatTotalDuration(items)
                 }
+                span("text-sm text-muted") {
+                    id = "autosave-indicator"
+                    style = "margin-left:0.5rem;"
+                }
             }
             div("schedule-toolbar-center") {
                 a(href = "/admin/channels/$channelId/schedule/grid", classes = "btn btn-sm btn-secondary") {
                     +"Grid View"
+                }
+                button(classes = "btn btn-sm btn-secondary") {
+                    id = "validate-btn"
+                    +"Validate"
+                }
+                if (otherChannels.isNotEmpty()) {
+                    // Copy from channel
+                    form(action = "/admin/channels/$channelId/schedule/copy-from", method = FormMethod.post, classes = "inline") {
+                        style = "display:flex;align-items:center;gap:0.25rem;"
+                        select("form-control form-control-sm") {
+                            name = "sourceChannelId"
+                            option { value = ""; +"Copy from..." }
+                            otherChannels.forEach { ch ->
+                                option {
+                                    value = ch.id.toString()
+                                    +ch.name
+                                }
+                            }
+                        }
+                        button(type = ButtonType.submit, classes = "btn btn-sm btn-secondary") {
+                            +"Copy"
+                        }
+                    }
                 }
             }
             div("schedule-toolbar-right") {
@@ -563,6 +609,81 @@ private fun scheduleEditorScript(): String = """
             document.querySelectorAll('.library-asset').forEach(function(el) {
                 el.style.display = el.dataset.assetName.toLowerCase().includes(q) ? '' : 'none';
             });
+        });
+    }
+
+    // Overlap detection
+    function checkOverlaps() {
+        var items = playlist.querySelectorAll('.playlist-item:not(.playlist-item-placeholder)');
+        var hasOverlap = false;
+        var arr = [];
+        items.forEach(function(el) {
+            var s = el.querySelector('.timing-start');
+            var e = el.querySelector('.timing-end');
+            if (s && e && s.value && e.value) {
+                arr.push({start: s.value, end: e.value});
+            }
+        });
+        for (var i = 0; i < arr.length; i++) {
+            for (var j = i + 1; j < arr.length; j++) {
+                if (arr[i].start < arr[j].end && arr[j].start < arr[i].end) {
+                    hasOverlap = true;
+                }
+            }
+        }
+        var w = document.getElementById('overlap-warning');
+        if (w) w.style.display = hasOverlap ? '' : 'none';
+    }
+
+    // Wrap updateState to also check overlaps
+    var _origUpdate = updateState;
+    updateState = function() {
+        _origUpdate();
+        checkOverlaps();
+    };
+
+    // Autosave indicator
+    var autosaveEl = document.getElementById('autosave-indicator');
+    var autosaveTimer = null;
+    function scheduleAutosave() {
+        if (autosaveTimer) clearTimeout(autosaveTimer);
+        if (autosaveEl) autosaveEl.textContent = 'Unsaved changes';
+        autosaveTimer = setTimeout(function() {
+            if (autosaveEl) autosaveEl.textContent = 'Saving...';
+            // Submit save form via fetch
+            var form = document.getElementById('schedule-form');
+            if (form) {
+                var formData = new FormData(form);
+                fetch(form.action, { method: 'POST', body: formData }).then(function() {
+                    if (autosaveEl) autosaveEl.textContent = 'Saved';
+                    setTimeout(function() { if (autosaveEl) autosaveEl.textContent = ''; }, 3000);
+                }).catch(function() {
+                    if (autosaveEl) autosaveEl.textContent = 'Save failed';
+                });
+            }
+        }, 5000);
+    }
+
+    // Hook into timing changes for autosave
+    playlist.addEventListener('change', function(e) {
+        if (e.target.classList.contains('timing-start') || e.target.classList.contains('timing-end') || e.target.classList.contains('day-check')) {
+            updateState();
+            scheduleAutosave();
+        }
+    });
+
+    // Validate button
+    var validateBtn = document.getElementById('validate-btn');
+    if (validateBtn) {
+        validateBtn.addEventListener('click', function() {
+            // First save current state, then validate
+            updateState();
+            fetch(window.location.pathname + '/validate', { method: 'POST' })
+                .then(function(r) { return r.text(); })
+                .then(function(html) {
+                    var container = document.getElementById('validation-results');
+                    if (container) container.innerHTML = html;
+                });
         });
     }
 

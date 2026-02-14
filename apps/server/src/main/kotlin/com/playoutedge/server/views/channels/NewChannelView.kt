@@ -14,7 +14,8 @@ import kotlinx.html.*
  */
 fun HTML.newChannelView(
     session: AdminClaims,
-    error: String? = null
+    error: String? = null,
+    groups: List<ChannelGroup> = emptyList()
 ) {
     adminLayout(title = "Create Channel", userName = session.displayName, currentPath = "/admin/channels") {
         pageHeader(
@@ -45,6 +46,78 @@ fun HTML.newChannelView(
                         }
                         small("form-helper") {
                             +"Choose a descriptive name to easily identify this channel."
+                        }
+                    }
+
+                    // Schedule template selector
+                    div("form-group") {
+                        label { +"Schedule Template" }
+                        div("template-options") {
+                            style = "display:flex;gap:1rem;flex-wrap:wrap;"
+                            label("day-checkbox") {
+                                style = "display:flex;align-items:center;gap:0.5rem;padding:0.75rem 1rem;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;"
+                                input(type = InputType.radio) {
+                                    name = "template"
+                                    value = "blank"
+                                    checked = true
+                                }
+                                div {
+                                    strong { +"Blank" }
+                                    br
+                                    small("text-muted") { +"Start with an empty schedule" }
+                                }
+                            }
+                            label("day-checkbox") {
+                                style = "display:flex;align-items:center;gap:0.5rem;padding:0.75rem 1rem;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;"
+                                input(type = InputType.radio) {
+                                    name = "template"
+                                    value = "loop"
+                                }
+                                div {
+                                    strong { +"24/7 Loop" }
+                                    br
+                                    small("text-muted") { +"All assets play continuously, all day" }
+                                }
+                            }
+                            label("day-checkbox") {
+                                style = "display:flex;align-items:center;gap:0.5rem;padding:0.75rem 1rem;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;"
+                                input(type = InputType.radio) {
+                                    name = "template"
+                                    value = "timeslotted"
+                                }
+                                div {
+                                    strong { +"Time-slotted" }
+                                    br
+                                    small("text-muted") { +"Different content at different times of day" }
+                                }
+                            }
+                        }
+                    }
+
+                    // Channel group selector
+                    if (groups.isNotEmpty()) {
+                        div("form-group") {
+                            label {
+                                htmlFor = "groupId"
+                                +"Channel Group"
+                            }
+                            select("form-control") {
+                                id = "groupId"
+                                name = "groupId"
+                                option {
+                                    value = ""
+                                    +"No group"
+                                }
+                                groups.forEach { group ->
+                                    option {
+                                        value = group.id.toString()
+                                        +group.name
+                                    }
+                                }
+                            }
+                            small("form-helper") {
+                                +"Optionally assign this channel to a group for easier organization."
+                            }
                         }
                     }
 

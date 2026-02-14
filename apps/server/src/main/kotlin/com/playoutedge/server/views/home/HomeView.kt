@@ -12,7 +12,9 @@ import kotlinx.html.*
 fun HTML.homeView(
     session: AdminClaims,
     fleetHealth: FleetHealth,
-    alerts: List<AlertSummary>
+    alerts: List<AlertSummary>,
+    contentStats: ContentStats? = null,
+    recentActivity: List<RecentActivity> = emptyList()
 ) {
     adminLayout(title = "Dashboard", userName = session.displayName, currentPath = "/admin") {
         // Page header
@@ -41,13 +43,31 @@ fun HTML.homeView(
                 span("stat-value text-success") { +"${fleetHealth.onlineCount}" }
             }
 
-            // Offline devices
+            // Channels
             div("stat-card") {
                 div("stat-card-header") {
-                    div("stat-icon icon-danger") { +"!" }
+                    div("stat-icon icon-info") { +"#" }
                 }
-                span("stat-label") { +"Offline" }
-                span("stat-value text-danger") { +"${fleetHealth.totalCount - fleetHealth.onlineCount}" }
+                span("stat-label") { +"Channels" }
+                span("stat-value") { +"${contentStats?.channelCount ?: 0}" }
+            }
+
+            // Assets
+            div("stat-card") {
+                div("stat-card-header") {
+                    div("stat-icon icon-warning") { +"F" }
+                }
+                span("stat-label") { +"Assets" }
+                span("stat-value") { +"${contentStats?.assetCount ?: 0}" }
+            }
+
+            // Storage
+            div("stat-card") {
+                div("stat-card-header") {
+                    div("stat-icon icon-secondary") { +"S" }
+                }
+                span("stat-label") { +"Storage Used" }
+                span("stat-value") { +(contentStats?.storageDisplay ?: "0 MB") }
             }
 
             // Online rate
@@ -70,8 +90,45 @@ fun HTML.homeView(
             // Alerts Widget
             alertsWidget(alerts)
 
+            // Recent Activity Widget
+            recentActivityWidget(recentActivity)
+
             // Quick Actions Widget
             quickActionsWidget()
+        }
+    }
+}
+
+/**
+ * Recent activity widget showing latest audit entries.
+ */
+fun FlowContent.recentActivityWidget(activity: List<RecentActivity>) {
+    div("card") {
+        div("card-header") {
+            h3 { +"Recent Activity" }
+            a(href = "/admin/reports/audit", classes = "btn btn-sm btn-secondary") { +"View All" }
+        }
+        div("card-body") {
+            if (activity.isEmpty()) {
+                div("text-center p-4") {
+                    p("text-muted") { +"No recent activity" }
+                }
+            } else {
+                ul("alert-list") {
+                    activity.forEach { item ->
+                        li("alert-item") {
+                            div("alert-item-content") {
+                                span("alert-type") { +"${item.action} ${item.entityType}" }
+                                p("alert-message") {
+                                    +(item.actorName ?: "System")
+                                    +" · "
+                                    +item.createdAt.toString().take(16).replace("T", " ")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -204,21 +261,35 @@ fun FlowContent.quickActionsWidget() {
             h3 { +"Quick Actions" }
         }
         div("card-body") {
-            div("quick-actions") {
-                // Primary action (larger)
-                a(href = "/admin/devices/enroll", classes = "btn btn-primary btn-lg") {
-                    +"+ Add Device"
+            div("quick-actions-grid") {
+                // Action cards
+                a(href = "/admin/assets/upload", classes = "action-card") {
+                    div("action-card-icon icon-primary") { +"+" }
+                    div("action-card-content") {
+                        span("action-card-title") { +"Upload Asset" }
+                        span("action-card-desc") { +"Add new media content" }
+                    }
                 }
-
-                // Secondary actions
-                a(href = "/admin/channels/new", classes = "btn btn-secondary") {
-                    +"Create Channel"
+                a(href = "/admin/channels/new", classes = "action-card") {
+                    div("action-card-icon icon-info") { +"#" }
+                    div("action-card-content") {
+                        span("action-card-title") { +"Create Channel" }
+                        span("action-card-desc") { +"Set up a new channel" }
+                    }
                 }
-                a(href = "/admin/assets/upload", classes = "btn btn-secondary") {
-                    +"Upload Content"
+                a(href = "/admin/devices/enroll", classes = "action-card action-card-primary") {
+                    div("action-card-icon icon-success") { +"+" }
+                    div("action-card-content") {
+                        span("action-card-title") { +"Enroll Device" }
+                        span("action-card-desc") { +"Add a new device to fleet" }
+                    }
                 }
-                a(href = "/admin/overlay/profiles/new", classes = "btn btn-secondary") {
-                    +"New Overlay"
+                a(href = "/admin/overlay/profiles/new", classes = "action-card") {
+                    div("action-card-icon icon-warning") { +"L" }
+                    div("action-card-content") {
+                        span("action-card-title") { +"New Overlay" }
+                        span("action-card-desc") { +"Create overlay profile" }
+                    }
                 }
             }
         }

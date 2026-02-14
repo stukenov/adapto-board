@@ -12,6 +12,9 @@ import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import com.playoutedge.persistence.tables.EmbedViews
+import kotlinx.datetime.Clock
+import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.util.UUID
 
@@ -54,8 +57,37 @@ fun Route.embedRoutes(
                 return@get
             }
 
+            // Record embed view
+            val ipAddress = call.request.local.remoteAddress
+            val userAgent = call.request.headers["User-Agent"]
+            val referer = call.request.headers["Referer"]
+            newSuspendedTransaction {
+                EmbedViews.insertAndGetId {
+                    it[EmbedViews.channelId] = channelId
+                    it[EmbedViews.ipAddress] = ipAddress
+                    it[EmbedViews.userAgent] = userAgent
+                    it[EmbedViews.referer] = referer
+                    it[EmbedViews.viewedAt] = Clock.System.now()
+                }
+            }
+
+            // Read embed customization parameters
+            val bgColor = call.request.queryParameters["bg"]
+            val muted = call.request.queryParameters["muted"]?.toBooleanStrictOrNull() ?: true
+            val controls = call.request.queryParameters["controls"]?.toBooleanStrictOrNull() ?: false
+            val kenburns = call.request.queryParameters["kenburns"]?.toBooleanStrictOrNull() ?: true
+            val shuffle = call.request.queryParameters["shuffle"]?.toBooleanStrictOrNull() ?: false
+
             call.respondHtml(HttpStatusCode.OK) {
-                embedPlayerView(channelId.toString(), channelData)
+                embedPlayerView(
+                    channelId = channelId.toString(),
+                    channelName = channelData,
+                    bgColor = bgColor,
+                    muted = muted,
+                    controls = controls,
+                    kenburns = kenburns,
+                    shuffle = shuffle
+                )
             }
         }
 

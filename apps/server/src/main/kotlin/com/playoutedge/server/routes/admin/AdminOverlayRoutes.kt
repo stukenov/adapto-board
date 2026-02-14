@@ -7,15 +7,25 @@ import com.playoutedge.persistence.repositories.ChannelRepository
 import com.playoutedge.persistence.repositories.OverlayRepository
 import com.playoutedge.persistence.repositories.WebhookLogRepository
 import com.playoutedge.server.plugins.adminSession
+import com.playoutedge.server.views.adminLayout
+import com.playoutedge.server.views.displayName
 import com.playoutedge.server.views.overlay.*
+import com.playoutedge.server.views.pageHeader
 import io.ktor.server.application.*
 import io.ktor.server.html.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import com.playoutedge.persistence.entities.OverlayBindingEntity
+import com.playoutedge.persistence.tables.OverlayBindings
+import com.playoutedge.server.services.WebhookService
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import org.jetbrains.exposed.sql.update
+import kotlinx.html.*
 import java.util.UUID
 
 private fun getWebhookBaseUrl(): String {
@@ -28,12 +38,28 @@ private fun getWebhookBaseUrl(): String {
 fun Route.adminOverlayRoutes(
     overlayRepository: OverlayRepository,
     channelRepository: ChannelRepository,
-    webhookLogRepository: WebhookLogRepository
+    webhookLogRepository: WebhookLogRepository,
+    webhookService: WebhookService? = null
 ) {
     route("/admin/overlay") {
         // Main overlay page - redirect to profiles
         get {
             call.respondRedirect("/admin/overlay/profiles")
+        }
+
+        // POST /admin/overlay/webhook-logs/:id/retry - Retry webhook log
+        post("/webhook-logs/{id}/retry") {
+            val session = call.adminSession ?: run { call.respondRedirect("/admin/login"); return@post }
+            val logId = call.parameters["id"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+            if (logId != null) {
+                newSuspendedTransaction {
+                    val log = com.playoutedge.persistence.entities.WebhookLogEntity.findById(logId)
+                    if (log != null) {
+                        log.retryCount = log.retryCount + 1
+                    }
+                }
+            }
+            call.respondRedirect("/admin/overlay")
         }
 
         // === Profile Routes ===
@@ -47,7 +73,9 @@ fun Route.adminOverlayRoutes(
                 }
 
                 val tenantId = TenantId(session.tenantId)
-                val profiles = overlayRepository.findAllProfiles(tenantId)
+                val page = call.request.queryParameters["page"]?.toIntOrNull()?.coerceAtLeast(1) ?: 1
+                val pageSize = 50
+                val (profiles, totalCount) = overlayRepository.findAllProfilesPaged(tenantId, pageSize, (page - 1) * pageSize)
 
                 val profileItems = profiles.map { profile ->
                     val bindingsCount = overlayRepository.countBindingsByProfile(tenantId, profile.id.value)
@@ -61,8 +89,16 @@ fun Route.adminOverlayRoutes(
                     )
                 }
 
+                val totalPages = ((totalCount + pageSize - 1) / pageSize).toInt().coerceAtLeast(1)
+                val pagination = com.playoutedge.server.views.PaginationInfo(
+                    currentPage = page,
+                    totalPages = totalPages,
+                    totalItems = totalCount,
+                    basePath = "/admin/overlay/profiles"
+                )
+
                 call.respondHtml {
-                    overlayProfilesListView(session, profileItems)
+                    overlayProfilesListView(session, profileItems, pagination)
                 }
             }
 
@@ -503,6 +539,88 @@ fun Route.adminOverlayRoutes(
 
                 overlayRepository.updateBindingConfig(tenantId, bindingId, configJson)
                 call.respondRedirect("/admin/overlay/bindings/$bindingId")
+            }
+
+            // GET /admin/overlay/bindings/:id/preview - Iframe preview
+            get("/{id}/preview") {
+                val session = call.adminSession ?: run { call.respondRedirect("/admin/login"); return@get }
+                val tenantId = TenantId(session.tenantId)
+                val bindingId = call.parameters["id"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                if (bindingId == null) { call.respondRedirect("/admin/overlay/bindings"); return@get }
+
+                val binding = overlayRepository.findBindingById(tenantId, bindingId)
+                if (binding == null) { call.respondRedirect("/admin/overlay/bindings"); return@get }
+
+                call.respondHtml {
+                    adminLayout(title = "Overlay Preview", userName = session.displayName, currentPath = "/admin/overlay") {
+                        pageHeader(
+                            title = "Preview: ${binding.channel.name}",
+                            backHref = "/admin/overlay/bindings/$bindingId",
+                            backLabel = "Back to Binding"
+                        )
+                        div("preview-container") {
+                            iframe {
+                                src = "/embed/${binding.channel.id.value}"
+                                style = "width:100%;height:600px;border:1px solid #ddd;border-radius:8px;"
+                            }
+                        }
+                    }
+                }
+            }
+
+            // POST /admin/overlay/bindings/:id/test-webhook - Send test payload
+            post("/{id}/test-webhook") {
+                val session = call.adminSession ?: run { call.respondRedirect("/admin/login"); return@post }
+                val tenantId = TenantId(session.tenantId)
+                val bindingId = call.parameters["id"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                if (bindingId == null) { call.respondRedirect("/admin/overlay/bindings"); return@post }
+
+                val params = call.receiveParameters()
+                val testPayload = params["payload"] ?: "{}"
+
+                // Validate JSON
+                try { Json.parseToJsonElement(testPayload) }
+                catch (e: Exception) { call.respondRedirect("/admin/overlay/bindings/$bindingId?error=Invalid+JSON+payload"); return@post }
+
+                val binding = overlayRepository.findBindingById(tenantId, bindingId)
+                if (binding == null) { call.respondRedirect("/admin/overlay/bindings"); return@post }
+
+                overlayRepository.setState(tenantId, binding.channel.id.value, testPayload)
+                call.respondRedirect("/admin/overlay/bindings/$bindingId?success=Test+payload+sent")
+            }
+
+            // POST /admin/overlay/bindings/:id/update-schedule - Set schedule start/end
+            post("/{id}/update-schedule") {
+                val session = call.adminSession ?: run { call.respondRedirect("/admin/login"); return@post }
+                val bindingId = call.parameters["id"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                if (bindingId == null) { call.respondRedirect("/admin/overlay/bindings"); return@post }
+
+                val params = call.receiveParameters()
+                newSuspendedTransaction {
+                    OverlayBindings.update({ (OverlayBindings.id eq bindingId) and (OverlayBindings.tenantId eq session.tenantId) }) {
+                        it[scheduleStart] = params["scheduleStart"]?.takeIf { s -> s.isNotBlank() }?.let { s ->
+                            kotlinx.datetime.Instant.parse(s + "T00:00:00Z")
+                        }
+                        it[scheduleEnd] = params["scheduleEnd"]?.takeIf { s -> s.isNotBlank() }?.let { s ->
+                            kotlinx.datetime.Instant.parse(s + "T23:59:59Z")
+                        }
+                    }
+                }
+                call.respondRedirect("/admin/overlay/bindings/$bindingId?success=Schedule+updated")
+            }
+
+            // POST /admin/overlay/bindings/:id/regenerate-secret - Regenerate webhook secret
+            post("/{id}/regenerate-secret") {
+                val session = call.adminSession ?: run { call.respondRedirect("/admin/login"); return@post }
+                val tenantId = TenantId(session.tenantId)
+                val bindingId = call.parameters["id"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+                if (bindingId == null) { call.respondRedirect("/admin/overlay/bindings"); return@post }
+
+                val binding = overlayRepository.findBindingById(tenantId, bindingId)
+                if (binding == null) { call.respondRedirect("/admin/overlay/bindings"); return@post }
+
+                webhookService?.regenerateSecret(bindingId)
+                call.respondRedirect("/admin/overlay/bindings/$bindingId?success=Webhook+secret+regenerated")
             }
 
             // POST /admin/overlay/bindings/:id/delete - Delete binding

@@ -4,12 +4,13 @@ import com.playoutedge.domain.enums.AlertStatus
 import com.playoutedge.domain.tenant.TenantId
 import com.playoutedge.persistence.repositories.AlertFilters
 import com.playoutedge.persistence.repositories.AlertRepository
+import com.playoutedge.persistence.repositories.AssetRepository
+import com.playoutedge.persistence.repositories.AuditFilters
+import com.playoutedge.persistence.repositories.AuditRepository
+import com.playoutedge.persistence.repositories.ChannelRepository
 import com.playoutedge.persistence.repositories.DeviceRepository
 import com.playoutedge.server.plugins.adminSession
-import com.playoutedge.server.views.home.AlertSummary
-import com.playoutedge.server.views.home.FleetHealth
-import com.playoutedge.server.views.home.OfflineDevice
-import com.playoutedge.server.views.home.homeView
+import com.playoutedge.server.views.home.*
 import io.ktor.server.application.*
 import io.ktor.server.html.*
 import io.ktor.server.response.*
@@ -22,7 +23,10 @@ import kotlin.time.Duration.Companion.minutes
  */
 fun Route.adminHomeRoutes(
     deviceRepository: DeviceRepository,
-    alertRepository: AlertRepository
+    alertRepository: AlertRepository,
+    channelRepository: ChannelRepository,
+    assetRepository: AssetRepository,
+    auditRepository: AuditRepository
 ) {
     route("/admin") {
         // GET /admin - Dashboard
@@ -73,11 +77,34 @@ fun Route.adminHomeRoutes(
                 )
             }
 
+            // Fetch content stats
+            val channelCount = channelRepository.findAll(tenantId).size
+            val assets = assetRepository.findAllActive(tenantId)
+            val storageBytes = assetRepository.getTotalStorageBytes(tenantId)
+            val contentStats = ContentStats(
+                channelCount = channelCount,
+                assetCount = assets.size,
+                storageUsedBytes = storageBytes
+            )
+
+            // Fetch recent audit entries
+            val auditEntries = auditRepository.findByTenant(tenantId, AuditFilters(limit = 10))
+            val recentActivity = auditEntries.map { log ->
+                RecentActivity(
+                    action = log.action,
+                    entityType = log.entityType,
+                    actorName = log.actorUser?.displayName,
+                    createdAt = log.createdAt
+                )
+            }
+
             call.respondHtml {
                 homeView(
                     session = session,
                     fleetHealth = fleetHealth,
-                    alerts = alerts
+                    alerts = alerts,
+                    contentStats = contentStats,
+                    recentActivity = recentActivity
                 )
             }
         }

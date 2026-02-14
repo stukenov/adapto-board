@@ -52,9 +52,10 @@ fun Route.webhookRoutes(webhookService: WebhookService) {
             }
 
             val signature = call.request.header("X-Signature-256")
+            val timestamp = call.request.header("X-Timestamp")
             val payload = call.receiveChannel().toByteArray()
 
-            when (val result = webhookService.processWebhook(bindingId, signature, payload)) {
+            when (val result = webhookService.processWebhook(bindingId, signature, payload, timestamp)) {
                 is WebhookResult.Success -> {
                     call.respond(HttpStatusCode.OK, mapOf("status" to "accepted"))
                 }
@@ -69,6 +70,12 @@ fun Route.webhookRoutes(webhookService: WebhookService) {
                 }
                 is WebhookResult.PayloadTooLarge -> {
                     call.respond(HttpStatusCode.PayloadTooLarge, mapOf("error" to "Payload too large"))
+                }
+                is WebhookResult.TimestampExpired -> {
+                    call.respond(HttpStatusCode.RequestTimeout, mapOf("error" to "Timestamp expired or invalid"))
+                }
+                is WebhookResult.DuplicatePayload -> {
+                    call.respond(HttpStatusCode.Conflict, mapOf("error" to "Duplicate payload"))
                 }
                 is WebhookResult.InternalError -> {
                     call.respond(HttpStatusCode.InternalServerError, mapOf("error" to result.message))

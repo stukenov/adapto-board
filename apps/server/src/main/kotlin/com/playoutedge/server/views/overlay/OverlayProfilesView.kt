@@ -1,11 +1,13 @@
 package com.playoutedge.server.views.overlay
 
 import com.playoutedge.auth.AdminClaims
+import com.playoutedge.server.views.PaginationInfo
 import com.playoutedge.server.views.adminLayout
 import com.playoutedge.server.views.alertBox
 import com.playoutedge.server.views.displayName
 import com.playoutedge.server.views.emptyState
 import com.playoutedge.server.views.pageHeader
+import com.playoutedge.server.views.paginationNav
 import kotlinx.html.*
 
 /**
@@ -13,7 +15,8 @@ import kotlinx.html.*
  */
 fun HTML.overlayProfilesListView(
     session: AdminClaims,
-    profiles: List<OverlayProfileItem>
+    profiles: List<OverlayProfileItem>,
+    pagination: PaginationInfo? = null
 ) {
     adminLayout(title = "Overlay Profiles", userName = session.displayName, currentPath = "/admin/overlay") {
         pageHeader(
@@ -31,8 +34,8 @@ fun HTML.overlayProfilesListView(
             a(href = "/admin/overlay/bindings", classes = "tab") { +"Bindings" }
         }
 
-        div("card") {
-            if (profiles.isEmpty()) {
+        if (profiles.isEmpty()) {
+            div("card") {
                 emptyState(
                     icon = "🎨",
                     title = "No overlay profiles",
@@ -40,64 +43,73 @@ fun HTML.overlayProfilesListView(
                     actionHref = "/admin/overlay/profiles/new",
                     actionLabel = "Create Profile"
                 )
-            } else {
-                table("table") {
-                    thead {
-                        tr {
-                            th { +"Name" }
-                            th { +"Widget Types" }
-                            th { +"Bindings" }
-                            th { +"Created" }
-                            th { }
-                        }
+            }
+        } else {
+            div("template-gallery") {
+                profiles.forEach { profile ->
+                    val templateClass = when {
+                        profile.widgetTypes.any { it.contains("ticker", ignoreCase = true) } -> "template-ticker"
+                        profile.widgetTypes.any { it.contains("kpi", ignoreCase = true) } -> "template-kpi"
+                        profile.widgetTypes.any { it.contains("table", ignoreCase = true) || it.contains("queue", ignoreCase = true) } -> "template-table"
+                        profile.widgetTypes.any { it.contains("qr", ignoreCase = true) } -> "template-qr"
+                        profile.widgetTypes.any { it.contains("poll", ignoreCase = true) } -> "template-poll"
+                        profile.widgetTypes.any { it.contains("reaction", ignoreCase = true) } -> "template-reaction"
+                        profile.widgetTypes.any { it.contains("weather", ignoreCase = true) } -> "template-weather"
+                        profile.widgetTypes.any { it.contains("clock", ignoreCase = true) } -> "template-clock"
+                        else -> "template-default"
                     }
-                    tbody {
-                        profiles.forEach { profile ->
-                            tr {
-                                td {
-                                    a(href = "/admin/overlay/profiles/${profile.id}", classes = "font-medium") {
-                                        +profile.name
+                    a(href = "/admin/overlay/profiles/${profile.id}", classes = "template-card $templateClass") {
+                        div("template-card-preview") {
+                            // Visual layout preview based on template type
+                            when {
+                                templateClass == "template-ticker" -> {
+                                    div("preview-bar preview-bar-bottom") {}
+                                }
+                                templateClass == "template-kpi" -> {
+                                    div("preview-grid-2x2") {
+                                        repeat(4) { div("preview-tile") {} }
                                     }
                                 }
-                                td {
-                                    if (profile.widgetTypes.isEmpty()) {
-                                        span("text-muted") { +"No widgets" }
-                                    } else {
-                                        profile.widgetTypes.take(3).forEach { type ->
-                                            span("badge badge-gray badge-plain mr-1") { +type }
-                                        }
-                                        if (profile.widgetTypes.size > 3) {
-                                            span("text-muted text-sm") { +"+${profile.widgetTypes.size - 3}" }
-                                        }
+                                templateClass == "template-table" -> {
+                                    div("preview-table-lines") {
+                                        repeat(3) { div("preview-line") {} }
                                     }
                                 }
-                                td {
-                                    if (profile.bindingsCount > 0) {
-                                        span("badge badge-info badge-plain") { +"${profile.bindingsCount}" }
-                                    } else {
-                                        span("text-muted") { +"—" }
+                                templateClass == "template-qr" -> {
+                                    div("preview-qr-box") {}
+                                }
+                                templateClass == "template-poll" -> {
+                                    div("preview-bars-horizontal") {
+                                        repeat(3) { div("preview-hbar") {} }
                                     }
                                 }
-                                td {
-                                    span("text-muted") {
-                                        +profile.createdAt.toString().substringBefore("T")
-                                    }
-                                }
-                                td {
-                                    div("table-actions") {
-                                        a(href = "/admin/overlay/profiles/${profile.id}", classes = "btn btn-secondary btn-sm") {
-                                            +"View"
-                                        }
-                                        a(href = "/admin/overlay/profiles/${profile.id}/edit", classes = "btn btn-ghost btn-sm") {
-                                            +"Edit"
-                                        }
-                                    }
+                                else -> {
+                                    div("preview-generic") {}
                                 }
                             }
+                        }
+                        div("template-card-name") { +profile.name }
+                        div("template-card-desc") {
+                            if (profile.widgetTypes.isNotEmpty()) {
+                                +profile.widgetTypes.joinToString(", ")
+                            } else {
+                                +"Custom layout"
+                            }
+                        }
+                        div("template-card-meta") {
+                            if (profile.bindingsCount > 0) {
+                                span("badge badge-info badge-plain") { +"${profile.bindingsCount} binding${if (profile.bindingsCount != 1) "s" else ""}" }
+                            }
+                            span("text-muted text-sm") { +profile.createdAt.toString().substringBefore("T") }
                         }
                     }
                 }
             }
+        }
+
+        // Pagination
+        if (pagination != null) {
+            paginationNav(pagination)
         }
     }
 }
@@ -248,6 +260,11 @@ fun HTML.overlayProfileDetailView(
                     +"Delete"
                 }
             }
+        }
+
+        // Warning banner if profile has active bindings
+        if (bindings.isNotEmpty()) {
+            alertBox("Changes to this profile affect all ${bindings.size} live channel${if (bindings.size != 1) "s" else ""} using it.", "warning")
         }
 
         // Profile definition

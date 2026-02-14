@@ -250,6 +250,9 @@ fun HTML.overlayBindingDetailView(
                     button(type = ButtonType.submit, classes = "btn btn-success") { +"Activate" }
                 }
             }
+            a(href = "/admin/overlay/bindings/${binding.id}/preview", classes = "btn btn-secondary overlay-preview-btn") {
+                +"Preview"
+            }
             form(action = "/admin/overlay/bindings/${binding.id}/delete", method = FormMethod.post, classes = "inline") {
                 button(type = ButtonType.submit, classes = "btn btn-danger") {
                     attributes["onclick"] = "return confirm('Delete this binding? This action cannot be undone.')"
@@ -297,6 +300,81 @@ fun HTML.overlayBindingDetailView(
             OverlaySourceType.REST_PULL -> restConnectorCard(binding)
             OverlaySourceType.WEBHOOK -> webhookConfigCard(binding, webhookLogs)
         }
+
+        // Test Webhook section (available for all source types)
+        div("card mb-4") {
+            div("card-header") {
+                h3 { +"Test Payload" }
+            }
+            div("card-body") {
+                form(action = "/admin/overlay/bindings/${binding.id}/test-webhook", method = FormMethod.post) {
+                    div("form-group") {
+                        label {
+                            htmlFor = "testPayload"
+                            +"JSON Payload"
+                        }
+                        textArea(classes = "form-control code-editor json-editor") {
+                            id = "testPayload"
+                            name = "payload"
+                            rows = "6"
+                            placeholder = """{"ticker": {"text": "Test message..."}}"""
+                        }
+                        small("form-helper") {
+                            +"Enter valid JSON to send as a test payload. The editor will highlight syntax errors in real-time."
+                        }
+                    }
+                    div("form-actions") {
+                        button(type = ButtonType.submit, classes = "btn btn-primary") {
+                            +"Send Test"
+                        }
+                    }
+                }
+            }
+        }
+
+        // Schedule section
+        div("card mb-4") {
+            div("card-header") {
+                h3 { +"Schedule" }
+            }
+            div("card-body") {
+                form(action = "/admin/overlay/bindings/${binding.id}/update-schedule", method = FormMethod.post) {
+                    div("form-row") {
+                        div("form-group col-6") {
+                            label {
+                                htmlFor = "scheduleStart"
+                                +"Start Date"
+                            }
+                            input(type = InputType.date, classes = "form-control") {
+                                id = "scheduleStart"
+                                name = "scheduleStart"
+                            }
+                            small("form-helper") {
+                                +"Overlay will become active on this date. Leave empty for no start constraint."
+                            }
+                        }
+                        div("form-group col-6") {
+                            label {
+                                htmlFor = "scheduleEnd"
+                                +"End Date"
+                            }
+                            input(type = InputType.date, classes = "form-control") {
+                                id = "scheduleEnd"
+                                name = "scheduleEnd"
+                            }
+                            small("form-helper") {
+                                +"Overlay will be deactivated after this date. Leave empty for no end constraint."
+                            }
+                        }
+                    }
+                    div("form-actions") {
+                        button(type = ButtonType.submit, classes = "btn btn-primary") {
+                            +"Update Schedule"
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -312,7 +390,7 @@ private fun MAIN.manualEditorCard(binding: OverlayBindingDetail) {
                         htmlFor = "stateJson"
                         +"Overlay State JSON"
                     }
-                    textArea(classes = "form-control code-editor") {
+                    textArea(classes = "form-control code-editor json-editor") {
                         id = "stateJson"
                         name = "stateJson"
                         rows = "12"
@@ -320,7 +398,9 @@ private fun MAIN.manualEditorCard(binding: OverlayBindingDetail) {
                         +binding.sourceConfigJson
                     }
                     small("form-helper") {
-                        +"Edit the JSON data that will be displayed on the overlay. Changes are pushed to devices in real-time."
+                        +"Edit the JSON data that will be displayed on the overlay. Changes are pushed to devices in real-time. "
+                        strong { +"Tip:" }
+                        +" The editor validates JSON syntax as you type — a green border means valid JSON, red means there is an error."
                     }
                 }
                 div("form-actions") {
@@ -485,6 +565,12 @@ private fun MAIN.webhookConfigCard(binding: OverlayBindingDetail, webhookLogs: L
                 small("form-helper") {
                     +"Use this secret to sign webhook payloads for security."
                 }
+                form(action = "/admin/overlay/bindings/${binding.id}/regenerate-secret", method = FormMethod.post, classes = "mt-2") {
+                    button(type = ButtonType.submit, classes = "btn btn-warning btn-sm") {
+                        attributes["onclick"] = "return confirm('Regenerate webhook secret? Existing integrations will stop working until updated with the new secret.')"
+                        +"Regenerate Secret"
+                    }
+                }
             }
 
             div("form-group") {
@@ -526,6 +612,7 @@ private fun MAIN.webhookConfigCard(binding: OverlayBindingDetail, webhookLogs: L
                         th { +"Latency" }
                         th { +"Size" }
                         th { +"Error" }
+                        th { }
                     }
                 }
                 tbody {
@@ -547,6 +634,15 @@ private fun MAIN.webhookConfigCard(binding: OverlayBindingDetail, webhookLogs: L
                                 log.error?.let {
                                     span("text-danger") { +it }
                                 } ?: span("text-muted") { +"—" }
+                            }
+                            td {
+                                if (!log.isSuccess) {
+                                    form(action = "/admin/overlay/webhook-logs/${log.id}/retry", method = FormMethod.post, classes = "inline") {
+                                        button(type = ButtonType.submit, classes = "btn btn-secondary btn-sm") {
+                                            +"Retry"
+                                        }
+                                    }
+                                }
                             }
                         }
                     }

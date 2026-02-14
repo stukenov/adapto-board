@@ -24,4 +24,8 @@ class TtsService(
         val config = EdgeTtsConfig(voice = voice)
         return ttsClient.synthesize(text, config)
     }
+
+    fun close() {
+        ttsClient.close()
+    }
 }

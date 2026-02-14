@@ -43,7 +43,10 @@ fun HTML.asrunReportsView(
     summary: AsrunSummaryView,
     filters: AsrunFiltersView,
     devices: List<DeviceFilterOption>,
-    channels: List<ChannelFilterOption>
+    channels: List<ChannelFilterOption>,
+    playbackByDay: List<ChartDataPoint> = emptyList(),
+    topAssets: List<ChartDataPoint> = emptyList(),
+    activePreset: String? = null
 ) {
     adminLayout(title = "As-Run Reports", userName = session.displayName, currentPath = "/admin/reports") {
         pageHeader(
@@ -59,6 +62,65 @@ fun HTML.asrunReportsView(
         div("tabs mb-4") {
             a(href = "/admin/reports/asrun", classes = "tab active") { +"As-Run Reports" }
             a(href = "/admin/reports/audit", classes = "tab") { +"Audit Log" }
+        }
+
+        // Date preset buttons
+        div("date-presets") {
+            a(href = "/admin/reports/asrun?preset=last7days", classes = if (activePreset == "last7days") "active" else "") {
+                +"Last 7 days"
+            }
+            a(href = "/admin/reports/asrun?preset=last30days", classes = if (activePreset == "last30days") "active" else "") {
+                +"Last 30 days"
+            }
+            a(href = "/admin/reports/asrun?preset=thisMonth", classes = if (activePreset == "thisMonth") "active" else "") {
+                +"This month"
+            }
+            a(href = "/admin/reports/asrun?preset=lastMonth", classes = if (activePreset == "lastMonth") "active" else "") {
+                +"Last month"
+            }
+        }
+
+        // CSS bar charts
+        if (playbackByDay.isNotEmpty() || topAssets.isNotEmpty()) {
+            div("card mb-4") {
+                div("card-body") {
+                    if (playbackByDay.isNotEmpty()) {
+                        div("chart-container") {
+                            h4 { +"Playback by Day" }
+                            playbackByDay.forEach { point ->
+                                div("chart-bar-row") {
+                                    span("chart-bar-label") { +point.label.takeLast(5) }
+                                    div("chart-bar-track") {
+                                        div("chart-bar-fill") {
+                                            style = "width: ${point.percentage}%"
+                                        }
+                                    }
+                                    span("chart-bar-value") { +"${point.value}" }
+                                }
+                            }
+                        }
+                    }
+                    if (topAssets.isNotEmpty()) {
+                        div("chart-container") {
+                            h4 { +"Top Assets" }
+                            topAssets.forEach { point ->
+                                div("chart-bar-row") {
+                                    span("chart-bar-label") {
+                                        title = point.label
+                                        +(if (point.label.length > 15) point.label.take(15) + "..." else point.label)
+                                    }
+                                    div("chart-bar-track") {
+                                        div("chart-bar-fill") {
+                                            style = "width: ${point.percentage}%"
+                                        }
+                                    }
+                                    span("chart-bar-value") { +"${point.value}" }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // Summary cards
@@ -223,13 +285,17 @@ fun HTML.asrunReportsView(
                                     }
                                 }
                                 td {
-                                    a(href = "/admin/devices/${event.deviceId}", classes = "font-medium") {
+                                    a(href = "/admin/reports/asrun?deviceId=${event.deviceId}", classes = "font-medium") {
+                                        title = "Filter by this device"
                                         +event.deviceName
                                     }
                                 }
                                 td {
                                     event.channelName?.let {
-                                        a(href = "/admin/channels/${event.channelId}") { +it }
+                                        a(href = "/admin/reports/asrun?channelId=${event.channelId}") {
+                                            title = "Filter by this channel"
+                                            +it
+                                        }
                                     } ?: span("text-muted") { +"—" }
                                 }
                                 td {
@@ -441,11 +507,23 @@ fun HTML.auditLogView(
                                 }
                                 td {
                                     if (log.hasDiff) {
-                                        a(href = "/admin/reports/audit/${log.id}/diff", classes = "btn btn-ghost btn-sm") {
+                                        span("diff-toggle") {
+                                            attributes["onclick"] = "var el=this.nextElementSibling;el.classList.toggle('open');this.textContent=el.classList.contains('open')?'Hide changes':'View changes'"
                                             +"View changes"
                                         }
+                                        div("diff-content") {
+                                            id = "diff-${log.id}"
+                                            +"Loading..."
+                                            attributes["data-diff-url"] = "/admin/reports/audit/${log.id}/diff"
+                                            attributes["onclick"] = ""
+                                        }
+                                        script {
+                                            unsafe {
+                                                +"document.querySelector('#diff-${log.id}').parentElement.querySelector('.diff-toggle').addEventListener('click',function(){var d=document.getElementById('diff-${log.id}');if(d.dataset.loaded)return;fetch(d.dataset.diffUrl).then(r=>r.text()).then(t=>{d.innerHTML=t;d.dataset.loaded='1'}).catch(()=>{d.textContent='Could not load diff'})},{ once: false })"
+                                            }
+                                        }
                                     } else {
-                                        span("text-muted") { +"—" }
+                                        span("text-muted") { +"--" }
                                     }
                                 }
                             }
