@@ -90,6 +90,50 @@ fun HTML.channelDetailView(
             }
         }
 
+        // Embed Player section
+        div("card mb-4") {
+            div("card-header") {
+                h3 { +"Embed Player" }
+                button(classes = "btn btn-secondary btn-sm") {
+                    id = "copy-embed-btn"
+                    +"Copy Embed Code"
+                }
+            }
+            div("card-body") {
+                div("embed-preview-container") {
+                    iframe {
+                        src = "/embed/${channel.id}"
+                        attributes["width"] = "100%"
+                        attributes["height"] = "400"
+                        attributes["frameborder"] = "0"
+                        attributes["allowfullscreen"] = "true"
+                        attributes["style"] = "border-radius: var(--radius); background: #000;"
+                    }
+                }
+                div("embed-code-box mt-3") {
+                    id = "embed-code"
+                    code {
+                        +"""<iframe src="${"https://tv.adapto.kz/embed/${channel.id}"}" width="1920" height="1080" frameborder="0" allowfullscreen></iframe>"""
+                    }
+                }
+            }
+        }
+
+        script {
+            unsafe {
+                +"""
+                document.getElementById('copy-embed-btn')?.addEventListener('click', function() {
+                    const code = document.getElementById('embed-code')?.textContent || '';
+                    navigator.clipboard.writeText(code).then(function() {
+                        const btn = document.getElementById('copy-embed-btn');
+                        btn.textContent = 'Copied!';
+                        setTimeout(function() { btn.textContent = 'Copy Embed Code'; }, 2000);
+                    });
+                });
+                """.trimIndent()
+            }
+        }
+
         // Devices section
         div("card") {
             div("card-header") {

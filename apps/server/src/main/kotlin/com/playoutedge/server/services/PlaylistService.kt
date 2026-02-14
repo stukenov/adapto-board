@@ -26,7 +26,9 @@ data class PlaylistItem(
     val validTo: LocalDate?,
     val daysOfWeek: Int?,
     val timeStart: LocalTime?,
-    val timeEnd: LocalTime?
+    val timeEnd: LocalTime?,
+    val voiceoverUrl: String? = null,
+    val weight: Int = 1
 )
 
 class PlaylistService(
@@ -42,6 +44,11 @@ class PlaylistService(
             val asset = assetRepo.findById(tenantId, item.asset.id.value) ?: return@mapNotNull null
             val signedUrl = storageService.getSignedUrl(asset.storageKey, 1.hours)
 
+            // Generate voiceover signed URL if available
+            val voiceoverUrl = item.voiceoverKey?.let { key ->
+                storageService.getSignedUrl(key, 1.hours)
+            }
+
             PlaylistItem(
                 assetId = asset.id.value,
                 url = signedUrl,
@@ -52,9 +59,11 @@ class PlaylistService(
                 validTo = item.validTo,
                 daysOfWeek = item.daysOfWeek,
                 timeStart = item.timeStart,
-                timeEnd = item.timeEnd
+                timeEnd = item.timeEnd,
+                voiceoverUrl = voiceoverUrl,
+                weight = item.weight
             )
-        }.sortedBy { it.orderIndex }
+        }.sortedWith(compareByDescending<PlaylistItem> { it.weight }.thenBy { it.orderIndex })
 
         return PlaylistManifest(
             scheduleVersionId = activeVersion.id.value,

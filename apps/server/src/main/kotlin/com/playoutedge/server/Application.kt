@@ -14,8 +14,11 @@ import com.playoutedge.server.services.RegistrationService
 import com.playoutedge.server.services.WebhookService
 import com.playoutedge.server.services.OverlayService
 import com.playoutedge.server.services.OverlaySubscribers
+import com.playoutedge.server.services.OverlayPollService
 import com.playoutedge.server.services.PlaylistService
 import com.playoutedge.server.services.ScheduleService
+import com.playoutedge.server.services.ScheduleTemplateService
+import com.playoutedge.server.services.TtsService
 import com.playoutedge.persistence.config.DatabaseConfig
 import com.playoutedge.persistence.config.DatabaseFactory
 import com.playoutedge.persistence.repositories.impl.AlertRepositoryImpl
@@ -74,6 +77,8 @@ import com.playoutedge.server.routes.player.playerAsrunRoutes
 import com.playoutedge.server.routes.player.playlistRoutes
 import com.playoutedge.server.routes.landing.publicLandingRoutes
 import com.playoutedge.server.routes.landing.publicSignupRoutes
+import com.playoutedge.server.routes.embedRoutes
+import com.playoutedge.server.routes.publicPollRoutes
 import com.playoutedge.storage.AssetUploadService
 import com.playoutedge.storage.LocalStorageService
 import com.playoutedge.storage.StorageConfig
@@ -135,6 +140,9 @@ fun Application.module() {
     val alertService = AlertService(alertRepository)
     val registrationService = RegistrationService(tenantRepository, userRepository, passwordService)
     val maintenanceService = MaintenanceService()
+    val ttsService = TtsService(storageService)
+    val scheduleTemplateService = ScheduleTemplateService()
+    val overlayPollService = OverlayPollService(overlayRepository, overlaySubscribers)
 
     // Install plugins
     install(RequestIdPlugin)
@@ -159,11 +167,16 @@ fun Application.module() {
     jobScheduler.register(AsrunCleanupJobHandler(asrunRepository))
     jobScheduler.start()
 
+    // Start overlay REST pull polling service
+    overlayPollService.start()
+
     // Configure routes
     routing {
         // Public routes (before admin to avoid auth)
         publicLandingRoutes()
         publicSignupRoutes(registrationService, jwtService)
+        embedRoutes(channelRepository, playlistService)
+        publicPollRoutes(overlayRepository, overlaySubscribers)
 
         // Admin web routes (SSR)
         adminAuthRoutes(userRepository, jwtService, passwordService)
@@ -175,7 +188,7 @@ fun Application.module() {
         adminReportsRoutes(asrunRepository, auditRepository, deviceRepository, channelRepository)
         adminSettingsRoutes(userRepository, assetRepository, deviceRepository, passwordService)
         adminOnboardingRoutes(assetRepository, channelRepository, deviceRepository)
-        adminScheduleRoutes(channelRepository, scheduleRepository, assetRepository, scheduleService)
+        adminScheduleRoutes(channelRepository, scheduleRepository, assetRepository, scheduleService, ttsService)
         adminStaticRoutes()
 
         // API routes

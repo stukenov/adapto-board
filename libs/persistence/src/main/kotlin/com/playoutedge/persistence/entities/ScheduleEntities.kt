@@ -47,4 +47,6 @@ class ScheduleItemEntity(id: EntityID<UUID>) : UUIDEntity(id) {
     var timeStart by ScheduleItems.timeStart
     var timeEnd by ScheduleItems.timeEnd
     var weight by ScheduleItems.weight
+    var voiceoverKey by ScheduleItems.voiceoverKey
+    var storyGroupId by ScheduleItems.storyGroupId
 }

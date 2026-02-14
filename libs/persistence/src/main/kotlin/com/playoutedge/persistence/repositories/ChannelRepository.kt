@@ -6,6 +6,7 @@ import com.playoutedge.persistence.entities.ChannelEntity
 import java.util.UUID
 
 interface ChannelRepository {
+    suspend fun findByIdAnyTenant(channelId: UUID): ChannelEntity?
     suspend fun findById(tenantId: TenantId, channelId: UUID): ChannelEntity?
     suspend fun findAll(tenantId: TenantId): List<ChannelEntity>
     suspend fun findByStatus(tenantId: TenantId, status: ChannelStatus): List<ChannelEntity>

@@ -15,6 +15,11 @@ import java.util.UUID
 
 class ChannelRepositoryImpl : ChannelRepository {
 
+    override suspend fun findByIdAnyTenant(channelId: UUID): ChannelEntity? =
+        newSuspendedTransaction {
+            ChannelEntity.findById(channelId)
+        }
+
     override suspend fun findById(tenantId: TenantId, channelId: UUID): ChannelEntity? =
         newSuspendedTransaction {
             ChannelEntity.find {

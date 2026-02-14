@@ -45,6 +45,8 @@ object ScheduleItems : UUIDTable("schedule_items") {
     val timeStart = time("time_start").nullable()
     val timeEnd = time("time_end").nullable()
     val weight = integer("weight").default(1)
+    val voiceoverKey = varchar("voiceover_key", 500).nullable()
+    val storyGroupId = uuid("story_group_id").nullable()
 
     init {
         uniqueIndex("uq_schedule_items_version_order", tenantId, scheduleVersionId, orderIndex)

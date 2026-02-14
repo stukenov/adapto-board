@@ -34,6 +34,10 @@ interface OverlayRepository {
     suspend fun deleteBinding(tenantId: TenantId, bindingId: UUID): Boolean
     suspend fun countBindingsByProfile(tenantId: TenantId, profileId: UUID): Long
 
+    // REST pull bindings (cross-tenant, for background polling)
+    suspend fun findAllRestPullBindings(): List<OverlayBindingEntity>
+    suspend fun getStateByChannel(channelId: UUID): OverlayStateEntity?
+
     // State operations
     suspend fun getState(tenantId: TenantId, channelId: UUID): OverlayStateEntity?
     suspend fun setState(tenantId: TenantId, channelId: UUID, stateJson: String): OverlayStateEntity

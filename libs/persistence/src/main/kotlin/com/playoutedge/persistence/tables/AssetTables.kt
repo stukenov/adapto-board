@@ -23,6 +23,7 @@ object Assets : UUIDTable("assets") {
     val createdAt = timestamp("created_at")
     val archivedAt = timestamp("archived_at").nullable()
     val rejectionReason = text("rejection_reason").nullable()
+    val voiceoverKey = varchar("voiceover_key", 500).nullable()
 }
 
 object AssetVersions : UUIDTable("asset_versions") {

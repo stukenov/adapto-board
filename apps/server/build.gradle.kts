@@ -18,6 +18,10 @@ dependencies {
     implementation(project(":libs:storage"))
     implementation(project(":libs:overlay"))
     implementation(project(":libs:observability"))
+    implementation(project(":libs:tts"))
+
+    // Ktor Client (for overlay polling)
+    implementation(libs.bundles.ktor.client)
 
     // Ktor Server
     implementation(libs.bundles.ktor.server)

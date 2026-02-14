@@ -83,6 +83,11 @@ fun HTML.scheduleEditorView(
                     +formatTotalDuration(items)
                 }
             }
+            div("schedule-toolbar-center") {
+                a(href = "/admin/channels/$channelId/schedule/grid", classes = "btn btn-sm btn-secondary") {
+                    +"Grid View"
+                }
+            }
             div("schedule-toolbar-right") {
                 form(action = "/admin/channels/$channelId/schedule/save", method = FormMethod.post, classes = "inline") {
                     id = "schedule-form"
@@ -272,6 +277,26 @@ private fun FlowContent.playlistItemElement(item: ScheduleEditorItem, index: Int
                                 }
                                 +name
                             }
+                        }
+                    }
+                }
+            }
+            // TTS Voiceover controls
+            div("item-timing-row") {
+                div("form-group") {
+                    label { +"Voiceover" }
+                    div("tts-controls") {
+                        label("day-checkbox") {
+                            input(type = InputType.checkBox, classes = "tts-enabled") {}
+                            +"Generate voiceover"
+                        }
+                        select("form-control form-control-sm tts-voice") {
+                            option { value = "RU_DARIYA"; +"Dariya (RU, female)" }
+                            option { value = "RU_IVAN"; +"Ivan (RU, male)" }
+                            option { value = "KK_AIGUL"; +"Aigul (KK, female)" }
+                            option { value = "KK_DAULET"; +"Daulet (KK, male)" }
+                            option { value = "EN_JENNY"; +"Jenny (EN, female)" }
+                            option { value = "EN_GUY"; +"Guy (EN, male)" }
                         }
                     }
                 }

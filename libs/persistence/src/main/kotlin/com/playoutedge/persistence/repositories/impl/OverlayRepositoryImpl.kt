@@ -171,6 +171,21 @@ class OverlayRepositoryImpl : OverlayRepository {
 
     // State operations
 
+    override suspend fun findAllRestPullBindings(): List<OverlayBindingEntity> =
+        newSuspendedTransaction {
+            OverlayBindingEntity.find {
+                (OverlayBindings.sourceType eq OverlaySourceType.REST_PULL) and
+                    (OverlayBindings.status eq BindingStatus.ACTIVE)
+            }.toList()
+        }
+
+    override suspend fun getStateByChannel(channelId: UUID): OverlayStateEntity? =
+        newSuspendedTransaction {
+            OverlayStateEntity.find {
+                OverlayStates.channelId eq channelId
+            }.firstOrNull()
+        }
+
     override suspend fun getState(tenantId: TenantId, channelId: UUID): OverlayStateEntity? =
         newSuspendedTransaction {
             OverlayStateEntity.find {

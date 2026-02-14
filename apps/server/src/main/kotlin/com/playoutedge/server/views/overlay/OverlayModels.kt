@@ -89,5 +89,10 @@ enum class OverlayTemplate(val displayName: String, val description: String) {
     TICKER("Ticker", "Scrolling text ticker at bottom of screen"),
     KPI_TILES("KPI Tiles", "Grid of key performance indicators"),
     QUEUE_TABLE("Queue Table", "Dynamic table showing queue data"),
-    QR_CARD("QR Card", "Card with QR code and call to action")
+    QR_CARD("QR Card", "Card with QR code and call to action"),
+    POLL("Poll", "Interactive poll with voting"),
+    REACTION("Reactions", "Emoji reaction overlay"),
+    WEATHER("Weather", "Live weather widget"),
+    CLOCK("Clock", "Current time display"),
+    NEWS_TICKER("News Ticker", "Scrolling news feed from RSS/URL")
 }

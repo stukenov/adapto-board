@@ -8,6 +8,8 @@ import com.playoutedge.server.plugins.adminSession
 import com.playoutedge.server.services.PublishResult
 import com.playoutedge.server.services.ScheduleItemInput
 import com.playoutedge.server.services.ScheduleService
+import com.playoutedge.server.services.TtsService
+import com.playoutedge.tts.TtsVoice
 import com.playoutedge.server.views.channels.*
 import io.ktor.server.application.*
 import io.ktor.server.html.*
@@ -38,7 +40,8 @@ fun Route.adminScheduleRoutes(
     channelRepository: ChannelRepository,
     scheduleRepository: ScheduleRepository,
     assetRepository: AssetRepository,
-    scheduleService: ScheduleService
+    scheduleService: ScheduleService,
+    ttsService: TtsService? = null
 ) {
     route("/admin/channels/{channelId}/schedule") {
         // GET /admin/channels/:channelId/schedule - Schedule editor
@@ -230,6 +233,90 @@ fun Route.adminScheduleRoutes(
 
             val param = if (result is PublishResult.Success) "success" else "error"
             call.respondRedirect("/admin/channels/$channelId/schedule?$param=$message")
+        }
+
+        // GET /admin/channels/:channelId/schedule/grid - Grid view
+        get("/grid") {
+            val session = call.adminSession ?: run {
+                call.respondRedirect("/admin/login")
+                return@get
+            }
+
+            val tenantId = TenantId(session.tenantId)
+            val channelId = call.parameters["channelId"]?.let {
+                runCatching { UUID.fromString(it) }.getOrNull()
+            }
+
+            if (channelId == null) {
+                call.respondRedirect("/admin/channels")
+                return@get
+            }
+
+            val channel = channelRepository.findById(tenantId, channelId)
+            if (channel == null) {
+                call.respondRedirect("/admin/channels")
+                return@get
+            }
+
+            val (activeVersionNumber, editorItems) = newSuspendedTransaction {
+                val activeVersion = scheduleRepository.findActiveVersion(tenantId, channelId)
+                val sourceVersion = activeVersion ?: scheduleRepository.findDraftVersion(tenantId, channelId)
+                val items = sourceVersion?.let { version ->
+                    scheduleRepository.findItemsByVersion(tenantId, version.id.value)
+                } ?: emptyList()
+
+                val editorItems = items.mapIndexed { index, item ->
+                    ScheduleEditorItem(
+                        assetId = item.asset.id.value,
+                        assetName = item.asset.name,
+                        assetType = item.asset.type,
+                        durationMs = item.asset.durationMs,
+                        orderIndex = index,
+                        timeStart = item.timeStart?.toString(),
+                        timeEnd = item.timeEnd?.toString(),
+                        daysOfWeek = item.daysOfWeek
+                    )
+                }
+
+                Pair(activeVersion?.version, editorItems)
+            }
+
+            call.respondHtml {
+                scheduleGridView(
+                    session = session,
+                    channelId = channelId,
+                    channelName = channel.name,
+                    items = editorItems,
+                    activeVersionNumber = activeVersionNumber
+                )
+            }
+        }
+
+        // POST /admin/channels/:channelId/schedule/tts-preview - Generate TTS preview
+        post("/tts-preview") {
+            val session = call.adminSession ?: run {
+                call.respondRedirect("/admin/login")
+                return@post
+            }
+
+            if (ttsService == null) {
+                call.respondText("TTS not available", status = io.ktor.http.HttpStatusCode.ServiceUnavailable)
+                return@post
+            }
+
+            val params = call.receiveParameters()
+            val text = params["text"] ?: ""
+            val voiceName = params["voice"] ?: "RU_DARIYA"
+
+            if (text.isBlank()) {
+                call.respondText("Text is required", status = io.ktor.http.HttpStatusCode.BadRequest)
+                return@post
+            }
+
+            val voice = runCatching { TtsVoice.valueOf(voiceName) }.getOrDefault(TtsVoice.RU_DARIYA)
+            val audioBytes = ttsService.previewVoiceover(text, voice)
+
+            call.respondBytes(audioBytes, io.ktor.http.ContentType.Audio.MPEG)
         }
 
         // POST /admin/channels/:channelId/schedule/remove/:itemIndex — fallback without JS

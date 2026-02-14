@@ -20,6 +20,7 @@ include("libs:auth")
 include("libs:storage")
 include("libs:overlay")
 include("libs:observability")
+include("libs:tts")
 
 dependencyResolutionManagement {
     versionCatalogs {

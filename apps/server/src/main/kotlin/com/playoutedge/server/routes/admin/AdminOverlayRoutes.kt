@@ -540,6 +540,11 @@ private fun getTemplateDefinition(template: OverlayTemplate): String = when (tem
     OverlayTemplate.KPI_TILES -> """{"widgets":[{"type":"kpi-grid","position":"top-right","columns":2}]}"""
     OverlayTemplate.QUEUE_TABLE -> """{"widgets":[{"type":"table","position":"center","columns":["name","status","wait"]}]}"""
     OverlayTemplate.QR_CARD -> """{"widgets":[{"type":"qr-card","position":"bottom-right","size":120}]}"""
+    OverlayTemplate.POLL -> """{"widgets":[{"type":"poll","position":"center","question":"","options":["Option 1","Option 2","Option 3"]}],"poll":{"question":"","options":["Option 1","Option 2","Option 3"],"votes":[0,0,0]}}"""
+    OverlayTemplate.REACTION -> """{"widgets":[{"type":"reactions","position":"bottom-right","emojis":["👍","❤️","😂","🎉","👏"]}]}"""
+    OverlayTemplate.WEATHER -> """{"widgets":[{"type":"weather","position":"top-right","city":"Almaty","units":"metric","apiKey":""}]}"""
+    OverlayTemplate.CLOCK -> """{"widgets":[{"type":"clock","position":"top-right","format":"24h","timezone":"Asia/Almaty"}]}"""
+    OverlayTemplate.NEWS_TICKER -> """{"widgets":[{"type":"news-ticker","position":"bottom","feedUrl":"","scrollSpeed":60}]}"""
 }
 
 private fun formatJson(json: String): String {

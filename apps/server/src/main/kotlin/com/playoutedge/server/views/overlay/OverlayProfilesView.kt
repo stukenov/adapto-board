@@ -154,6 +154,11 @@ fun HTML.newOverlayProfileView(
                                     OverlayTemplate.KPI_TILES -> "📊"
                                     OverlayTemplate.QUEUE_TABLE -> "📋"
                                     OverlayTemplate.QR_CARD -> "📱"
+                                    OverlayTemplate.POLL -> "📊"
+                                    OverlayTemplate.REACTION -> "👍"
+                                    OverlayTemplate.WEATHER -> "🌤"
+                                    OverlayTemplate.CLOCK -> "🕐"
+                                    OverlayTemplate.NEWS_TICKER -> "📰"
                                 }
                                 div("template-card") {
                                     attributes["data-template"] = template.name
