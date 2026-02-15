@@ -37,7 +37,7 @@ fun HTML.overlayProfilesListView(
         if (profiles.isEmpty()) {
             div("card") {
                 emptyState(
-                    icon = "🎨",
+                    icon = "palette",
                     title = "No overlay profiles",
                     description = "Create your first overlay profile to add dynamic content like tickers, tables, and KPIs to your channels.",
                     actionHref = "/admin/overlay/profiles/new",
@@ -360,7 +360,7 @@ fun HTML.overlayProfileDetailView(
             if (bindings.isEmpty()) {
                 div("card-body") {
                     emptyState(
-                        icon = "🔗",
+                        icon = "link",
                         title = "No bindings yet",
                         description = "Connect this profile to a channel to start displaying dynamic content.",
                         actionHref = "/admin/overlay/bindings/new?profile=${profile.id}",

@@ -9,6 +9,7 @@ import com.playoutedge.server.views.dangerItem
 import com.playoutedge.server.views.dangerZone
 import com.playoutedge.server.views.displayName
 import com.playoutedge.server.views.pageHeader
+import com.playoutedge.server.views.icon
 import kotlinx.html.*
 
 /**
@@ -203,14 +204,13 @@ fun HTML.assetDetailView(
                     dl("info-list") {
                         dt { +"Type" }
                         dd {
-                            val typeIcon = when (asset.type) {
-                                AssetType.VIDEO -> "🎬"
-                                AssetType.IMAGE -> "🖼"
-                                AssetType.AUDIO -> "🎵"
-                                AssetType.SLIDESHOW -> "📽"
-                            }
                             span("badge badge-gray badge-plain") {
-                                +"$typeIcon ${asset.type.name.lowercase()}"
+                                when (asset.type) {
+                                    AssetType.VIDEO -> { icon("film"); +" video" }
+                                    AssetType.IMAGE -> { icon("image"); +" image" }
+                                    AssetType.AUDIO -> { icon("music"); +" audio" }
+                                    AssetType.SLIDESHOW -> { icon("play"); +" slideshow" }
+                                }
                             }
                         }
 

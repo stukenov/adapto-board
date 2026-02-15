@@ -49,7 +49,7 @@ fun HTML.deviceGroupsView(
         }
 
         if (groups.isEmpty()) {
-            emptyState("📁", "No Groups", "Create groups to organize your devices.")
+            emptyState("folder", "No Groups", "Create groups to organize your devices.")
         } else {
             div("card") {
                 div("card-body") {

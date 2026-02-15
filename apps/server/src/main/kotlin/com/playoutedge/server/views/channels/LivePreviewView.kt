@@ -56,7 +56,7 @@ fun HTML.livePreviewView(
             div("card") {
                 div("card-body") {
                     emptyState(
-                        icon = "📺",
+                        icon = "monitor",
                         title = "No active schedule",
                         description = "Publish a schedule to see the live preview.",
                         actionHref = "/admin/channels/$channelId/schedule",

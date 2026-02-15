@@ -5,6 +5,7 @@ import com.playoutedge.domain.enums.ChannelStatus
 import com.playoutedge.server.views.adminLayout
 import com.playoutedge.server.views.displayName
 import com.playoutedge.server.views.emptyState
+import com.playoutedge.server.views.icon
 import com.playoutedge.server.views.pageHeader
 import kotlinx.html.*
 
@@ -29,7 +30,7 @@ fun HTML.channelDetailView(
             span("badge badge-${channelStatusBadge(channel.status)} mr-2") {
                 +channel.status.name.lowercase()
             }
-            a(href = "/admin/channels/${channel.id}/live", classes = "btn btn-info") {
+            a(href = "/admin/channels/${channel.id}/live", classes = "btn btn-secondary") {
                 +"Live Preview"
             }
             a(href = "/admin/channels/${channel.id}/edit", classes = "btn btn-secondary") {
@@ -42,7 +43,7 @@ fun HTML.channelDetailView(
             // Devices card
             div("stat-card") {
                 val onlineCount = devices.count { it.isOnline }
-                div("stat-icon icon-success") { +"📺" }
+                div("stat-icon icon-success") { icon("monitor") }
                 span("stat-label") { +"Devices" }
                 span("stat-value") {
                     +"$onlineCount"
@@ -55,7 +56,7 @@ fun HTML.channelDetailView(
 
             // Schedule items card
             div("stat-card") {
-                div("stat-icon icon-primary") { +"📋" }
+                div("stat-icon icon-primary") { icon("document") }
                 span("stat-label") { +"Schedule" }
                 span("stat-value") { +"${scheduleItems.size}" }
                 span("text-sm text-muted") { +"items" }
@@ -63,7 +64,7 @@ fun HTML.channelDetailView(
 
             // Duration card
             div("stat-card") {
-                div("stat-icon icon-info") { +"⏱" }
+                div("stat-icon icon-info") { icon("clock") }
                 span("stat-label") { +"Total Duration" }
                 span("stat-value") { +calculateTotalDuration(scheduleItems) }
             }
@@ -80,7 +81,7 @@ fun HTML.channelDetailView(
             if (scheduleItems.isEmpty()) {
                 div("card-body") {
                     emptyState(
-                        icon = "📋",
+                        icon = "clipboard",
                         title = "No schedule items",
                         description = "Add videos or images to this channel's schedule.",
                         actionHref = "/admin/channels/${channel.id}/schedule",
@@ -224,7 +225,7 @@ fun HTML.channelDetailView(
             if (devices.isEmpty()) {
                 div("card-body") {
                     emptyState(
-                        icon = "📺",
+                        icon = "monitor",
                         title = "No devices assigned",
                         description = "Assign devices to this channel to start playback.",
                         actionHref = "/admin/devices/enroll",

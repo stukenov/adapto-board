@@ -8,6 +8,7 @@ import com.playoutedge.server.views.alertBox
 import com.playoutedge.server.views.displayName
 import com.playoutedge.server.views.emptyState
 import com.playoutedge.server.views.pageHeader
+import com.playoutedge.server.views.icon
 import kotlinx.html.*
 import java.util.UUID
 
@@ -39,7 +40,7 @@ fun HTML.overlayBindingsListView(
         div("card") {
             if (bindings.isEmpty()) {
                 emptyState(
-                    icon = "🔗",
+                    icon = "link",
                     title = "No overlay bindings",
                     description = "Connect overlay profiles to channels to display dynamic content like tickers, tables, and KPIs.",
                     actionHref = "/admin/overlay/bindings/new",
@@ -264,7 +265,7 @@ fun HTML.overlayBindingDetailView(
         // Status cards
         div("stats-grid mb-4") {
             div("stat-card") {
-                div("stat-icon") { +"📡" }
+                div("stat-icon") { icon("trending-up") }
                 div("stat-content") {
                     div("stat-value") {
                         span("badge badge-${bindingStatusBadge(binding.status)} badge-lg") {
@@ -275,14 +276,14 @@ fun HTML.overlayBindingDetailView(
                 }
             }
             div("stat-card") {
-                div("stat-icon") { +"🔌" }
+                div("stat-icon") { icon("link") }
                 div("stat-content") {
                     div("stat-value") { +binding.sourceType.name.replace("_", " ") }
                     div("stat-label") { +"Source Type" }
                 }
             }
             div("stat-card") {
-                div("stat-icon") { +"🎨" }
+                div("stat-icon") { icon("palette") }
                 div("stat-content") {
                     div("stat-value") {
                         a(href = "/admin/overlay/profiles/${binding.profileId}") {
@@ -616,7 +617,7 @@ private fun MAIN.webhookConfigCard(binding: OverlayBindingDetail, webhookLogs: L
         if (webhookLogs.isEmpty()) {
             div("card-body") {
                 emptyState(
-                    icon = "📥",
+                    icon = "download",
                     title = "No webhook calls yet",
                     description = "Webhook calls will appear here once you start sending data."
                 )
