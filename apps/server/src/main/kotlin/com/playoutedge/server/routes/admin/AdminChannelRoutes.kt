@@ -17,6 +17,7 @@ import io.ktor.server.html.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import com.playoutedge.server.views.components.isHtmx
 import com.playoutedge.server.views.components.respondHxFragment
 import com.playoutedge.server.views.components.hxPagination
 import kotlinx.datetime.Clock
@@ -419,7 +420,12 @@ fun Route.adminChannelRoutes(
                 channelRepository.delete(tenantId, channelId)
             }
 
-            call.respondRedirect("/admin/channels")
+            if (call.isHtmx) {
+                call.response.header("HX-Redirect", "/admin/channels?success=Channel+deleted")
+                call.respond(io.ktor.http.HttpStatusCode.OK)
+            } else {
+                call.respondRedirect("/admin/channels?success=Channel+deleted")
+            }
         }
 
         // GET /admin/channels/:id/live - Live preview

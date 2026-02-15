@@ -7,6 +7,8 @@ import com.playoutedge.server.views.dangerItem
 import com.playoutedge.server.views.dangerZone
 import com.playoutedge.server.views.displayName
 import com.playoutedge.server.views.pageHeader
+import com.playoutedge.server.views.components.hxButton
+import com.playoutedge.server.views.components.BtnVariant
 import kotlinx.html.*
 
 /**
@@ -200,12 +202,14 @@ fun HTML.editChannelView(
                         title = "Delete Channel",
                         description = "Permanently remove this channel and all its schedule items. Devices will be unassigned."
                     ) {
-                        form(action = "/admin/channels/${channel.id}/delete", method = FormMethod.post) {
-                            button(type = ButtonType.submit, classes = "btn btn-danger") {
-                                attributes["onclick"] = "return confirm('Are you sure you want to delete this channel? This action cannot be undone.')"
-                                +"Delete Channel"
-                            }
-                        }
+                        hxButton(
+                            label = "Delete Channel",
+                            variant = BtnVariant.DANGER,
+                            hxPost = "/admin/channels/${channel.id}/delete",
+                            target = "body",
+                            swap = "none",
+                            confirm = "Are you sure you want to delete this channel? This action cannot be undone."
+                        )
                     }
                 }
             }

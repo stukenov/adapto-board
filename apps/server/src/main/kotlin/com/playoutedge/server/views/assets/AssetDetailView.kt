@@ -4,6 +4,8 @@ import com.playoutedge.auth.AdminClaims
 import com.playoutedge.domain.enums.AssetStatus
 import com.playoutedge.domain.enums.AssetType
 import com.playoutedge.server.views.*
+import com.playoutedge.server.views.components.hxButton
+import com.playoutedge.server.views.components.BtnVariant
 import kotlinx.html.*
 
 /**
@@ -231,12 +233,14 @@ fun HTML.assetDetailView(
                                 title = "Archive Asset",
                                 description = "Remove this asset from active use."
                             ) {
-                                form(action = "/admin/assets/${asset.id}/archive", method = FormMethod.post) {
-                                    button(type = ButtonType.submit, classes = "btn btn-danger") {
-                                        attributes["onclick"] = "return confirm('Are you sure you want to archive this asset?')"
-                                        +"Archive"
-                                    }
-                                }
+                                hxButton(
+                                    label = "Archive",
+                                    variant = BtnVariant.DANGER,
+                                    hxPost = "/admin/assets/${asset.id}/archive",
+                                    target = "body",
+                                    swap = "none",
+                                    confirm = "Are you sure you want to archive this asset?"
+                                )
                             }
                         }
                     }

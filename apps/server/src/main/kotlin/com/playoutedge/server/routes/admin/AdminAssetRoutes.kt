@@ -17,7 +17,9 @@ import io.ktor.server.application.*
 import io.ktor.server.html.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
+import io.ktor.http.*
 import io.ktor.server.routing.*
+import com.playoutedge.server.views.components.isHtmx
 import java.io.File
 import java.security.MessageDigest
 import java.util.UUID
@@ -586,7 +588,12 @@ fun Route.adminAssetRoutes(
             }
 
             assetRepository.archive(tenantId, assetId)
-            call.respondRedirect("/admin/assets")
+            if (call.isHtmx) {
+                call.response.header("HX-Redirect", "/admin/assets?success=Asset+archived")
+                call.respond(HttpStatusCode.OK)
+            } else {
+                call.respondRedirect("/admin/assets?success=Asset+archived")
+            }
         }
     }
 }
