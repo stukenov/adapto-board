@@ -1,14 +1,7 @@
 package com.playoutedge.server.views.devices
 
 import com.playoutedge.auth.AdminClaims
-import com.playoutedge.server.views.PaginationInfo
-import com.playoutedge.server.views.adminLayout
-import com.playoutedge.server.views.displayName
-import com.playoutedge.server.views.emptyState
-import com.playoutedge.server.views.pageHeader
-import com.playoutedge.server.views.paginationNav
-import com.playoutedge.server.views.statCard
-import com.playoutedge.server.views.icon
+import com.playoutedge.server.views.*
 import kotlinx.datetime.Clock
 import kotlinx.html.*
 import kotlin.time.Duration.Companion.hours
@@ -212,8 +205,12 @@ fun HTML.devicesListView(
                                     }
                                     if (device.latitude != null && device.longitude != null) {
                                         +" "
-                                        span("text-muted") {
-                                            title = "Location: ${device.latitude}, ${device.longitude}"
+                                        a(
+                                            href = "https://www.google.com/maps?q=${device.latitude},${device.longitude}",
+                                            classes = "text-muted"
+                                        ) {
+                                            target = "_blank"
+                                            title = "View on map"
                                             +"—"
                                         }
                                     }

@@ -3,13 +3,7 @@ package com.playoutedge.server.views.assets
 import com.playoutedge.auth.AdminClaims
 import com.playoutedge.domain.enums.AssetStatus
 import com.playoutedge.domain.enums.AssetType
-import com.playoutedge.server.views.adminLayout
-import com.playoutedge.server.views.alertBox
-import com.playoutedge.server.views.dangerItem
-import com.playoutedge.server.views.dangerZone
-import com.playoutedge.server.views.displayName
-import com.playoutedge.server.views.pageHeader
-import com.playoutedge.server.views.icon
+import com.playoutedge.server.views.*
 import kotlinx.html.*
 
 /**
@@ -76,7 +70,7 @@ fun HTML.assetDetailView(
                                     style = "text-align:center;padding:40px 0"
                                     div {
                                         style = "font-size:64px;margin-bottom:16px"
-                                        +"🎵"
+                                        icon("music", 64)
                                     }
                                     audio {
                                         id = "preview-audio"
@@ -201,12 +195,13 @@ fun HTML.assetDetailView(
                         dt { +"Type" }
                         dd {
                             span("badge badge-gray badge-plain") {
-                                when (asset.type) {
-                                    AssetType.VIDEO -> { icon("film"); +" video" }
-                                    AssetType.IMAGE -> { icon("image"); +" image" }
-                                    AssetType.AUDIO -> { icon("music"); +" audio" }
-                                    AssetType.SLIDESHOW -> { icon("play"); +" slideshow" }
-                                }
+                                icon(when (asset.type) {
+                                    AssetType.VIDEO -> "film"
+                                    AssetType.IMAGE -> "image"
+                                    AssetType.AUDIO -> "music"
+                                    AssetType.SLIDESHOW -> "play"
+                                }, 14)
+                                +" ${asset.type.name.lowercase()}"
                             }
                         }
                         dt { +"MIME Type" }

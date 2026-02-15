@@ -3,13 +3,7 @@ package com.playoutedge.server.views.assets
 import com.playoutedge.auth.AdminClaims
 import com.playoutedge.domain.enums.AssetStatus
 import com.playoutedge.domain.enums.AssetType
-import com.playoutedge.server.views.PaginationInfo
-import com.playoutedge.server.views.adminLayout
-import com.playoutedge.server.views.displayName
-import com.playoutedge.server.views.emptyState
-import com.playoutedge.server.views.pageHeader
-import com.playoutedge.server.views.paginationNav
-import com.playoutedge.server.views.icon
+import com.playoutedge.server.views.*
 import kotlinx.html.*
 
 /**
@@ -266,12 +260,12 @@ fun HTML.assetsListView(
                                             }
                                         } else {
                                             div("asset-thumbnail-placeholder") {
-                                                when (asset.type) {
-                                                    AssetType.VIDEO -> icon("film")
-                                                    AssetType.IMAGE -> icon("image")
-                                                    AssetType.AUDIO -> icon("music")
-                                                    AssetType.SLIDESHOW -> icon("play")
-                                                }
+                                                icon(when (asset.type) {
+                                                    AssetType.VIDEO -> "film"
+                                                    AssetType.IMAGE -> "image"
+                                                    AssetType.AUDIO -> "music"
+                                                    AssetType.SLIDESHOW -> "play"
+                                                }, 32)
                                             }
                                         }
                                     }
@@ -302,11 +296,12 @@ fun HTML.assetsListView(
                                     }
                                     td {
                                         span("badge badge-gray badge-plain") {
-                                            when (asset.type) {
-                                                AssetType.VIDEO -> { icon("film"); +" video" }
-                                                AssetType.IMAGE -> { icon("image"); +" image" }
-                                                else -> { icon("document"); +" ${asset.type.name.lowercase()}" }
-                                            }
+                                            icon(when (asset.type) {
+                                                AssetType.VIDEO -> "film"
+                                                AssetType.IMAGE -> "image"
+                                                else -> "document"
+                                            }, 14)
+                                            +" ${asset.type.name.lowercase()}"
                                         }
                                     }
                                     td {
@@ -358,12 +353,12 @@ fun HTML.assetsListView(
                                 }
                             } else {
                                 div("asset-grid-icon") {
-                                    when (asset.type) {
-                                        AssetType.VIDEO -> icon("film")
-                                        AssetType.IMAGE -> icon("image")
-                                        AssetType.AUDIO -> icon("music")
-                                        AssetType.SLIDESHOW -> icon("play")
-                                    }
+                                    icon(when (asset.type) {
+                                        AssetType.VIDEO -> "film"
+                                        AssetType.IMAGE -> "image"
+                                        AssetType.AUDIO -> "music"
+                                        AssetType.SLIDESHOW -> "play"
+                                    }, 32)
                                 }
                             }
                             div("asset-grid-info") {

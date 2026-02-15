@@ -2,12 +2,7 @@ package com.playoutedge.server.views.reports
 
 import com.playoutedge.auth.AdminClaims
 import com.playoutedge.domain.enums.AsrunEventType
-import com.playoutedge.server.views.adminLayout
-import com.playoutedge.server.views.displayName
-import com.playoutedge.server.views.emptyState
-import com.playoutedge.server.views.pageHeader
-import com.playoutedge.server.views.statCard
-import com.playoutedge.server.views.icon
+import com.playoutedge.server.views.*
 import kotlinx.html.*
 
 /**
