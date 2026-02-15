@@ -87,6 +87,43 @@ fun HTML.adminLayout(
         title { +"$title - Playout Edge" }
         link(rel = "stylesheet", href = "/admin/static/styles.css")
         link(rel = "icon", type = "image/svg+xml", href = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23d97706' rx='20' width='100' height='100'/><text y='.9em' x='50%' text-anchor='middle' font-size='60' fill='white'>P</text></svg>")
+        script(src = "https://unpkg.com/htmx.org@2.0.4") {
+            attributes["integrity"] = "sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+"
+            attributes["crossorigin"] = "anonymous"
+        }
+        meta {
+            name = "htmx-config"
+            attributes["content"] = """{"selfRequestsOnly":true,"allowEval":false,"allowScriptTags":false,"historyCacheSize":0}"""
+        }
+        script(src = "https://cdn.tailwindcss.com") {}
+        script {
+            unsafe {
+                +"""
+                tailwind.config = {
+                    prefix: 'tw-',
+                    corePlugins: { preflight: false },
+                    theme: {
+                        extend: {
+                            colors: {
+                                border: 'hsl(240 5.9% 90%)',
+                                input: 'hsl(240 5.9% 90%)',
+                                ring: 'hsl(240 5.9% 10%)',
+                                background: 'hsl(0 0% 100%)',
+                                foreground: 'hsl(240 10% 3.9%)',
+                                primary: { DEFAULT: 'hsl(240 5.9% 10%)', foreground: 'hsl(0 0% 98%)' },
+                                secondary: { DEFAULT: 'hsl(240 4.8% 95.9%)', foreground: 'hsl(240 5.9% 10%)' },
+                                destructive: { DEFAULT: 'hsl(0 84.2% 60.2%)', foreground: 'hsl(0 0% 98%)' },
+                                muted: { DEFAULT: 'hsl(240 4.8% 95.9%)', foreground: 'hsl(240 3.8% 46.1%)' },
+                                accent: { DEFAULT: 'hsl(240 4.8% 95.9%)', foreground: 'hsl(240 5.9% 10%)' },
+                                card: { DEFAULT: 'hsl(0 0% 100%)', foreground: 'hsl(240 10% 3.9%)' },
+                            },
+                            borderRadius: { lg: '0.5rem', md: 'calc(0.5rem - 2px)', sm: 'calc(0.5rem - 4px)' }
+                        }
+                    }
+                }
+                """.trimIndent()
+            }
+        }
     }
     body {
         // Skip to main content link (a11y)
@@ -292,6 +329,43 @@ fun HTML.authLayout(
         title { +"$title - Playout Edge" }
         link(rel = "stylesheet", href = "/admin/static/styles.css")
         link(rel = "icon", type = "image/svg+xml", href = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23d97706' rx='20' width='100' height='100'/><text y='.9em' x='50%' text-anchor='middle' font-size='60' fill='white'>P</text></svg>")
+        script(src = "https://unpkg.com/htmx.org@2.0.4") {
+            attributes["integrity"] = "sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+"
+            attributes["crossorigin"] = "anonymous"
+        }
+        meta {
+            name = "htmx-config"
+            attributes["content"] = """{"selfRequestsOnly":true,"allowEval":false,"allowScriptTags":false,"historyCacheSize":0}"""
+        }
+        script(src = "https://cdn.tailwindcss.com") {}
+        script {
+            unsafe {
+                +"""
+                tailwind.config = {
+                    prefix: 'tw-',
+                    corePlugins: { preflight: false },
+                    theme: {
+                        extend: {
+                            colors: {
+                                border: 'hsl(240 5.9% 90%)',
+                                input: 'hsl(240 5.9% 90%)',
+                                ring: 'hsl(240 5.9% 10%)',
+                                background: 'hsl(0 0% 100%)',
+                                foreground: 'hsl(240 10% 3.9%)',
+                                primary: { DEFAULT: 'hsl(240 5.9% 10%)', foreground: 'hsl(0 0% 98%)' },
+                                secondary: { DEFAULT: 'hsl(240 4.8% 95.9%)', foreground: 'hsl(240 5.9% 10%)' },
+                                destructive: { DEFAULT: 'hsl(0 84.2% 60.2%)', foreground: 'hsl(0 0% 98%)' },
+                                muted: { DEFAULT: 'hsl(240 4.8% 95.9%)', foreground: 'hsl(240 3.8% 46.1%)' },
+                                accent: { DEFAULT: 'hsl(240 4.8% 95.9%)', foreground: 'hsl(240 5.9% 10%)' },
+                                card: { DEFAULT: 'hsl(0 0% 100%)', foreground: 'hsl(240 10% 3.9%)' },
+                            },
+                            borderRadius: { lg: '0.5rem', md: 'calc(0.5rem - 2px)', sm: 'calc(0.5rem - 4px)' }
+                        }
+                    }
+                }
+                """.trimIndent()
+            }
+        }
     }
     body("auth-body") {
         main("auth-main") {

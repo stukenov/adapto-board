@@ -557,3 +557,36 @@ if (bellBtn) {
         document.getElementById('notification-dropdown')?.classList.remove('open');
     });
 }
+
+// ========================================
+// HTMX INTEGRATION
+// ========================================
+
+// Show toast from HX-Trigger header {"showToast":{message,type}}
+document.body.addEventListener('showToast', function(evt) {
+    var detail = evt.detail || {};
+    Toast.show(detail.message || 'Done', detail.type || 'success');
+});
+
+// Show/hide HTMX loading indicators
+document.body.addEventListener('htmx:beforeRequest', function(evt) {
+    var indicator = evt.detail.elt.querySelector('.htmx-indicator');
+    if (indicator) indicator.style.display = 'inline';
+});
+document.body.addEventListener('htmx:afterRequest', function(evt) {
+    var indicator = evt.detail.elt.querySelector('.htmx-indicator');
+    if (indicator) indicator.style.display = 'none';
+});
+
+// Handle HTMX errors
+document.body.addEventListener('htmx:responseError', function(evt) {
+    Toast.show('Request failed. Please try again.', 'error');
+});
+
+// Handle 401 — redirect to login
+document.body.addEventListener('htmx:beforeSwap', function(evt) {
+    if (evt.detail.xhr.status === 401) {
+        window.location.href = '/admin/login?error=expired';
+        evt.detail.shouldSwap = false;
+    }
+});
