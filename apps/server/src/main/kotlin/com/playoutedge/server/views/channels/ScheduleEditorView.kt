@@ -7,6 +7,7 @@ import com.playoutedge.server.views.alertBox
 import com.playoutedge.server.views.displayName
 import com.playoutedge.server.views.emptyState
 import com.playoutedge.server.views.pageHeader
+import com.playoutedge.server.views.icon
 import kotlinx.html.*
 import java.util.UUID
 
@@ -201,7 +202,7 @@ fun HTML.scheduleEditorView(
                     div("card-body") {
                         if (libraryAssets.isEmpty()) {
                             emptyState(
-                                icon = "🎬",
+                                icon = "film",
                                 title = "No assets",
                                 description = "Upload assets first to add them to your schedule.",
                                 actionHref = "/admin/assets/upload",
@@ -218,7 +219,7 @@ fun HTML.scheduleEditorView(
                                         attributes["data-asset-type"] = asset.type.name
                                         attributes["data-asset-duration"] = (asset.durationMs ?: 0).toString()
                                         div("library-asset-icon") {
-                                            +assetTypeIcon(asset.type)
+                                            icon(assetTypeIconName(asset.type), 18)
                                         }
                                         div("library-asset-info") {
                                             div("library-asset-name") { +asset.name }
@@ -268,7 +269,7 @@ private fun FlowContent.playlistItemElement(item: ScheduleEditorItem, index: Int
         attributes["data-days-of-week"] = (item.daysOfWeek ?: 127).toString()
 
         div("playlist-item-handle") { +"⠿" }
-        div("playlist-item-icon") { +assetTypeIcon(item.assetType) }
+        div("playlist-item-icon") { icon(assetTypeIconName(item.assetType), 18) }
         div("playlist-item-info") {
             div("playlist-item-name") { +item.assetName }
             div("playlist-item-meta") {
@@ -351,10 +352,10 @@ private fun FlowContent.playlistItemElement(item: ScheduleEditorItem, index: Int
     }
 }
 
-private fun assetTypeIcon(type: AssetType): String = when (type) {
-    AssetType.VIDEO -> "🎬"
-    AssetType.IMAGE -> "🖼"
-    else -> "📄"
+private fun assetTypeIconName(type: AssetType): String = when (type) {
+    AssetType.VIDEO -> "film"
+    AssetType.IMAGE -> "image"
+    else -> "document"
 }
 
 private fun formatDurationMs(ms: Int): String {

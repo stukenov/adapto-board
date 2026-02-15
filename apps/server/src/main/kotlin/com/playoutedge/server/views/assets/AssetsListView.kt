@@ -3,7 +3,13 @@ package com.playoutedge.server.views.assets
 import com.playoutedge.auth.AdminClaims
 import com.playoutedge.domain.enums.AssetStatus
 import com.playoutedge.domain.enums.AssetType
-import com.playoutedge.server.views.*
+import com.playoutedge.server.views.PaginationInfo
+import com.playoutedge.server.views.adminLayout
+import com.playoutedge.server.views.displayName
+import com.playoutedge.server.views.emptyState
+import com.playoutedge.server.views.pageHeader
+import com.playoutedge.server.views.paginationNav
+import com.playoutedge.server.views.icon
 import kotlinx.html.*
 
 /**
@@ -200,7 +206,7 @@ fun HTML.assetsListView(
         div("card") {
             if (assets.isEmpty()) {
                 emptyState(
-                    icon = "🎬",
+                    icon = "film",
                     title = "No assets found",
                     description = if (filters.hasActiveFilters())
                         "Try adjusting your filters or upload new content."
@@ -260,11 +266,11 @@ fun HTML.assetsListView(
                                             }
                                         } else {
                                             div("asset-thumbnail-placeholder") {
-                                                +when (asset.type) {
-                                                    AssetType.VIDEO -> "🎬"
-                                                    AssetType.IMAGE -> "🖼"
-                                                    AssetType.AUDIO -> "🎵"
-                                                    AssetType.SLIDESHOW -> "📽"
+                                                when (asset.type) {
+                                                    AssetType.VIDEO -> icon("film")
+                                                    AssetType.IMAGE -> icon("image")
+                                                    AssetType.AUDIO -> icon("music")
+                                                    AssetType.SLIDESHOW -> icon("play")
                                                 }
                                             }
                                         }
@@ -295,13 +301,12 @@ fun HTML.assetsListView(
                                         }
                                     }
                                     td {
-                                        val typeIcon = when (asset.type) {
-                                            AssetType.VIDEO -> "🎬"
-                                            AssetType.IMAGE -> "🖼"
-                                            else -> "📄"
-                                        }
                                         span("badge badge-gray badge-plain") {
-                                            +"$typeIcon ${asset.type.name.lowercase()}"
+                                            when (asset.type) {
+                                                AssetType.VIDEO -> { icon("film"); +" video" }
+                                                AssetType.IMAGE -> { icon("image"); +" image" }
+                                                else -> { icon("document"); +" ${asset.type.name.lowercase()}" }
+                                            }
                                         }
                                     }
                                     td {
@@ -353,11 +358,11 @@ fun HTML.assetsListView(
                                 }
                             } else {
                                 div("asset-grid-icon") {
-                                    +when (asset.type) {
-                                        AssetType.VIDEO -> "🎬"
-                                        AssetType.IMAGE -> "🖼"
-                                        AssetType.AUDIO -> "🎵"
-                                        AssetType.SLIDESHOW -> "📽"
+                                    when (asset.type) {
+                                        AssetType.VIDEO -> icon("film")
+                                        AssetType.IMAGE -> icon("image")
+                                        AssetType.AUDIO -> icon("music")
+                                        AssetType.SLIDESHOW -> icon("play")
                                     }
                                 }
                             }

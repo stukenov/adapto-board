@@ -33,7 +33,7 @@ fun HTML.deviceLogsView(
 
         if (logs.isEmpty()) {
             emptyState(
-                icon = "\uD83D\uDCCB",
+                icon = "clipboard",
                 title = "No logs found",
                 description = "This device has not reported any logs yet."
             )

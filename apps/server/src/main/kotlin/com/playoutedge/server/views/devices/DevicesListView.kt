@@ -1,7 +1,14 @@
 package com.playoutedge.server.views.devices
 
 import com.playoutedge.auth.AdminClaims
-import com.playoutedge.server.views.*
+import com.playoutedge.server.views.PaginationInfo
+import com.playoutedge.server.views.adminLayout
+import com.playoutedge.server.views.displayName
+import com.playoutedge.server.views.emptyState
+import com.playoutedge.server.views.pageHeader
+import com.playoutedge.server.views.paginationNav
+import com.playoutedge.server.views.statCard
+import com.playoutedge.server.views.icon
 import kotlinx.datetime.Clock
 import kotlinx.html.*
 import kotlin.time.Duration.Companion.hours
@@ -38,22 +45,22 @@ fun HTML.devicesListView(
         // Stats cards
         div("stats-grid mb-4") {
             div("stat-card") {
-                div("stat-icon icon-primary") { +"📺" }
+                div("stat-icon icon-primary") { icon("monitor") }
                 span("stat-label") { +"Total" }
                 span("stat-value") { +"${stats.total}" }
             }
             div("stat-card") {
-                div("stat-icon icon-success") { +"✓" }
+                div("stat-icon icon-success") { icon("check-circle") }
                 span("stat-label") { +"Online" }
                 span("stat-value text-success") { +"${stats.online}" }
             }
             div("stat-card") {
-                div("stat-icon icon-danger") { +"!" }
+                div("stat-icon icon-danger") { icon("x-circle") }
                 span("stat-label") { +"Offline" }
                 span("stat-value text-danger") { +"${stats.offline}" }
             }
             div("stat-card") {
-                div("stat-icon icon-warning") { +"⏳" }
+                div("stat-icon icon-warning") { icon("clock") }
                 span("stat-label") { +"Pending" }
                 span("stat-value text-warning") { +"${stats.pending}" }
             }
@@ -140,7 +147,7 @@ fun HTML.devicesListView(
         div("card") {
             if (devices.isEmpty()) {
                 emptyState(
-                    icon = "📺",
+                    icon = "monitor",
                     title = "No devices found",
                     description = if (filters.hasActiveFilters())
                         "Try adjusting your filters or add a new device."
@@ -205,13 +212,9 @@ fun HTML.devicesListView(
                                     }
                                     if (device.latitude != null && device.longitude != null) {
                                         +" "
-                                        a(
-                                            href = "https://www.google.com/maps?q=${device.latitude},${device.longitude}",
-                                            classes = "text-muted"
-                                        ) {
-                                            target = "_blank"
-                                            title = "View on map"
-                                            +"\uD83D\uDCCD"
+                                        span("text-muted") {
+                                            title = "Location: ${device.latitude}, ${device.longitude}"
+                                            +"—"
                                         }
                                     }
                                 }

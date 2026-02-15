@@ -102,7 +102,7 @@ fun HTML.enrollCodesView(
             if (activeCodes.isEmpty()) {
                 div("card-body") {
                     emptyState(
-                        icon = "🔑",
+                        icon = "key",
                         title = "No active codes",
                         description = "Generate a code above to start enrolling devices."
                     )

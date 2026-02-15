@@ -2,7 +2,11 @@ package com.playoutedge.server.views.channels
 
 import com.playoutedge.auth.AdminClaims
 import com.playoutedge.domain.enums.ChannelStatus
-import com.playoutedge.server.views.*
+import com.playoutedge.server.views.adminLayout
+import com.playoutedge.server.views.displayName
+import com.playoutedge.server.views.emptyState
+import com.playoutedge.server.views.icon
+import com.playoutedge.server.views.pageHeader
 import kotlinx.html.*
 
 /**
@@ -26,7 +30,7 @@ fun HTML.channelDetailView(
             span("badge badge-${channelStatusBadge(channel.status)} mr-2") {
                 +channel.status.name.lowercase()
             }
-            a(href = "/admin/channels/${channel.id}/live", classes = "btn btn-info") {
+            a(href = "/admin/channels/${channel.id}/live", classes = "btn btn-secondary") {
                 +"Live Preview"
             }
             a(href = "/admin/channels/${channel.id}/edit", classes = "btn btn-secondary") {
@@ -34,34 +38,60 @@ fun HTML.channelDetailView(
             }
         }
 
-        // Tabs
-        pageTabs(listOf(
-            TabDef("Overview", "/admin/channels/${channel.id}"),
-            TabDef("Schedule", "/admin/channels/${channel.id}/schedule", scheduleItems.size),
-            TabDef("Devices", "/admin/channels/${channel.id}", devices.size)
-        ), "/admin/channels/${channel.id}")
-
-        // Two-column layout
-        detailLayout(
-            main = {
-                // Schedule section
-                sectionCard("Schedule", actions = {
-                    a(href = "/admin/channels/${channel.id}/schedule", classes = "btn btn-secondary btn-sm") {
-                        +"Edit Schedule"
-                    }
-                }) {
-                    if (scheduleItems.isEmpty()) {
-                        emptyState(
-                            icon = "📋",
-                            title = "No schedule items",
-                            description = "Add videos or images to this channel's schedule.",
-                            actionHref = "/admin/channels/${channel.id}/schedule",
-                            actionLabel = "Add Items"
-                        )
-                    } else {
-                        scheduleTable(scheduleItems, channel.id)
-                    }
+        // Stats row
+        div("stats-grid mb-4") {
+            // Devices card
+            div("stat-card") {
+                val onlineCount = devices.count { it.isOnline }
+                div("stat-icon icon-success") { icon("monitor") }
+                span("stat-label") { +"Devices" }
+                span("stat-value") {
+                    +"$onlineCount"
+                    span("text-muted font-normal text-lg") { +" / ${devices.size}" }
                 }
+                if (devices.isNotEmpty()) {
+                    span("text-sm text-muted") { +"$onlineCount online" }
+                }
+            }
+
+            // Schedule items card
+            div("stat-card") {
+                div("stat-icon icon-primary") { icon("document") }
+                span("stat-label") { +"Schedule" }
+                span("stat-value") { +"${scheduleItems.size}" }
+                span("text-sm text-muted") { +"items" }
+            }
+
+            // Duration card
+            div("stat-card") {
+                div("stat-icon icon-info") { icon("clock") }
+                span("stat-label") { +"Total Duration" }
+                span("stat-value") { +calculateTotalDuration(scheduleItems) }
+            }
+        }
+
+        // Schedule section
+        div("card mb-4") {
+            div("card-header") {
+                h3 { +"Schedule" }
+                a(href = "/admin/channels/${channel.id}/schedule", classes = "btn btn-secondary btn-sm") {
+                    +"Edit Schedule"
+                }
+            }
+            if (scheduleItems.isEmpty()) {
+                div("card-body") {
+                    emptyState(
+                        icon = "clipboard",
+                        title = "No schedule items",
+                        description = "Add videos or images to this channel's schedule.",
+                        actionHref = "/admin/channels/${channel.id}/schedule",
+                        actionLabel = "Add Items"
+                    )
+                }
+            } else {
+                scheduleTable(scheduleItems, channel.id)
+            }
+        }
 
                 // Validation warnings
                 if (validationWarnings.isNotEmpty()) {
@@ -198,6 +228,29 @@ fun HTML.channelDetailView(
                     });
                 })();
                 """.trimIndent()
+            }
+        }
+
+        // Devices section
+        div("card") {
+            div("card-header") {
+                h3 { +"Assigned Devices" }
+                a(href = "/admin/devices?channel=${channel.id}", classes = "btn btn-secondary btn-sm") {
+                    +"Manage"
+                }
+            }
+            if (devices.isEmpty()) {
+                div("card-body") {
+                    emptyState(
+                        icon = "monitor",
+                        title = "No devices assigned",
+                        description = "Assign devices to this channel to start playback.",
+                        actionHref = "/admin/devices/enroll",
+                        actionLabel = "Add Device"
+                    )
+                }
+            } else {
+                deviceTable(devices)
             }
         }
     }

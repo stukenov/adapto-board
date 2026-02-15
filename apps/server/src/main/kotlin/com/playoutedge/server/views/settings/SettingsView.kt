@@ -3,7 +3,15 @@ package com.playoutedge.server.views.settings
 import com.playoutedge.auth.AdminClaims
 import com.playoutedge.domain.enums.UserRole
 import com.playoutedge.domain.enums.UserStatus
-import com.playoutedge.server.views.*
+import com.playoutedge.server.views.adminLayout
+import com.playoutedge.server.views.alertBox
+import com.playoutedge.server.views.breadcrumb
+import com.playoutedge.server.views.displayName
+import com.playoutedge.server.views.emptyState
+import com.playoutedge.server.views.icon
+import com.playoutedge.server.views.pageHeader
+import com.playoutedge.server.views.roleLabel
+import com.playoutedge.server.views.statCard
 import kotlinx.datetime.Clock
 import kotlinx.html.*
 
@@ -37,7 +45,7 @@ fun HTML.settingsMainView(
         // Quotas
         div("stats-grid mb-4") {
             div("stat-card") {
-                div("stat-icon") { +"💾" }
+                div("stat-icon") { icon("database") }
                 div("stat-content") {
                     div("stat-value") { +"${storageQuota.usedFormatted} / ${storageQuota.limitFormatted}" }
                     div("stat-label") { +"Storage Usage" }
@@ -54,7 +62,7 @@ fun HTML.settingsMainView(
                 }
             }
             div("stat-card") {
-                div("stat-icon") { +"📺" }
+                div("stat-icon") { icon("monitor") }
                 div("stat-content") {
                     div("stat-value") { +"${deviceQuota.enrolled} / ${deviceQuota.limit}" }
                     div("stat-label") { +"Device Slots" }
@@ -215,7 +223,7 @@ fun HTML.usersListView(
         div("card") {
             if (users.isEmpty()) {
                 emptyState(
-                    icon = "👥",
+                    icon = "users",
                     title = "No users",
                     description = "Invite team members to help manage your content and devices.",
                     actionHref = "/admin/settings/users/invite",
@@ -561,7 +569,7 @@ fun HTML.apiKeysView(
         div("card") {
             if (apiKeys.isEmpty()) {
                 emptyState(
-                    icon = "🔑",
+                    icon = "key",
                     title = "No API keys",
                     description = "Create API keys for programmatic access to your tenant's data and operations.",
                     actionHref = "/admin/settings/api-keys/new",
@@ -894,7 +902,7 @@ fun HTML.securityView(
             div("card-body") {
                 if (sessions.isEmpty()) {
                     emptyState(
-                        icon = "🔒",
+                        icon = "lock",
                         title = "No active sessions",
                         description = "No active sessions found for your account."
                     )

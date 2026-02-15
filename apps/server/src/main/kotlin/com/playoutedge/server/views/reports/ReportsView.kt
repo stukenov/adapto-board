@@ -2,7 +2,12 @@ package com.playoutedge.server.views.reports
 
 import com.playoutedge.auth.AdminClaims
 import com.playoutedge.domain.enums.AsrunEventType
-import com.playoutedge.server.views.*
+import com.playoutedge.server.views.adminLayout
+import com.playoutedge.server.views.displayName
+import com.playoutedge.server.views.emptyState
+import com.playoutedge.server.views.pageHeader
+import com.playoutedge.server.views.statCard
+import com.playoutedge.server.views.icon
 import kotlinx.html.*
 
 /**
@@ -118,21 +123,21 @@ fun HTML.asrunReportsView(
         // Summary cards
         div("stats-grid mb-4") {
             div("stat-card") {
-                div("stat-icon") { +"📊" }
+                div("stat-icon") { icon("chart-bar") }
                 div("stat-content") {
                     div("stat-value") { +"${summary.totalEvents}" }
                     div("stat-label") { +"Total Events" }
                 }
             }
             div("stat-card") {
-                div("stat-icon") { +"🎬" }
+                div("stat-icon") { icon("film") }
                 div("stat-content") {
                     div("stat-value") { +"${summary.uniqueAssets}" }
                     div("stat-label") { +"Unique Assets" }
                 }
             }
             div("stat-card") {
-                div("stat-icon") { +"⏱" }
+                div("stat-icon") { icon("clock") }
                 div("stat-content") {
                     div("stat-value") { +summary.totalPlayTime }
                     div("stat-label") { +"Total Play Time" }
@@ -250,7 +255,7 @@ fun HTML.asrunReportsView(
         div("card") {
             if (events.isEmpty()) {
                 emptyState(
-                    icon = "📊",
+                    icon = "chart-bar",
                     title = "No events found",
                     description = if (filters.hasActiveFilters())
                         "Try adjusting your filters to see more results."
@@ -456,7 +461,7 @@ fun HTML.auditLogView(
         div("card") {
             if (logs.isEmpty()) {
                 emptyState(
-                    icon = "📝",
+                    icon = "pencil",
                     title = "No audit entries",
                     description = if (filters.hasActiveFilters())
                         "Try adjusting your filters to see more results."

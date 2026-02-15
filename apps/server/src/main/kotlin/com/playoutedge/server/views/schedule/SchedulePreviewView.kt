@@ -30,7 +30,7 @@ fun HTML.schedulePreviewView(
             backHref = "/admin/channels/$channelId/schedule", backLabel = "Back to Schedule")
 
         if (items.isEmpty()) {
-            emptyState("📋", "No Schedule Items", "This channel has no scheduled content yet.",
+            emptyState("clipboard", "No Schedule Items", "This channel has no scheduled content yet.",
                 actionHref = "/admin/channels/$channelId/schedule", actionLabel = "Edit Schedule")
         } else {
             div("card") {

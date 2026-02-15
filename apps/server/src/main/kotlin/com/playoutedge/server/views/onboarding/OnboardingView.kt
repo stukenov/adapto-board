@@ -6,6 +6,7 @@ import com.playoutedge.server.views.alertBox
 import com.playoutedge.server.views.displayName
 import com.playoutedge.server.views.pageHeader
 import com.playoutedge.server.views.settings.TIMEZONES
+import com.playoutedge.server.views.icon
 import kotlinx.html.*
 
 /**
@@ -286,7 +287,7 @@ private fun MAIN.firstAssetStep() {
             form(action = "/admin/onboarding/step/first-asset", method = FormMethod.post, encType = FormEncType.multipartFormData) {
                 div("upload-zone mb-4") {
                     div("upload-zone-content") {
-                        div("upload-icon") { +"📁" }
+                        div("upload-icon") { icon("folder") }
                         div("form-group") {
                             label {
                                 htmlFor = "file"
@@ -567,21 +568,21 @@ fun HTML.onboardingCompleteView(session: AdminClaims) {
 
             div("stats-grid mt-4 mb-4") {
                 div("stat-card") {
-                    div("stat-icon") { +"🎬" }
+                    div("stat-icon") { icon("film") }
                     div("stat-content") {
                         div("stat-value") { +"1" }
                         div("stat-label") { +"Asset Uploaded" }
                     }
                 }
                 div("stat-card") {
-                    div("stat-icon") { +"📺" }
+                    div("stat-icon") { icon("monitor") }
                     div("stat-content") {
                         div("stat-value") { +"1" }
                         div("stat-label") { +"Channel Created" }
                     }
                 }
                 div("stat-card") {
-                    div("stat-icon") { +"📱" }
+                    div("stat-icon") { icon("monitor") }
                     div("stat-content") {
                         div("stat-value") { +"1" }
                         div("stat-label") { +"Device Connected" }
@@ -596,22 +597,22 @@ fun HTML.onboardingCompleteView(session: AdminClaims) {
                 div("card-body") {
                     div("next-steps-grid") {
                         a(href = "/admin/assets", classes = "next-step-item") {
-                            span("next-step-icon") { +"📁" }
+                            span("next-step-icon") { icon("folder") }
                             span("next-step-title") { +"Upload more content" }
                             span("next-step-description") { +"Build your media library" }
                         }
                         a(href = "/admin/channels", classes = "next-step-item") {
-                            span("next-step-icon") { +"📅" }
+                            span("next-step-icon") { icon("clock") }
                             span("next-step-title") { +"Create schedules" }
                             span("next-step-description") { +"Automate playback" }
                         }
                         a(href = "/admin/devices", classes = "next-step-item") {
-                            span("next-step-icon") { +"📺" }
+                            span("next-step-icon") { icon("monitor") }
                             span("next-step-title") { +"Add more devices" }
                             span("next-step-description") { +"Expand your network" }
                         }
                         a(href = "/admin/overlay", classes = "next-step-item") {
-                            span("next-step-icon") { +"🎨" }
+                            span("next-step-icon") { icon("palette") }
                             span("next-step-title") { +"Set up overlays" }
                             span("next-step-description") { +"Dynamic content" }
                         }

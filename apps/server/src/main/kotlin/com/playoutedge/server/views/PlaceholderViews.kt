@@ -23,7 +23,7 @@ fun HTML.placeholderView(
         div("card") {
             div("card-body") {
                 emptyState(
-                    icon = "🚧",
+                    icon = "exclamation",
                     title = "Coming Soon",
                     description = description
                 )

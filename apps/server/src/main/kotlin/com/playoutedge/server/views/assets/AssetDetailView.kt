@@ -3,7 +3,13 @@ package com.playoutedge.server.views.assets
 import com.playoutedge.auth.AdminClaims
 import com.playoutedge.domain.enums.AssetStatus
 import com.playoutedge.domain.enums.AssetType
-import com.playoutedge.server.views.*
+import com.playoutedge.server.views.adminLayout
+import com.playoutedge.server.views.alertBox
+import com.playoutedge.server.views.dangerItem
+import com.playoutedge.server.views.dangerZone
+import com.playoutedge.server.views.displayName
+import com.playoutedge.server.views.pageHeader
+import com.playoutedge.server.views.icon
 import kotlinx.html.*
 
 /**
@@ -194,13 +200,14 @@ fun HTML.assetDetailView(
                     dl("info-list") {
                         dt { +"Type" }
                         dd {
-                            val typeIcon = when (asset.type) {
-                                AssetType.VIDEO -> "🎬"
-                                AssetType.IMAGE -> "🖼"
-                                AssetType.AUDIO -> "🎵"
-                                AssetType.SLIDESHOW -> "📽"
+                            span("badge badge-gray badge-plain") {
+                                when (asset.type) {
+                                    AssetType.VIDEO -> { icon("film"); +" video" }
+                                    AssetType.IMAGE -> { icon("image"); +" image" }
+                                    AssetType.AUDIO -> { icon("music"); +" audio" }
+                                    AssetType.SLIDESHOW -> { icon("play"); +" slideshow" }
+                                }
                             }
-                            span("badge badge-gray badge-plain") { +"$typeIcon ${asset.type.name.lowercase()}" }
                         }
                         dt { +"MIME Type" }
                         dd { asset.mimeType?.let { code { +it } } ?: span("text-muted") { +"—" } }

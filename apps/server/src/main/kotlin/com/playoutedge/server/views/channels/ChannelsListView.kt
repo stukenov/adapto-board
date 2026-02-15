@@ -119,7 +119,7 @@ fun HTML.channelsListView(
         div("card") {
             if (channels.isEmpty()) {
                 emptyState(
-                    icon = "📺",
+                    icon = "monitor",
                     title = "No channels found",
                     description = if (filters.hasActiveFilters())
                         "Try adjusting your filters or create a new channel."
@@ -164,13 +164,18 @@ fun FlowContent.channelTable(channels: List<ChannelListItem>) {
                         }
                     }
                     td {
-                        val (badgeClass, icon) = when (channel.status) {
-                            ChannelStatus.ACTIVE -> "badge-success" to "●"
-                            ChannelStatus.PAUSED -> "badge-warning" to "⏸"
-                        }
-                        span("badge $badgeClass") {
-                            +"$icon ${channel.status.name.lowercase()}"
-                        }
+                                val badgeClass = when (channel.status) {
+                                    ChannelStatus.ACTIVE -> "badge-success"
+                                    ChannelStatus.PAUSED -> "badge-warning"
+                                }
+                                val dotClass = when (channel.status) {
+                                    ChannelStatus.ACTIVE -> "status-active"
+                                    ChannelStatus.PAUSED -> "status-paused"
+                                }
+                                span("badge $badgeClass") {
+                                    span("status-dot $dotClass") {}
+                                    +channel.status.name.lowercase()
+                                }
                     }
                     td {
                         if (channel.deviceCount > 0) {

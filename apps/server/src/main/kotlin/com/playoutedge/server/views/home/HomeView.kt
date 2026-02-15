@@ -5,6 +5,7 @@ import com.playoutedge.server.views.adminLayout
 import com.playoutedge.server.views.detailLayout
 import com.playoutedge.server.views.displayName
 import com.playoutedge.server.views.pageHeader
+import com.playoutedge.server.views.icon
 import kotlinx.html.*
 
 /**
@@ -29,7 +30,7 @@ fun HTML.homeView(
             // Total devices
             div("stat-card") {
                 div("stat-card-header") {
-                    div("stat-icon icon-primary") { +"📺" }
+                    div("stat-icon icon-primary") { icon("monitor") }
                 }
                 span("stat-label") { +"Total Devices" }
                 span("stat-value") { +"${fleetHealth.totalCount}" }
@@ -38,7 +39,7 @@ fun HTML.homeView(
             // Online devices
             div("stat-card") {
                 div("stat-card-header") {
-                    div("stat-icon icon-success") { +"✓" }
+                    div("stat-icon icon-success") { icon("check-circle") }
                 }
                 span("stat-label") { +"Online" }
                 span("stat-value text-success") { +"${fleetHealth.onlineCount}" }
@@ -47,7 +48,7 @@ fun HTML.homeView(
             // Channels
             div("stat-card") {
                 div("stat-card-header") {
-                    div("stat-icon icon-info") { +"#" }
+                    div("stat-icon icon-info") { icon("hash") }
                 }
                 span("stat-label") { +"Channels" }
                 span("stat-value") { +"${contentStats?.channelCount ?: 0}" }
@@ -56,7 +57,7 @@ fun HTML.homeView(
             // Assets
             div("stat-card") {
                 div("stat-card-header") {
-                    div("stat-icon icon-warning") { +"F" }
+                    div("stat-icon icon-warning") { icon("folder") }
                 }
                 span("stat-label") { +"Assets" }
                 span("stat-value") { +"${contentStats?.assetCount ?: 0}" }
@@ -65,7 +66,7 @@ fun HTML.homeView(
             // Storage
             div("stat-card") {
                 div("stat-card-header") {
-                    div("stat-icon icon-secondary") { +"S" }
+                    div("stat-icon icon-secondary") { icon("database") }
                 }
                 span("stat-label") { +"Storage Used" }
                 span("stat-value") { +(contentStats?.storageDisplay ?: "0 MB") }
@@ -74,7 +75,7 @@ fun HTML.homeView(
             // Online rate
             div("stat-card") {
                 div("stat-card-header") {
-                    div("stat-icon icon-info") { +"%" }
+                    div("stat-icon icon-info") { icon("trending-up") }
                 }
                 span("stat-label") { +"Uptime" }
                 span("stat-value ${if (fleetHealth.onlineRate >= 80) "text-success" else "text-warning"}") {
@@ -183,7 +184,7 @@ fun FlowContent.fleetHealthWidget(health: FleetHealth) {
                 }
             } else if (health.totalCount > 0) {
                 div("text-center p-4") {
-                    div("text-success text-2xl mb-2") { +"✓" }
+                    div("text-success text-2xl mb-2") { icon("check-circle") }
                     p("text-muted") { +"All devices are online" }
                 }
             } else {
@@ -217,20 +218,20 @@ fun FlowContent.alertsWidget(alerts: List<AlertSummary>) {
         div("card-body") {
             if (alerts.isEmpty()) {
                 div("text-center p-4") {
-                    div("text-success text-2xl mb-2") { +"✓" }
+                    div("text-success text-2xl mb-2") { icon("check-circle") }
                     p("text-muted") { +"No open alerts" }
                 }
             } else {
                 ul("alert-list") {
                     alerts.take(5).forEach { alert ->
-                        val icon = when (alert.type.lowercase()) {
-                            "device_offline" -> "⚠️"
-                            "publish_failed" -> "❌"
-                            "storage_warning" -> "💾"
-                            else -> "ℹ️"
+                        val iconName = when (alert.type.lowercase()) {
+                            "device_offline" -> "exclamation"
+                            "publish_failed" -> "x-circle"
+                            "storage_warning" -> "database"
+                            else -> "exclamation"
                         }
                         li("alert-item alert-${alert.type.lowercase()}") {
-                            span("alert-item-icon") { +icon }
+                            span("alert-item-icon") { icon(iconName) }
                             div("alert-item-content") {
                                 span("alert-type") { +alert.type.replace("_", " ") }
                                 p("alert-message") { +alert.message }
@@ -269,7 +270,7 @@ fun FlowContent.quickActionsWidget() {
                     }
                 }
                 a(href = "/admin/channels/new", classes = "action-card") {
-                    div("action-card-icon icon-info") { +"#" }
+                    div("action-card-icon icon-info") { icon("hash") }
                     div("action-card-content") {
                         span("action-card-title") { +"Create Channel" }
                         span("action-card-desc") { +"Set up a new channel" }

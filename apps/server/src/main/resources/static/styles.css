@@ -989,6 +989,27 @@ textarea.form-control {
 .stat-icon.icon-warning { background: var(--warning-light); color: var(--warning); }
 .stat-icon.icon-info { background: var(--info-light); color: var(--info); }
 .stat-icon.icon-primary { background: var(--primary-light); color: var(--primary); }
+.stat-icon.icon-secondary { background: var(--gray-100); color: var(--gray-500); }
+
+/* Inline SVG icons */
+.icon {
+    display: inline-block;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+
+/* Status dots for badges */
+.status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-full);
+    margin-right: 6px;
+    vertical-align: middle;
+}
+.status-dot.status-active { background: var(--success); }
+.status-dot.status-paused { background: var(--warning); }
+.status-dot.status-offline { background: var(--danger); }
 
 .stat-label {
     font-size: var(--font-xs);
@@ -4071,14 +4092,14 @@ pre.code-block {
 
 /* btn-info */
 .btn-info {
-    background: var(--info, #0ea5e9);
+    background: var(--gray-700, #44403c);
     color: white;
-    border: 1px solid var(--info, #0ea5e9);
+    border: 1px solid var(--gray-700, #44403c);
 }
 
 .btn-info:hover {
-    background: #0284c7;
-    border-color: #0284c7;
+    background: var(--gray-800, #292524);
+    border-color: var(--gray-800, #292524);
 }
 
 /* ========================================
