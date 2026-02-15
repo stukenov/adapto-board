@@ -348,6 +348,21 @@ a:hover {
     max-width: 1200px;
 }
 
+/* Strategic vertical flow: all direct children of admin-main get consistent spacing.
+   This prevents any component from overlapping the one below it. */
+.admin-main > * + * {
+    margin-top: var(--spacing-lg);
+}
+
+/* Elements that already define their own margin-bottom can opt out */
+.admin-main > .page-header + * {
+    margin-top: var(--spacing-md);
+}
+.admin-main > .page-tabs + *,
+.admin-main > .tabs + * {
+    margin-top: 0;
+}
+
 /* Mobile sidebar */
 .sidebar-overlay {
     display: none;
@@ -1345,12 +1360,13 @@ textarea.form-control {
 /* ========================================
    TABS
    ======================================== */
-.tabs {
+.tabs,
+.page-tabs {
     display: flex;
     gap: var(--spacing-xs);
     border-bottom: 1px solid var(--gray-200);
     padding-bottom: 0;
-    margin-bottom: 0;
+    margin-bottom: var(--spacing-lg);
 }
 
 .tab {
@@ -1406,6 +1422,7 @@ textarea.form-control {
     gap: var(--spacing-md);
     align-items: flex-end;
     flex-wrap: wrap;
+    padding: var(--spacing-md) var(--spacing-lg);
 }
 
 .filter-row .form-group {
