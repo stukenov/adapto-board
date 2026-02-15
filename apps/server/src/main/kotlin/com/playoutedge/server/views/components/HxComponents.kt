@@ -88,12 +88,11 @@ fun FlowContent.hxSearchInput(
             currentValue?.let { value = it }
             attributes["hx-get"] = url
             attributes["hx-target"] = target
-            attributes["hx-swap"] = "innerHTML"
+            attributes["hx-swap"] = "outerHTML"
             attributes["hx-trigger"] = "input changed delay:${debounceMs}ms, search"
-            attributes["hx-indicator"] = ".search-indicator"
+            attributes["hx-include"] = "[name='status']"
             attributes["aria-label"] = placeholder
         }
-        span("search-indicator htmx-indicator") { +"..." }
     }
 }
 
@@ -248,7 +247,13 @@ fun FlowContent.hxForm(
 // ========================================
 
 fun hxToastTrigger(message: String, type: String = "success"): String {
-    return """{"showToast":{"message":"${message.replace("\"", "\\\"")}","type":"$type"}}"""
+    val escaped = message
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")
+        .replace("\n", "\\n")
+        .replace("\r", "\\r")
+        .replace("\t", "\\t")
+    return """{"showToast":{"message":"$escaped","type":"$type"}}"""
 }
 
 // ========================================
@@ -260,9 +265,11 @@ fun FlowContent.hxPagination(
     totalPages: Int,
     totalItems: Long,
     baseUrl: String,
-    target: String
+    target: String,
+    extraParams: String = ""
 ) {
     if (totalPages <= 1) return
+    val sep = if (extraParams.isEmpty()) "?" else "$extraParams&"
     nav("pagination-nav") {
         div("pagination-info") {
             +"Page $currentPage of $totalPages ($totalItems items)"
@@ -270,7 +277,7 @@ fun FlowContent.hxPagination(
         div("pagination-buttons") {
             if (currentPage > 1) {
                 button(classes = "btn btn-secondary btn-sm") {
-                    attributes["hx-get"] = "$baseUrl?page=${currentPage - 1}"
+                    attributes["hx-get"] = "$baseUrl${sep}page=${currentPage - 1}"
                     attributes["hx-target"] = target
                     attributes["hx-swap"] = "outerHTML"
                     attributes["hx-push-url"] = "true"
@@ -279,7 +286,7 @@ fun FlowContent.hxPagination(
             }
             if (currentPage < totalPages) {
                 button(classes = "btn btn-secondary btn-sm") {
-                    attributes["hx-get"] = "$baseUrl?page=${currentPage + 1}"
+                    attributes["hx-get"] = "$baseUrl${sep}page=${currentPage + 1}"
                     attributes["hx-target"] = target
                     attributes["hx-swap"] = "outerHTML"
                     attributes["hx-push-url"] = "true"

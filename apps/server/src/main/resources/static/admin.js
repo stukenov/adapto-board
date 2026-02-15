@@ -568,13 +568,17 @@ document.body.addEventListener('showToast', function(evt) {
     Toast.show(detail.message || 'Done', detail.type || 'success');
 });
 
-// Show/hide HTMX loading indicators
+// Show/hide HTMX loading indicators (check element itself, parent, and children)
 document.body.addEventListener('htmx:beforeRequest', function(evt) {
-    var indicator = evt.detail.elt.querySelector('.htmx-indicator');
+    var elt = evt.detail.elt;
+    var indicator = elt.querySelector('.htmx-indicator') ||
+        (elt.parentElement && elt.parentElement.querySelector('.htmx-indicator'));
     if (indicator) indicator.style.display = 'inline';
 });
 document.body.addEventListener('htmx:afterRequest', function(evt) {
-    var indicator = evt.detail.elt.querySelector('.htmx-indicator');
+    var elt = evt.detail.elt;
+    var indicator = elt.querySelector('.htmx-indicator') ||
+        (elt.parentElement && elt.parentElement.querySelector('.htmx-indicator'));
     if (indicator) indicator.style.display = 'none';
 });
 

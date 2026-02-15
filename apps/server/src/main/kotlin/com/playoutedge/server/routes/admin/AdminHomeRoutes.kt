@@ -11,6 +11,7 @@ import com.playoutedge.persistence.repositories.ChannelRepository
 import com.playoutedge.persistence.repositories.DeviceRepository
 import com.playoutedge.server.plugins.adminSession
 import com.playoutedge.server.views.components.respondHxFragment
+import com.playoutedge.server.views.components.respondUnauthorized
 import com.playoutedge.server.views.home.*
 import io.ktor.server.application.*
 import io.ktor.server.html.*
@@ -115,7 +116,10 @@ fun Route.adminHomeRoutes(
 
         // HTMX fragment: Fleet health widget
         get("/fragments/fleet-health") {
-            val session = call.adminSession ?: return@get
+            val session = call.adminSession ?: run {
+                call.respondUnauthorized()
+                return@get
+            }
             val tenantId = TenantId(session.tenantId)
 
             val devices = deviceRepository.findAll(tenantId)
@@ -148,7 +152,10 @@ fun Route.adminHomeRoutes(
 
         // HTMX fragment: Alerts widget
         get("/fragments/alerts") {
-            val session = call.adminSession ?: return@get
+            val session = call.adminSession ?: run {
+                call.respondUnauthorized()
+                return@get
+            }
             val tenantId = TenantId(session.tenantId)
 
             val alertFilters = AlertFilters(

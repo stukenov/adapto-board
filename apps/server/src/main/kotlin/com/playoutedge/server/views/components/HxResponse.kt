@@ -17,11 +17,16 @@ suspend fun ApplicationCall.respondHxFragment(
     block: FlowContent.() -> Unit
 ) {
     val html = buildString {
-        appendHTML(prettyPrint = false).div {
+        appendHTML(prettyPrint = false).body {
             block()
         }
     }
-    // Remove the outer <div> wrapper, return just inner content
-    val inner = html.removePrefix("<div>").removeSuffix("</div>")
+    // Strip the <body>...</body> wrapper to get inner content
+    val inner = html.substringAfter("<body>").substringBeforeLast("</body>")
     respondText(inner, ContentType.Text.Html, status)
+}
+
+/** Respond with 401 if no session (for HTMX fragment routes) */
+suspend fun ApplicationCall.respondUnauthorized() {
+    respondText("", ContentType.Text.Html, HttpStatusCode.Unauthorized)
 }

@@ -19,6 +19,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import com.playoutedge.server.views.components.isHtmx
 import com.playoutedge.server.views.components.respondHxFragment
+import com.playoutedge.server.views.components.respondUnauthorized
 import com.playoutedge.server.views.components.hxPagination
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
@@ -112,7 +113,10 @@ fun Route.adminChannelRoutes(
 
         // GET /admin/channels/table - HTMX fragment for channel table
         get("/table") {
-            val session = call.adminSession ?: return@get
+            val session = call.adminSession ?: run {
+                call.respondUnauthorized()
+                return@get
+            }
             val tenantId = TenantId(session.tenantId)
 
             val statusParam = call.request.queryParameters["status"]
