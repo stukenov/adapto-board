@@ -10,11 +10,15 @@ import com.playoutedge.persistence.repositories.ScheduleRepository
 import com.playoutedge.server.plugins.adminSession
 import com.playoutedge.server.services.ScheduleService
 import com.playoutedge.server.views.channels.*
+import com.playoutedge.server.views.emptyState
+import kotlinx.html.*
 import io.ktor.server.application.*
 import io.ktor.server.html.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import com.playoutedge.server.views.components.respondHxFragment
+import com.playoutedge.server.views.components.hxPagination
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -102,6 +106,73 @@ fun Route.adminChannelRoutes(
                     filters = filters,
                     pagination = pagination
                 )
+            }
+        }
+
+        // GET /admin/channels/table - HTMX fragment for channel table
+        get("/table") {
+            val session = call.adminSession ?: return@get
+            val tenantId = TenantId(session.tenantId)
+
+            val statusParam = call.request.queryParameters["status"]
+            val search = call.request.queryParameters["search"]
+            val page = call.request.queryParameters["page"]?.toIntOrNull()?.coerceAtLeast(1) ?: 1
+            val pageSize = 50
+            val filters = ChannelFilters(
+                status = statusParam?.let { runCatching { ChannelStatus.valueOf(it) }.getOrNull() },
+                search = search?.takeIf { it.isNotBlank() }
+            )
+
+            val (allChannels, totalCount) = channelRepository.findAllPaged(tenantId, pageSize, (page - 1) * pageSize)
+
+            var channels = allChannels
+            if (filters.status != null) {
+                channels = channels.filter { it.status == filters.status }
+            }
+            if (filters.search != null) {
+                channels = channels.filter { it.name.contains(filters.search, ignoreCase = true) }
+            }
+
+            val channelItems = channels.map { channel ->
+                val deviceCount = deviceRepository.findByChannel(tenantId, channel.id.value).size
+                val lastPublish = scheduleRepository.findActiveVersion(tenantId, channel.id.value)?.publishedAt
+                ChannelListItem(
+                    id = channel.id.value,
+                    name = channel.name,
+                    status = channel.status,
+                    deviceCount = deviceCount,
+                    lastPublish = lastPublish
+                )
+            }
+
+            val totalPages = ((totalCount + pageSize - 1) / pageSize).toInt().coerceAtLeast(1)
+
+            call.respondHxFragment {
+                div {
+                    id = "channels-table"
+                    div("card") {
+                        if (channelItems.isEmpty()) {
+                            emptyState(
+                                icon = "monitor",
+                                title = "No channels found",
+                                description = "Try adjusting your filters or create a new channel.",
+                                actionHref = "/admin/channels/new",
+                                actionLabel = "Create Channel"
+                            )
+                        } else {
+                            channelTable(channelItems)
+                        }
+                    }
+                    if (totalPages > 1) {
+                        hxPagination(
+                            currentPage = page,
+                            totalPages = totalPages,
+                            totalItems = totalCount,
+                            baseUrl = "/admin/channels/table",
+                            target = "#channels-table"
+                        )
+                    }
+                }
             }
         }
 

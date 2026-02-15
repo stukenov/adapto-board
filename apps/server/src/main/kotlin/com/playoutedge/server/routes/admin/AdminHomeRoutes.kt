@@ -10,6 +10,7 @@ import com.playoutedge.persistence.repositories.AuditRepository
 import com.playoutedge.persistence.repositories.ChannelRepository
 import com.playoutedge.persistence.repositories.DeviceRepository
 import com.playoutedge.server.plugins.adminSession
+import com.playoutedge.server.views.components.respondHxFragment
 import com.playoutedge.server.views.home.*
 import io.ktor.server.application.*
 import io.ktor.server.html.*
@@ -109,6 +110,63 @@ fun Route.adminHomeRoutes(
                     contentStats = contentStats,
                     recentActivity = recentActivity
                 )
+            }
+        }
+
+        // HTMX fragment: Fleet health widget
+        get("/fragments/fleet-health") {
+            val session = call.adminSession ?: return@get
+            val tenantId = TenantId(session.tenantId)
+
+            val devices = deviceRepository.findAll(tenantId)
+            val now = Clock.System.now()
+            val onlineThreshold = now - 5.minutes
+
+            val onlineDevices = devices.filter { device ->
+                device.lastSeenAt?.let { it >= onlineThreshold } ?: false
+            }
+            val offlineDevices = devices.filter { device ->
+                device.lastSeenAt?.let { it < onlineThreshold } ?: true
+            }
+
+            val fleetHealth = FleetHealth(
+                onlineCount = onlineDevices.size,
+                totalCount = devices.size,
+                offlineDevices = offlineDevices.map { device ->
+                    OfflineDevice(
+                        id = device.id.value,
+                        name = device.displayName,
+                        lastSeen = device.lastSeenAt
+                    )
+                }
+            )
+
+            call.respondHxFragment {
+                fleetHealthWidget(fleetHealth)
+            }
+        }
+
+        // HTMX fragment: Alerts widget
+        get("/fragments/alerts") {
+            val session = call.adminSession ?: return@get
+            val tenantId = TenantId(session.tenantId)
+
+            val alertFilters = AlertFilters(
+                status = AlertStatus.OPEN,
+                limit = 10
+            )
+            val alertEntities = alertRepository.findByTenant(tenantId, alertFilters)
+            val alerts = alertEntities.map { alert ->
+                AlertSummary(
+                    id = alert.id.value,
+                    type = alert.type.name,
+                    message = alert.payloadJson.toString(),
+                    createdAt = alert.firstSeenAt
+                )
+            }
+
+            call.respondHxFragment {
+                alertsWidget(alerts)
             }
         }
 

@@ -6,6 +6,7 @@ import com.playoutedge.server.views.detailLayout
 import com.playoutedge.server.views.displayName
 import com.playoutedge.server.views.pageHeader
 import com.playoutedge.server.views.icon
+import com.playoutedge.server.views.components.hxPolling
 import kotlinx.html.*
 
 /**
@@ -87,11 +88,15 @@ fun HTML.homeView(
         // Main content: 2-column layout
         detailLayout(
             main = {
-                fleetHealthWidget(fleetHealth)
+                hxPolling(url = "/admin/fragments/fleet-health", id = "fleet-health", intervalSeconds = 30) {
+                    fleetHealthWidget(fleetHealth)
+                }
                 recentActivityWidget(recentActivity)
             },
             sidebar = {
-                alertsWidget(alerts)
+                hxPolling(url = "/admin/fragments/alerts", id = "alerts-widget", intervalSeconds = 30) {
+                    alertsWidget(alerts)
+                }
                 quickActionsWidget()
             }
         )

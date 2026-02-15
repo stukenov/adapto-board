@@ -4,6 +4,8 @@ import com.playoutedge.auth.AdminClaims
 import com.playoutedge.domain.enums.ChannelStatus
 import com.playoutedge.server.views.PaginationInfo
 import com.playoutedge.server.views.*
+import com.playoutedge.server.views.components.hxSearchInput
+import com.playoutedge.server.views.components.hxPagination
 import kotlinx.html.*
 
 /**
@@ -39,75 +41,41 @@ fun HTML.channelsListView(
             TabDef("Paused", "/admin/channels?status=PAUSED")
         ), "/admin/channels${if (filters.status != null) "?status=${filters.status.name}" else ""}")
 
-        // Filters
+        // Filters with HTMX
         div("card mb-4") {
-            form(action = "/admin/channels", method = FormMethod.get, classes = "filter-form") {
-                div("filter-row") {
-                    div("form-group") {
-                        label {
-                            htmlFor = "filter-status"
-                            +"Status"
+            div("filter-row") {
+                // Live search
+                hxSearchInput(
+                    url = "/admin/channels/table",
+                    target = "#channels-table",
+                    name = "search",
+                    placeholder = "Search channels...",
+                    currentValue = filters.search
+                )
+                // Status filter with HTMX
+                div("form-group") {
+                    label {
+                        htmlFor = "filter-status"
+                        +"Status"
+                    }
+                    select("form-control") {
+                        id = "filter-status"
+                        name = "status"
+                        attributes["hx-get"] = "/admin/channels/table"
+                        attributes["hx-target"] = "#channels-table"
+                        attributes["hx-swap"] = "outerHTML"
+                        attributes["hx-trigger"] = "change"
+                        attributes["hx-include"] = "[name='search']"
+                        option {
+                            value = ""
+                            if (filters.status == null) selected = true
+                            +"All Statuses"
                         }
-                        select("form-control") {
-                            id = "filter-status"
-                            name = "status"
+                        ChannelStatus.entries.forEach { status ->
                             option {
-                                value = ""
-                                if (filters.status == null) selected = true
-                                +"All Statuses"
-                            }
-                            ChannelStatus.entries.forEach { status ->
-                                option {
-                                    value = status.name
-                                    if (filters.status == status) selected = true
-                                    +status.name.lowercase().replaceFirstChar { it.uppercase() }
-                                }
-                            }
-                        }
-                    }
-                    if (groups.isNotEmpty()) {
-                        div("form-group") {
-                            label {
-                                htmlFor = "filter-group"
-                                +"Group"
-                            }
-                            select("form-control") {
-                                id = "filter-group"
-                                name = "group"
-                                option {
-                                    value = ""
-                                    if (filters.groupId == null) selected = true
-                                    +"All Groups"
-                                }
-                                groups.forEach { group ->
-                                    option {
-                                        value = group.id.toString()
-                                        if (filters.groupId == group.id) selected = true
-                                        +group.name
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    div("form-group") {
-                        label {
-                            htmlFor = "filter-search"
-                            +"Search"
-                        }
-                        input(type = InputType.text, classes = "form-control") {
-                            id = "filter-search"
-                            name = "search"
-                            placeholder = "Search channels..."
-                            value = filters.search ?: ""
-                        }
-                    }
-                    div("filter-actions") {
-                        button(type = ButtonType.submit, classes = "btn btn-secondary") {
-                            +"Apply"
-                        }
-                        if (filters.hasActiveFilters()) {
-                            a(href = "/admin/channels", classes = "btn btn-ghost") {
-                                +"Clear"
+                                value = status.name
+                                if (filters.status == status) selected = true
+                                +status.name.lowercase().replaceFirstChar { it.uppercase() }
                             }
                         }
                     }
@@ -115,27 +83,35 @@ fun HTML.channelsListView(
             }
         }
 
-        // Channels table
-        div("card") {
-            if (channels.isEmpty()) {
-                emptyState(
-                    icon = "monitor",
-                    title = "No channels found",
-                    description = if (filters.hasActiveFilters())
-                        "Try adjusting your filters or create a new channel."
-                    else
-                        "Create your first channel to start organizing content for your displays.",
-                    actionHref = "/admin/channels/new",
-                    actionLabel = "Create Channel"
-                )
-            } else {
-                channelTable(channels)
+        // Channels table (HTMX target)
+        div {
+            id = "channels-table"
+            div("card") {
+                if (channels.isEmpty()) {
+                    emptyState(
+                        icon = "monitor",
+                        title = "No channels found",
+                        description = if (filters.hasActiveFilters())
+                            "Try adjusting your filters or create a new channel."
+                        else
+                            "Create your first channel to start organizing content for your displays.",
+                        actionHref = "/admin/channels/new",
+                        actionLabel = "Create Channel"
+                    )
+                } else {
+                    channelTable(channels)
+                }
             }
-        }
-
-        // Pagination
-        if (pagination != null) {
-            paginationNav(pagination)
+            // Pagination with HTMX
+            if (pagination != null) {
+                hxPagination(
+                    currentPage = pagination.currentPage,
+                    totalPages = pagination.totalPages,
+                    totalItems = pagination.totalItems,
+                    baseUrl = "/admin/channels/table",
+                    target = "#channels-table"
+                )
+            }
         }
     }
 }
