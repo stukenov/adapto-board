@@ -8,10 +8,10 @@ fun HTML.showcaseView() {
             div("showcase-hero-widgets") {
                 unsafe {
                     +"""
-                    <div class="hero-float-widget hfw-1" style="top:15%;left:8%"><div style="background:rgba(0,0,0,.4);border-radius:6px;padding:6px 10px;font-size:11px;color:rgba(255,255,255,.6);backdrop-filter:blur(8px)">📰 Breaking News Ticker</div></div>
-                    <div class="hero-float-widget hfw-2" style="top:25%;right:10%"><div style="background:rgba(0,0,0,.4);border-radius:6px;padding:6px 10px;font-size:11px;color:rgba(255,255,255,.6);backdrop-filter:blur(8px)">🏆 2 : 1 &nbsp;67'</div></div>
-                    <div class="hero-float-widget hfw-3" style="bottom:20%;left:12%"><div style="background:rgba(0,0,0,.4);border-radius:6px;padding:6px 10px;font-size:11px;color:rgba(255,255,255,.6);backdrop-filter:blur(8px)">📊 KPI: ₸2.4B</div></div>
-                    <div class="hero-float-widget hfw-4" style="bottom:30%;right:8%"><div style="background:rgba(0,0,0,.4);border-radius:6px;padding:6px 10px;font-size:11px;color:rgba(255,255,255,.6);backdrop-filter:blur(8px)">🏨 Hotel TV / Queue / DOOH</div></div>
+                    <div class="hero-float-widget hfw-1" style="top:17%;left:7%"><div class="hero-chip">Окна обслуживания: 12 online / 1 paused</div></div>
+                    <div class="hero-float-widget hfw-2" style="top:29%;right:9%"><div class="hero-chip">Overlay latency p95: 1.8s</div></div>
+                    <div class="hero-float-widget hfw-3" style="bottom:18%;left:10%"><div class="hero-chip">Центральный офис • 846 устройств online</div></div>
+                    <div class="hero-float-widget hfw-4" style="bottom:28%;right:7%"><div class="hero-chip">Retail + Queue + Corporate сценарии</div></div>
                     """
                 }
             }
@@ -19,7 +19,7 @@ fun HTML.showcaseView() {
                 div("showcase-hero-badge") { +"Product Showcase" }
                 h1 { +"See Adapto Board in Real Scenarios" }
                 p("showcase-hero-subtitle") {
-                    +"Готовые демо-каналы под 16:9, portrait, video wall, queue board, hotel TV и экраны бизнес-центров."
+                    +"Реалистичные демо-каналы под 16:9, portrait, video wall, queue board, hotel TV и экраны бизнес-центров — как в рабочей эксплуатации."
                 }
                 div("showcase-hero-stats") {
                     div("hero-stat") {
@@ -50,18 +50,18 @@ fun HTML.showcaseView() {
                     p { +"Каждый канал открывается сразу с контентом и активными overlay-сценариями без пустых экранов." }
                 }
                 div("demo-channels-grid") {
-                    demoChannelCard("news-24", "News 24", "Breaking news: ticker, weather, clock, alert layers", "News & Media", listOf("Ticker", "Weather", "Clock", "Breaking"), "#dc2626")
-                    demoChannelCard("sports-live", "Sports Live", "Live match overlays: score, reactions, stats", "Sports", listOf("Score", "Reactions", "Stats", "Ticker"), "#059669")
-                    demoChannelCard("corporate-lobby", "Corporate Lobby", "KPI dashboard and branded welcome composition", "Corporate", listOf("KPI Tiles", "QR Card", "Lower Third", "Clock"), "#2563eb")
-                    demoChannelCard("retail-signage", "Retail Signage", "Promo timers, engagement poll, CTA overlays", "Retail", listOf("Poll", "Countdown", "Ticker", "QR"), "#d97706")
-                    demoChannelCard("event-stream", "Event Stream", "Speaker cards, Q&A prompts, session countdown", "Events", listOf("Lower Third", "Q&A", "Countdown", "Ticker"), "#7c3aed")
-                    demoChannelCard("education-tv", "Education TV", "Campus schedule and announcements", "Education", listOf("Schedule", "News", "Clock", "Logo"), "#0891b2")
-                    demoChannelCard("roadside-portrait", "Roadside Portrait", "Vertical outdoor stack for fast offers and CTA", "Portrait DOOH", listOf("Vertical Promo", "Weather", "QR"), "#ea580c")
-                    demoChannelCard("led-wall-prime", "LED Wall Prime", "Ultra-wide video wall composition for event/lobby", "LED / Video Wall", listOf("Hero", "Sponsor", "Program"), "#0f766e")
-                    demoChannelCard("queue-hub", "Queue Hub", "ЦОН/банк табло: вызов, ETA, приоритеты", "Queue Board", listOf("Queue Table", "Priority", "Service Alerts"), "#1d4ed8")
-                    demoChannelCard("ad-live-hybrid", "Ad Live Hybrid", "Live stream + ad overlays for DOOH", "Ad Overlay", listOf("Sponsor", "CTA", "Ticker"), "#be123c")
-                    demoChannelCard("hotel-tv", "Hotel TV", "Lobby and room channel with concierge blocks", "Hotel TV", listOf("Welcome", "Services", "Clock"), "#7c3aed")
-                    demoChannelCard("business-center-flow", "Business Center Flow", "Лифтовые/этажные дайджест-экраны", "Business Center", listOf("Meetings", "Wayfinding", "Traffic"), "#334155")
+                    demoChannelCard("news-24", "News 24", "Эфир новостей: ticker, погодный блок, время и служебные алерты", "News & Media", listOf("Ticker", "Weather", "Clock", "Breaking"), "#dc2626")
+                    demoChannelCard("sports-live", "Sports Live", "Спортивный эфир: табло матча, тайминг, статистика владения", "Sports", listOf("Score", "Reactions", "Stats", "Ticker"), "#059669")
+                    demoChannelCard("corporate-lobby", "Corporate Lobby", "Лобби-композиция: KPI, welcome-блок, встречи и сервисные заметки", "Corporate", listOf("KPI Tiles", "QR Card", "Lower Third", "Clock"), "#2563eb")
+                    demoChannelCard("retail-signage", "Retail Signage", "Retail-показы: акция, остатки по SKU, CTA-блок и promo ticker", "Retail", listOf("Poll", "Countdown", "Ticker", "QR"), "#d97706")
+                    demoChannelCard("event-stream", "Event Stream", "Сценарий конференции: карточка спикера, таймер сессии, навигация", "Events", listOf("Lower Third", "Q&A", "Countdown", "Ticker"), "#7c3aed")
+                    demoChannelCard("education-tv", "Education TV", "Кампус-экран: расписание, объявления и служебные сообщения", "Education", listOf("Schedule", "News", "Clock", "Logo"), "#0891b2")
+                    demoChannelCard("roadside-portrait", "Roadside Portrait", "Вертикальный DOOH: offer stack, погодный триггер и QR-купон", "Portrait DOOH", listOf("Vertical Promo", "Weather", "QR"), "#ea580c")
+                    demoChannelCard("led-wall-prime", "LED Wall Prime", "Сверхширокий wall: hero-сцена, программа блока, sponsor слот", "LED / Video Wall", listOf("Hero", "Sponsor", "Program"), "#0f766e")
+                    demoChannelCard("queue-hub", "Queue Hub", "Queue-board: вызовы, ETA и приоритетные окна обслуживания", "Queue Board", listOf("Queue Table", "Priority", "Service Alerts"), "#1d4ed8")
+                    demoChannelCard("ad-live-hybrid", "Ad Live Hybrid", "Live stream с рекламными overlay-слоями без остановки эфира", "Ad Overlay", listOf("Sponsor", "CTA", "Ticker"), "#be123c")
+                    demoChannelCard("hotel-tv", "Hotel TV", "Hotel-сценарий: lobby welcome и room-service блоки", "Hotel TV", listOf("Welcome", "Services", "Clock"), "#7c3aed")
+                    demoChannelCard("business-center-flow", "Business Center Flow", "Этажные и лифтовые digest-экраны с навигацией и встречами", "Business Center", listOf("Meetings", "Wayfinding", "Traffic"), "#334155")
                 }
             }
         }
@@ -94,10 +94,10 @@ fun HTML.showcaseView() {
                     p { +"See the complete workflow from channel creation to live broadcast." }
                 }
                 div("walkthrough-grid") {
-                    walkthroughStep("1", "Create a Channel", "Set up a broadcast channel with a name, schedule, and default overlay profile. One click to go live.", "create-channel")
-                    walkthroughStep("2", "Upload & Schedule Content", "Drag & drop images and videos. Build playlists with timeline editor. Set start/end windows.", "schedule-content")
-                    walkthroughStep("3", "Configure Overlays", "Pick overlay templates and connect data via webhooks, REST polling, or manual control panel.", "configure-overlays")
-                    walkthroughStep("4", "Go Live & Monitor", "Embed on screens, monitor fleet status, and track changes in audit logs.", "go-live")
+                    walkthroughStep("1", "Создать канал", "Задаём профиль канала, регион и дефолтный overlay-пакет под тип экрана.", "create-channel")
+                    walkthroughStep("2", "Собрать сетку показов", "Планируем контент по временным окнам и дням недели без пустых промежутков.", "schedule-content")
+                    walkthroughStep("3", "Подключить данные", "Привязываем webhook/REST/manual источники для очередей, KPI, и сервисных уведомлений.", "configure-overlays")
+                    walkthroughStep("4", "Запустить и контролировать", "Проверяем online-статус устройств, rollback и аудит показов в одном потоке.", "go-live")
                 }
             }
         }

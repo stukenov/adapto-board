@@ -41,7 +41,7 @@ val DEMO_CHANNELS = mapOf(
         id = "sports-live",
         name = "Sports Live",
         category = "Sports",
-        description = "Live sports coverage with dynamic scoreboard, audience reactions, and real-time statistics",
+        description = "Live sports coverage with scoreboard, match timer, and compact stats strip",
         color = "#059669",
         bgImages = listOf(
             "https://images.unsplash.com/photo-1461896836934-bd45ea8ba7e2?w=1280&q=80",
@@ -50,7 +50,6 @@ val DEMO_CHANNELS = mapOf(
         ),
         overlayWidgets = listOf(
             DemoWidget("score", """<div class="ov-score"><div class="ov-score-team"><span class="ov-flag">🇰🇿</span>Astana FC</div><div class="ov-score-nums"><span id="demo-score-a">2</span>:<span id="demo-score-b">1</span></div><div class="ov-score-team">Kairat FC<span class="ov-flag">🇰🇿</span></div><div class="ov-score-period">2nd Half — <span id="demo-minute">67</span>'</div></div>"""),
-            DemoWidget("reactions", """<div class="ov-reactions" id="demo-reactions"></div>"""),
             DemoWidget("ticker", """<div class="ov-ticker"><div class="ov-ticker-label" style="background:#059669">STATS</div><div class="ov-ticker-track"><span class="ov-ticker-text">Possession: Astana 58% — Kairat 42% • Shots on target: 7-4 • Corner kicks: 5-3 • Yellow cards: 2-1</span></div></div>""")
         )
     ),
@@ -69,7 +68,7 @@ val DEMO_CHANNELS = mapOf(
             DemoWidget("kpi", """<div class="ov-kpi-grid"><div class="ov-kpi"><div class="ov-kpi-val" style="color:#3b82f6">${'$'}2.4M</div><div class="ov-kpi-lbl">Revenue</div></div><div class="ov-kpi"><div class="ov-kpi-val" style="color:#10b981">+18%</div><div class="ov-kpi-lbl">Growth</div></div><div class="ov-kpi"><div class="ov-kpi-val" style="color:#f59e0b">847</div><div class="ov-kpi-lbl">Clients</div></div><div class="ov-kpi"><div class="ov-kpi-val" style="color:#8b5cf6">99.9%</div><div class="ov-kpi-lbl">SLA</div></div></div>"""),
             DemoWidget("lower-third", """<div class="ov-lower-third"><div class="ov-lt-name">Welcome to Adapto HQ</div><div class="ov-lt-title">Innovation Center — Building the Future of Broadcast</div></div>"""),
             DemoWidget("clock", """<div class="ov-clock" id="demo-clock-corp">22:40:00</div>"""),
-            DemoWidget("qr", """<div class="ov-qr"><div class="ov-qr-grid"><div class="ov-qr-c"></div><div class="ov-qr-c"></div><div class="ov-qr-c"></div><div class="ov-qr-c"></div><div class="ov-qr-c ov-qr-w"></div><div class="ov-qr-c"></div><div class="ov-qr-c"></div><div class="ov-qr-c"></div><div class="ov-qr-c"></div></div><div class="ov-qr-txt">Wi-Fi: Connect</div></div>""")
+            DemoWidget("qr", """<div class="ov-qr"><div class="ov-qr-grid"><div class="ov-qr-c"></div><div class="ov-qr-c"></div><div class="ov-qr-c"></div><div class="ov-qr-c"></div><div class="ov-qr-c ov-qr-w"></div><div class="ov-qr-c"></div><div class="ov-qr-c"></div><div class="ov-qr-c"></div><div class="ov-qr-c"></div></div><div class="ov-qr-txt">Guest Wi-Fi: LobbyNet</div></div>""")
         )
     ),
     "retail-signage" to DemoChannel(
@@ -85,7 +84,7 @@ val DEMO_CHANNELS = mapOf(
         ),
         overlayWidgets = listOf(
             DemoWidget("countdown", """<div class="ov-countdown"><div class="ov-cd-label">FLASH SALE ENDS IN</div><div class="ov-cd-nums"><span class="ov-cd-num" id="demo-cd-h">02</span><span class="ov-cd-sep">:</span><span class="ov-cd-num" id="demo-cd-m">45</span><span class="ov-cd-sep">:</span><span class="ov-cd-num" id="demo-cd-s">30</span></div></div>"""),
-            DemoWidget("poll", """<div class="ov-poll"><div class="ov-poll-q">Which deal interests you?</div><div class="ov-poll-opt"><div class="ov-poll-bar" style="width:55%">Electronics — 55%</div></div><div class="ov-poll-opt"><div class="ov-poll-bar ov-poll-alt" style="width:30%">Fashion — 30%</div></div><div class="ov-poll-opt"><div class="ov-poll-bar ov-poll-alt2" style="width:15%">Home — 15%</div></div></div>"""),
+            DemoWidget("poll", """<div class="ov-poll"><div class="ov-poll-q">Какой отдел интересен сейчас?</div><div class="ov-poll-opt"><div class="ov-poll-bar" style="width:55%">Электроника — 55%</div></div><div class="ov-poll-opt"><div class="ov-poll-bar ov-poll-alt" style="width:30%">Одежда — 30%</div></div><div class="ov-poll-opt"><div class="ov-poll-bar ov-poll-alt2" style="width:15%">Дом — 15%</div></div></div>"""),
             DemoWidget("ticker", """<div class="ov-ticker"><div class="ov-ticker-label" style="background:#d97706">DEALS</div><div class="ov-ticker-track"><span class="ov-ticker-text">🔥 50% OFF Electronics today only • Free shipping on orders over $50 • New arrivals in Fashion — check aisle 3 • Loyalty members get extra 10% OFF</span></div></div>""")
         )
     ),
@@ -93,7 +92,7 @@ val DEMO_CHANNELS = mapOf(
         id = "event-stream",
         name = "Event Stream",
         category = "Events",
-        description = "Live event coverage with audience engagement, speaker intros, and Q&A management",
+        description = "Conference stream with speaker cards, session timing, and attendee guidance",
         color = "#7c3aed",
         bgImages = listOf(
             "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1280&q=80",
@@ -101,10 +100,9 @@ val DEMO_CHANNELS = mapOf(
             "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=1280&q=80"
         ),
         overlayWidgets = listOf(
-            DemoWidget("lower-third", """<div class="ov-lower-third"><div class="ov-lt-name">Dr. Sarah Chen</div><div class="ov-lt-title">Keynote: The Future of AI in Broadcasting</div></div>"""),
-            DemoWidget("reactions", """<div class="ov-reactions" id="demo-reactions-event"></div>"""),
+            DemoWidget("lower-third", """<div class="ov-lower-third"><div class="ov-lt-name">Dr. Sarah Chen</div><div class="ov-lt-title">Panel: Scaling nationwide signage operations</div></div>"""),
             DemoWidget("countdown", """<div class="ov-countdown ov-cd-small"><div class="ov-cd-label">NEXT SESSION</div><div class="ov-cd-nums"><span class="ov-cd-num" id="demo-cd2-m">15</span><span class="ov-cd-sep">:</span><span class="ov-cd-num" id="demo-cd2-s">00</span></div></div>"""),
-            DemoWidget("ticker", """<div class="ov-ticker"><div class="ov-ticker-label" style="background:#7c3aed">Q&A</div><div class="ov-ticker-track"><span class="ov-ticker-text">Submit questions via QR code on your badge • Next panel: "Scaling Digital Signage Networks" at 14:30 • WiFi: EventGuest / pass: innovate2026</span></div></div>""")
+            DemoWidget("ticker", """<div class="ov-ticker"><div class="ov-ticker-label" style="background:#7c3aed">Q&A</div><div class="ov-ticker-track"><span class="ov-ticker-text">Q&A через стойку регистрации • Следующая сессия в Hall C в 14:30 • Трансляция синхронизирована по 3 зонам</span></div></div>""")
         )
     ),
     "education-tv" to DemoChannel(
@@ -393,10 +391,6 @@ body.demo-page { background: var(--gray-900); color: #fff; font-family: var(--fo
 .ov-score-nums { font-size: 32px; font-weight: 700; display: flex; align-items: center; gap: 4px; font-variant-numeric: tabular-nums; }
 .ov-score-period { width: 100%; text-align: center; font-size: 11px; opacity: 0.6; }
 
-.ov-reactions { position: absolute; right: 20px; bottom: 60px; width: 60px; height: 200px; }
-.ov-reaction { position: absolute; bottom: 0; font-size: 28px; animation: float-up 3s ease-out forwards; opacity: 0; }
-@keyframes float-up { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-180px) scale(0.4); } }
-
 .ov-kpi-grid { position: absolute; top: 16px; right: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .ov-kpi { background: rgba(0,0,0,0.8); border-radius: 8px; padding: 12px 16px; text-align: center; backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.1); }
 .ov-kpi-val { font-size: 24px; font-weight: 700; }
@@ -494,22 +488,6 @@ private fun demoScript(demo: DemoChannel): String = """
             minEl.textContent = m;
         }, 3000);
     }
-
-    // Reactions animation
-    var emojis = ['👍','❤️','😂','🎉','👏','🔥','⚽'];
-    ['demo-reactions','demo-reactions-event'].forEach(function(id) {
-        var container = document.getElementById(id);
-        if (!container) return;
-        setInterval(function() {
-            var span = document.createElement('span');
-            span.className = 'ov-reaction';
-            span.textContent = emojis[Math.floor(Math.random()*emojis.length)];
-            span.style.left = Math.random()*40 + 'px';
-            span.style.animationDelay = Math.random()*0.5 + 's';
-            container.appendChild(span);
-            setTimeout(function(){ span.remove(); }, 3500);
-        }, 800 + Math.random()*1200);
-    });
 
     // Countdown timer
     var cdH = document.getElementById('demo-cd-h');
