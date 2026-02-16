@@ -6,11 +6,36 @@ fun HTML.showcaseView() {
     publicLayout("Product Showcase", currentPath = "/showcase") {
         // Hero
         section("showcase-hero") {
+            // Floating widget ghosts in background
+            div("showcase-hero-widgets") {
+                unsafe {
+                    +"""
+                    <div class="hero-float-widget hfw-1" style="top:15%;left:8%"><div style="background:rgba(0,0,0,.4);border-radius:6px;padding:6px 10px;font-size:11px;color:rgba(255,255,255,.6);backdrop-filter:blur(8px)">📰 Breaking News Ticker</div></div>
+                    <div class="hero-float-widget hfw-2" style="top:25%;right:10%"><div style="background:rgba(0,0,0,.4);border-radius:6px;padding:6px 10px;font-size:11px;color:rgba(255,255,255,.6);backdrop-filter:blur(8px)">🏆 2 : 1 &nbsp;67'</div></div>
+                    <div class="hero-float-widget hfw-3" style="bottom:20%;left:12%"><div style="background:rgba(0,0,0,.4);border-radius:6px;padding:6px 10px;font-size:11px;color:rgba(255,255,255,.6);backdrop-filter:blur(8px)">📊 KPI: $2.4M</div></div>
+                    <div class="hero-float-widget hfw-4" style="bottom:30%;right:8%"><div style="background:rgba(0,0,0,.4);border-radius:6px;padding:6px 10px;font-size:11px;color:rgba(255,255,255,.6);backdrop-filter:blur(8px)">⏱ 02:45:30</div></div>
+                    """
+                }
+            }
             div("showcase-hero-content") {
                 div("showcase-hero-badge") { +"Product Showcase" }
                 h1 { +"See Playout Edge in Action" }
                 p("showcase-hero-subtitle") {
                     +"Explore live demo channels, overlay templates, and interactive walkthroughs. No signup required."
+                }
+                div("showcase-hero-stats") {
+                    div("hero-stat") {
+                        span("hero-stat-num") { +"6" }
+                        span("hero-stat-label") { +"Demo Channels" }
+                    }
+                    div("hero-stat") {
+                        span("hero-stat-num") { +"15+" }
+                        span("hero-stat-label") { +"Templates" }
+                    }
+                    div("hero-stat") {
+                        span("hero-stat-num") { +"24/7" }
+                        span("hero-stat-label") { +"Live Overlays" }
+                    }
                 }
                 div("showcase-hero-actions") {
                     a(href = "#demo-channels", classes = "btn btn-primary btn-lg") { +"View Demo Channels" }
@@ -239,33 +264,35 @@ private fun FlowContent.demoChannelCard(
 ) {
     a(href = "/showcase/demo/$id", classes = "demo-channel-card") {
         div("demo-channel-preview") {
-            style = "background: linear-gradient(135deg, ${color}22, ${color}44)"
+            style = "background: linear-gradient(135deg, ${color}11, ${color}22); position: relative"
             div("demo-channel-screen") {
-                // Mini TV screen simulation
-                div("demo-screen-content") {
-                    style = "border-top: 3px solid $color"
-                    div("demo-screen-header") {
-                        span("demo-screen-badge") {
-                            style = "background: $color"
-                            +"LIVE"
-                        }
-                        span("demo-screen-name") { +name }
+                style = "position: relative; overflow: hidden"
+                // Mini TV with actual overlay widgets
+                div("demo-screen-bg") {
+                    style = "background: linear-gradient(160deg, #0f0f1a, #1a1a2e); width: 100%; height: 100%; position: absolute; inset: 0"
+                }
+                // Live badge
+                div("demo-screen-live-bar") {
+                    style = "position: absolute; top: 8px; left: 8px; z-index: 2; display: flex; align-items: center; gap: 6px"
+                    span("demo-screen-badge") {
+                        style = "background: $color"
+                        +"LIVE"
                     }
-                    div("demo-screen-overlays") {
-                        overlays.take(3).forEach { overlay ->
-                            span("demo-overlay-chip") { +overlay }
-                        }
-                        if (overlays.size > 3) {
-                            span("demo-overlay-chip demo-overlay-more") { +"+${overlays.size - 3}" }
-                        }
-                    }
+                    span("demo-screen-name") { +name }
+                }
+                // Mini overlays based on channel type
+                unsafe {
+                    +demoChannelMiniOverlays(id, color)
                 }
             }
         }
         div("demo-channel-info") {
-            div("demo-channel-category") {
-                style = "color: $color"
-                +category
+            div("demo-channel-meta") {
+                span("demo-channel-category") {
+                    style = "color: $color"
+                    +category
+                }
+                span("demo-channel-arrow") { +"\u2192" }
             }
             h3("demo-channel-name") { +name }
             p("demo-channel-desc") { +description }
@@ -276,6 +303,54 @@ private fun FlowContent.demoChannelCard(
             }
         }
     }
+}
+
+private fun demoChannelMiniOverlays(id: String, color: String): String = when (id) {
+    "news-24" -> """
+        <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.6);border-radius:4px;padding:3px 8px;font-size:11px;color:#fff;font-weight:600;font-variant-numeric:tabular-nums;z-index:2">14:30</div>
+        <div style="position:absolute;top:8px;right:60px;background:rgba(0,0,0,.6);border-radius:4px;padding:3px 8px;font-size:10px;color:#fff;display:flex;align-items:center;gap:4px;z-index:2"><span style="font-size:14px">☀️</span>+24°C</div>
+        <div style="position:absolute;top:8px;left:54px;background:$color;border-radius:3px;padding:2px 6px;font-size:7px;font-weight:700;color:#fff;z-index:2">N24</div>
+        <div style="position:absolute;bottom:0;left:0;right:0;height:24px;background:rgba(0,0,0,.85);display:flex;align-items:center;z-index:2"><span style="background:#e50914;color:#fff;font-size:7px;font-weight:700;padding:0 6px;height:100%;display:flex;align-items:center">BREAKING</span><span style="font-size:9px;color:#fff;white-space:nowrap;padding-left:8px">GDP growth exceeds expectations at 5.2% in Q4...</span></div>
+    """
+    "sports-live" -> """
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.7);border-radius:6px;padding:6px 12px;display:flex;align-items:center;gap:8px;z-index:2">
+            <span style="font-size:10px;font-weight:600;color:#fff">AST</span>
+            <span style="font-size:16px;font-weight:700;color:#fff">2 : 1</span>
+            <span style="font-size:10px;font-weight:600;color:#fff">KRT</span>
+        </div>
+        <div style="position:absolute;top:8px;right:8px;font-size:9px;color:rgba(255,255,255,.5);z-index:2">67'</div>
+        <div style="position:absolute;bottom:0;left:0;right:0;height:20px;background:rgba(0,0,0,.85);display:flex;align-items:center;z-index:2"><span style="background:$color;color:#fff;font-size:7px;font-weight:700;padding:0 6px;height:100%;display:flex;align-items:center">STATS</span><span style="font-size:8px;color:#fff;padding-left:6px">Possession: 58% - 42% | Shots: 12 - 8</span></div>
+    """
+    "corporate-lobby" -> """
+        <div style="position:absolute;top:10px;right:8px;display:grid;grid-template-columns:1fr 1fr;gap:3px;z-index:2">
+            <div style="background:rgba(0,0,0,.6);border-radius:3px;padding:4px 8px;text-align:center"><div style="font-size:12px;font-weight:700;color:#3b82f6">$2.4M</div><div style="font-size:6px;color:rgba(255,255,255,.4);text-transform:uppercase">Revenue</div></div>
+            <div style="background:rgba(0,0,0,.6);border-radius:3px;padding:4px 8px;text-align:center"><div style="font-size:12px;font-weight:700;color:#22c55e">+18%</div><div style="font-size:6px;color:rgba(255,255,255,.4);text-transform:uppercase">Growth</div></div>
+        </div>
+        <div style="position:absolute;bottom:20px;left:0;z-index:2"><div style="background:#fff;color:#000;font-weight:700;font-size:9px;padding:3px 10px">Sarah Chen</div><div style="background:rgba(0,0,0,.8);color:#fff;font-size:7px;padding:2px 10px">VP Operations</div></div>
+        <div style="position:absolute;top:10px;left:8px;background:rgba(0,0,0,.6);border-radius:3px;padding:3px 6px;font-size:10px;font-weight:600;color:#fff;font-variant-numeric:tabular-nums;z-index:2">09:45</div>
+    """
+    "retail-signage" -> """
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.7);border-radius:6px;padding:8px 14px;text-align:center;z-index:2">
+            <div style="font-size:7px;text-transform:uppercase;color:$color;font-weight:700;letter-spacing:1px">Flash Sale Ends In</div>
+            <div style="font-size:18px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;margin-top:2px">02:45:30</div>
+        </div>
+        <div style="position:absolute;bottom:0;left:0;right:0;height:20px;background:rgba(0,0,0,.85);display:flex;align-items:center;z-index:2"><span style="background:$color;color:#fff;font-size:7px;font-weight:700;padding:0 6px;height:100%;display:flex;align-items:center">DEALS</span><span style="font-size:8px;color:#fff;padding-left:6px">Electronics 40% OFF | Fashion BOGO | Home 25% OFF</span></div>
+    """
+    "event-stream" -> """
+        <div style="position:absolute;bottom:24px;left:0;z-index:2"><div style="background:#fff;color:#000;font-weight:700;font-size:9px;padding:3px 10px">Dr. Sarah Chen</div><div style="background:rgba(0,0,0,.8);color:#fff;font-size:7px;padding:2px 10px">Keynote Speaker</div></div>
+        <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.6);border-radius:4px;padding:4px 8px;text-align:center;z-index:2"><div style="font-size:6px;color:$color;text-transform:uppercase;font-weight:600">Next Session</div><div style="font-size:12px;font-weight:700;color:#fff">15:00</div></div>
+        <div style="position:absolute;bottom:0;left:0;right:0;height:20px;background:rgba(0,0,0,.85);display:flex;align-items:center;z-index:2"><span style="background:$color;color:#fff;font-size:7px;font-weight:700;padding:0 6px;height:100%;display:flex;align-items:center">Q&A</span><span style="font-size:8px;color:#fff;padding-left:6px">Submit questions via app or scan QR code</span></div>
+    """
+    "education-tv" -> """
+        <div style="position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:2px;z-index:2">
+            <div style="background:rgba(0,0,0,.6);border-radius:3px;padding:2px 6px;font-size:8px;color:#fff;display:flex;align-items:center;gap:4px"><span style="width:5px;height:5px;border-radius:50%;background:#22c55e;display:inline-block"></span>Math 101 — Now</div>
+            <div style="background:rgba(0,0,0,.4);border-radius:3px;padding:2px 6px;font-size:8px;color:rgba(255,255,255,.5)">Physics — 10:30</div>
+            <div style="background:rgba(0,0,0,.4);border-radius:3px;padding:2px 6px;font-size:8px;color:rgba(255,255,255,.5)">History — 11:15</div>
+        </div>
+        <div style="position:absolute;top:8px;left:8px;background:$color;border-radius:3px;padding:2px 6px;font-size:7px;font-weight:700;color:#fff;z-index:2">EDU</div>
+        <div style="position:absolute;bottom:0;left:0;right:0;height:20px;background:rgba(0,0,0,.85);display:flex;align-items:center;z-index:2"><span style="background:$color;color:#fff;font-size:7px;font-weight:700;padding:0 6px;height:100%;display:flex;align-items:center">NEWS</span><span style="font-size:8px;color:#fff;padding-left:6px">Campus library closes early at 5PM today</span></div>
+    """
+    else -> ""
 }
 
 private fun FlowContent.templateCategoryPill(category: String, label: String, active: Boolean = false) {
