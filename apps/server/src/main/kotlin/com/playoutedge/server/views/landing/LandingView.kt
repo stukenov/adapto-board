@@ -40,6 +40,55 @@ fun HTML.landingView() {
                         "Fleet статусы, audit, as-run и чистый контур внедрения: 1 клиент = 1 environment (v1)."
                     )
                 }
+
+                div("landing-live-grid") {
+                    realisticPreviewCard(
+                        title = "Операционный экран филиала",
+                        subtitle = "Queue + alerts + SLA",
+                        contentClass = "preview-ops"
+                    ) {
+                        div("preview-ops-header") {
+                            span("preview-dot online") {}
+                            span { +"Отделение Алматы • online 12/12" }
+                            span("preview-muted") { +"обновлено 15 сек назад" }
+                        }
+                        div("preview-ops-table") {
+                            div("preview-row preview-head") {
+                                span { +"Талон" }
+                                span { +"Окно" }
+                                span { +"Статус" }
+                            }
+                            div("preview-row") { span { +"A-204" }; span { +"7" }; span { +"Вызов" } }
+                            div("preview-row") { span { +"B-118" }; span { +"2" }; span { +"ETA 4 мин" } }
+                            div("preview-row") { span { +"P-031" }; span { +"VIP" }; span { +"Сейчас" } }
+                        }
+                    }
+                    realisticPreviewCard(
+                        title = "Коммерческий экран retail",
+                        subtitle = "Промо + остатки + QR CTA",
+                        contentClass = "preview-retail"
+                    ) {
+                        div("preview-kicker") { +"MEGA Center • 3 этаж" }
+                        h4 { +"Сезонная коллекция" }
+                        p { +"Скидки до 35% до 22:00" }
+                        div("preview-retail-footer") {
+                            span { +"SKU с остатком: 142" }
+                            span { +"QR scans: 87 / день" }
+                        }
+                    }
+                    realisticPreviewCard(
+                        title = "Корпоративный lobby feed",
+                        subtitle = "KPI + встречи + сервисные уведомления",
+                        contentClass = "preview-corp"
+                    ) {
+                        div("preview-kpi-line") {
+                            div { strong { +"99.94%" }; small { +"Uptime" } }
+                            div { strong { +"1.8с" }; small { +"Overlay p95" } }
+                            div { strong { +"846" }; small { +"Online devices" } }
+                        }
+                        div("preview-note") { +"11:00 • Встреча: Kaspi Team, Hall B • Лифт C на сервисе до 23:00" }
+                    }
+                }
             }
         }
 
@@ -64,5 +113,22 @@ private fun FlowContent.featureCard(icon: String, title: String, description: St
         }
         h3 { +title }
         p { +description }
+    }
+}
+
+private fun FlowContent.realisticPreviewCard(
+    title: String,
+    subtitle: String,
+    contentClass: String,
+    content: FlowContent.() -> Unit
+) {
+    div("landing-preview-card") {
+        div("landing-preview-meta") {
+            h3 { +title }
+            p { +subtitle }
+        }
+        div("landing-preview-canvas $contentClass") {
+            content()
+        }
     }
 }
