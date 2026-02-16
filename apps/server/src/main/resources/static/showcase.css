@@ -402,6 +402,34 @@
 .tp-react-5 { animation-delay: 1.2s; }
 @keyframes float-react { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-30px); opacity: 0.3; } }
 
+.tp-portrait { width: 62%; height: 92%; background: rgba(0,0,0,.68); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; justify-content: space-between; }
+.tp-portrait-top { font-size: 10px; opacity: .75; }
+.tp-portrait-main { font-size: 34px; font-weight: 800; line-height: .9; }
+.tp-portrait-main span { display: block; font-size: 12px; margin-top: 4px; font-weight: 500; }
+.tp-portrait-cta { font-size: 10px; background: rgba(234,88,12,.3); border: 1px solid rgba(234,88,12,.45); border-radius: 6px; padding: 6px 8px; }
+.tp-wayfinding-title { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+.tp-wayfinding-row { display: flex; justify-content: space-between; gap: 8px; font-size: 10px; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,.1); }
+
+.tp-wall { width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: linear-gradient(180deg, rgba(15,23,42,.35), rgba(15,23,42,.8)); padding: 10px; text-align: center; }
+.tp-wall-chip { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; background: rgba(15,118,110,.3); border: 1px solid rgba(15,118,110,.5); border-radius: 999px; padding: 2px 8px; }
+.tp-wall-title { font-size: 19px; font-weight: 800; margin-top: 6px; }
+.tp-wall-sub { font-size: 10px; opacity: .75; margin-top: 2px; }
+.tp-wall-grid { margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; width: 100%; }
+.tp-wall-grid span { font-size: 9px; background: rgba(255,255,255,.08); border-radius: 4px; padding: 5px; }
+
+.tp-queue { width: 100%; background: rgba(0,0,0,.7); border-radius: 8px; padding: 8px; }
+.tp-queue-head { font-size: 11px; font-weight: 700; margin-bottom: 5px; }
+.tp-queue-row { display: grid; grid-template-columns: 1fr 1fr 1.4fr; gap: 6px; font-size: 10px; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,.08); }
+
+.tp-ad { width: 100%; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; padding: 10px; }
+.tp-ad-live { align-self: flex-start; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 6px; background: rgba(190,18,60,.8); margin-bottom: auto; }
+.tp-ad-tag { align-self: flex-start; font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 6px; background: rgba(190,18,60,.8); margin-bottom: 8px; }
+.tp-ad-banner { font-size: 10px; font-weight: 600; background: rgba(0,0,0,.8); border-left: 3px solid #be123c; border-radius: 6px; padding: 7px 8px; }
+
+.tp-hotel, .tp-bc { width: 100%; background: rgba(0,0,0,.72); border-radius: 8px; padding: 9px; }
+.tp-hotel-title, .tp-bc-title { font-size: 12px; font-weight: 700; margin-bottom: 6px; }
+.tp-hotel-row, .tp-bc-row { display: flex; justify-content: space-between; gap: 8px; font-size: 10px; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,.1); }
+
 /* Walkthrough Steps */
 .walkthrough-grid {
     display: grid;
