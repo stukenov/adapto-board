@@ -58,10 +58,10 @@ fun HTML.showcaseView() {
                     demoChannelCard("education-tv", "Education TV", "Кампус-экран: расписание, объявления и служебные сообщения", "Education", listOf("Schedule", "News", "Clock", "Logo"), "#0891b2")
                     demoChannelCard("roadside-portrait", "Roadside Portrait", "Вертикальный DOOH: offer stack, погодный триггер и QR-купон", "Portrait DOOH", listOf("Vertical Promo", "Weather", "QR"), "#ea580c")
                     demoChannelCard("led-wall-prime", "LED Wall Prime", "Сверхширокий wall: hero-сцена, программа блока, sponsor слот", "LED / Video Wall", listOf("Hero", "Sponsor", "Program"), "#0f766e")
-                    demoChannelCard("queue-hub", "Queue Hub", "Queue-board: вызовы, ETA и приоритетные окна обслуживания", "Queue Board", listOf("Queue Table", "Priority", "Service Alerts"), "#1d4ed8")
+                    demoChannelCard("queue-hub", "Queue Portrait", "Вертикальный queue-канал: вызовы, ETA и приоритетные окна обслуживания", "Portrait Queue", listOf("Portrait Queue", "ETA", "Priority"), "#1d4ed8")
                     demoChannelCard("ad-live-hybrid", "Ad Live Hybrid", "Live stream с рекламными overlay-слоями без остановки эфира", "Ad Overlay", listOf("Sponsor", "CTA", "Ticker"), "#be123c")
-                    demoChannelCard("hotel-tv", "Hotel TV", "Hotel-сценарий: lobby welcome и room-service блоки", "Hotel TV", listOf("Welcome", "Services", "Clock"), "#7c3aed")
-                    demoChannelCard("business-center-flow", "Business Center Flow", "Этажные и лифтовые digest-экраны с навигацией и встречами", "Business Center", listOf("Meetings", "Wayfinding", "Traffic"), "#334155")
+                    demoChannelCard("hotel-tv", "Hotel Portrait", "Вертикальный hotel-канал: welcome, сервисы и concierge в формате 9:16", "Portrait Hotel", listOf("Welcome", "Services", "Clock"), "#7c3aed")
+                    demoChannelCard("business-center-flow", "Business Center Portrait", "Вертикальный digest-канал бизнес-центра: встречи, wayfinding и трафик", "Portrait Business Center", listOf("Meetings", "Wayfinding", "Traffic"), "#334155")
                 }
             }
         }
@@ -140,10 +140,11 @@ private fun FlowContent.demoChannelCard(
     id: String, name: String, description: String,
     category: String, overlays: List<String>, color: String
 ) {
-    a(href = "/showcase/demo/$id", classes = "demo-channel-card") {
+    val isPortrait = id in setOf("roadside-portrait", "queue-hub", "hotel-tv", "business-center-flow")
+    a(href = "/showcase/demo/$id", classes = "demo-channel-card${if (isPortrait) " demo-channel-card-portrait" else ""}") {
         div("demo-channel-preview") {
             style = "background: linear-gradient(135deg, ${color}11, ${color}22); position: relative"
-            div("demo-channel-screen") {
+            div("demo-channel-screen${if (isPortrait) " demo-channel-screen-portrait" else ""}") {
                 style = "position: relative; overflow: hidden"
                 div("demo-screen-bg") { style = "background: linear-gradient(160deg, #0f0f1a, #1a1a2e); width: 100%; height: 100%; position: absolute; inset: 0" }
                 div("demo-screen-live-bar") {
@@ -156,7 +157,7 @@ private fun FlowContent.demoChannelCard(
         }
         div("demo-channel-info") {
             div("demo-channel-meta") {
-                span("demo-channel-category") { style = "color: $color"; +category }
+                span("demo-channel-category") { style = "color: $color"; +(if (isPortrait) "$category • PORTRAIT" else category) }
                 span("demo-channel-arrow") { +"→" }
             }
             h3("demo-channel-name") { +name }
@@ -181,19 +182,23 @@ private fun demoChannelMiniOverlays(id: String, color: String): String = when (i
         </div>
     """
     "queue-hub" -> """
-        <div style="position:absolute;top:36px;left:10px;right:10px;background:rgba(0,0,0,.68);border-radius:6px;padding:6px;z-index:2">
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;font-size:8px;color:rgba(255,255,255,.6);margin-bottom:4px"><span>Ticket</span><span>Desk</span><span>ETA</span></div>
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;font-size:9px;color:#fff"><span>A-204</span><span>7</span><span>Now</span></div>
+        <div style="position:absolute;top:34px;left:10px;right:10px;background:rgba(4,20,46,.82);border:1px solid rgba(96,165,250,.45);border-radius:8px;padding:6px;z-index:2">
+            <div style="font-size:7px;opacity:.75;margin-bottom:4px">QUEUE PORTRAIT</div>
+            <div style="font-size:15px;font-weight:800;line-height:1">A-204</div>
+            <div style="font-size:8px;margin-top:2px">Window 7 • Now</div>
         </div>
+        <div style="position:absolute;bottom:0;left:0;right:0;height:20px;background:rgba(0,0,0,.85);display:flex;align-items:center;z-index:2"><span style="background:$color;color:#fff;font-size:7px;font-weight:700;padding:0 6px;height:100%;display:flex;align-items:center">PORTRAIT</span><span style="font-size:8px;color:#fff;padding-left:6px">Queue stack</span></div>
     """
     "ad-live-hybrid" -> """
         <div style="position:absolute;bottom:24px;left:0;right:0;height:24px;background:rgba(0,0,0,.78);display:flex;align-items:center;z-index:2"><span style="background:$color;color:#fff;font-size:7px;font-weight:700;padding:0 6px;height:100%;display:flex;align-items:center">AD</span><span style="font-size:8px;color:#fff;padding-left:6px">Партнёр эфира: бонус 5 000 ₸ по QR</span></div>
     """
     "hotel-tv" -> """
-        <div style="position:absolute;top:38px;right:8px;background:rgba(0,0,0,.62);border-radius:6px;padding:6px;z-index:2;color:#fff;font-size:8px;min-width:120px"><div style="font-weight:700;margin-bottom:4px">Altyn Hotel</div><div>Check-in 14:00</div><div>Breakfast 07:00</div></div>
+        <div style="position:absolute;top:34px;left:8px;right:8px;background:linear-gradient(180deg, rgba(30,18,64,.88), rgba(12,10,25,.86));border:1px solid rgba(167,139,250,.38);border-radius:8px;padding:6px;z-index:2;color:#fff;font-size:8px"><div style="font-weight:700;margin-bottom:4px">HOTEL PORTRAIT</div><div>Sky Lounge -20%</div><div>Room Service 24/7</div></div>
+        <div style="position:absolute;bottom:0;left:0;right:0;height:20px;background:rgba(0,0,0,.85);display:flex;align-items:center;z-index:2"><span style="background:$color;color:#fff;font-size:7px;font-weight:700;padding:0 6px;height:100%;display:flex;align-items:center">PORTRAIT</span><span style="font-size:8px;color:#fff;padding-left:6px">Hotel concierge</span></div>
     """
     "business-center-flow" -> """
-        <div style="position:absolute;top:36px;left:8px;right:8px;background:rgba(0,0,0,.62);border-radius:6px;padding:6px;color:#fff;font-size:8px;z-index:2"><div>Sunkar Towers • Floor 12</div><div style="opacity:.8">11:00 Kaspi Team • Hall B</div></div>
+        <div style="position:absolute;top:34px;left:8px;right:8px;background:rgba(15,23,42,.86);border:1px solid rgba(148,163,184,.35);border-radius:8px;padding:6px;color:#fff;font-size:8px;z-index:2"><div style="font-weight:700">BC PORTRAIT • Floor 12</div><div style="opacity:.8">11:00 Kaspi Team • Hall B</div></div>
+        <div style="position:absolute;bottom:0;left:0;right:0;height:20px;background:rgba(0,0,0,.85);display:flex;align-items:center;z-index:2"><span style="background:$color;color:#fff;font-size:7px;font-weight:700;padding:0 6px;height:100%;display:flex;align-items:center">PORTRAIT</span><span style="font-size:8px;color:#fff;padding-left:6px">Elevator digest</span></div>
     """
     else -> when (id) {
         "news-24" -> """

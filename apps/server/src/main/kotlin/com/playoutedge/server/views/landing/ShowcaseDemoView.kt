@@ -158,9 +158,9 @@ val DEMO_CHANNELS = mapOf(
     )
     ,"queue-hub" to DemoChannel(
         id = "queue-hub",
-        name = "Queue Hub",
-        category = "Queue Board",
-        description = "Queue scenario for ЦОН/bank/autoservice with live calls, ETA and priority windows",
+        name = "Queue Portrait",
+        category = "Portrait Queue Board",
+        description = "Portrait-first queue layout for banks/ЦОН with live calls, ETA bands and service priorities",
         color = "#1d4ed8",
         bgImages = listOf(
             "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1280&q=80",
@@ -168,7 +168,7 @@ val DEMO_CHANNELS = mapOf(
             "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=1280&q=80"
         ),
         overlayWidgets = listOf(
-            DemoWidget("queue", """<div class="ov-table ov-queue-board"><div class="ov-table-title">ЦОН Алматы • Живая очередь</div><div class="ov-table-hdr"><span>Ticket</span><span>Window</span><span>Status</span></div><div class="ov-table-row ov-table-active"><span>A-204</span><span>7</span><span>Вызов</span></div><div class="ov-table-row"><span>B-015</span><span>2</span><span>ETA 4м</span></div><div class="ov-table-row"><span>P-031</span><span>VIP</span><span>Сейчас</span></div><div class="ov-table-row"><span>C-442</span><span>4</span><span>ETA 6м</span></div></div>"""),
+            DemoWidget("queue-stack", """<div class="ov-queue-portrait"><div class="ov-qp-header">Queue Live • Алматы</div><div class="ov-qp-now"><span class="ov-qp-now-ticket">A-204</span><span class="ov-qp-now-desk">Окно 7 • Сейчас</span></div><div class="ov-qp-list"><div class="ov-qp-row"><span>B-015</span><span>Окно 2</span><span>ETA 4м</span></div><div class="ov-qp-row"><span>P-031</span><span>VIP Desk</span><span>Сейчас</span></div><div class="ov-qp-row"><span>C-442</span><span>Окно 4</span><span>ETA 6м</span></div><div class="ov-qp-row"><span>D-109</span><span>Окно 1</span><span>ETA 8м</span></div></div><div class="ov-qp-foot">Среднее ожидание: 5 минут</div></div>"""),
             DemoWidget("ticker", """<div class="ov-ticker"><div class="ov-ticker-label" style="background:#1d4ed8">QUEUE</div><div class="ov-ticker-track"><span class="ov-ticker-text">Услуга 008: окно 7 • Приоритетные клиенты обслуживаются в зоне B • Среднее ожидание: 5 мин</span></div></div>""")
         )
     )
@@ -191,9 +191,9 @@ val DEMO_CHANNELS = mapOf(
     )
     ,"hotel-tv" to DemoChannel(
         id = "hotel-tv",
-        name = "Hotel TV",
-        category = "Hotel TV",
-        description = "Corporate hotel channel for lobby and rooms with concierge and service data",
+        name = "Hotel Portrait",
+        category = "Portrait Hotel TV",
+        description = "Vertical hotel channel for lobby elevators and room corridors with concierge highlights",
         color = "#7c3aed",
         bgImages = listOf(
             "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1280&q=80",
@@ -201,16 +201,16 @@ val DEMO_CHANNELS = mapOf(
             "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1280&q=80"
         ),
         overlayWidgets = listOf(
-            DemoWidget("hotel-panel", """<div class="ov-hotel"><div class="ov-hotel-title">Welcome to Altyn Hotel</div><div class="ov-hotel-row"><span>Check-in</span><span>14:00</span></div><div class="ov-hotel-row"><span>Breakfast</span><span>07:00–10:30</span></div><div class="ov-hotel-row"><span>Room Service</span><span>24/7 • Dial 303</span></div></div>"""),
+            DemoWidget("hotel-stack", """<div class="ov-hotel-portrait"><div class="ov-hp-title">Welcome to Altyn Hotel</div><div class="ov-hp-highlight">Sky Lounge • -20% tonight</div><div class="ov-hp-row"><span>Check-in</span><span>14:00</span></div><div class="ov-hp-row"><span>Breakfast</span><span>07:00–10:30</span></div><div class="ov-hp-row"><span>Room Service</span><span>24/7 • 303</span></div><div class="ov-hp-row"><span>Spa</span><span>Floor 2 • till 23:00</span></div></div>"""),
             DemoWidget("clock", """<div class="ov-clock" id="demo-clock-hotel">22:40:00</div>"""),
             DemoWidget("ticker", """<div class="ov-ticker"><div class="ov-ticker-label" style="background:#7c3aed">CONCIERGE</div><div class="ov-ticker-track"><span class="ov-ticker-text">Shuttle to airport at 06:30 • SPA promo -20% for guests • Late checkout on request</span></div></div>""")
         )
     )
     ,"business-center-flow" to DemoChannel(
         id = "business-center-flow",
-        name = "Business Center Flow",
-        category = "Business Center",
-        description = "Elevator/lobby/floor digest screens with meetings, wayfinding and tenant updates",
+        name = "Business Center Portrait",
+        category = "Portrait Business Center",
+        description = "Vertical-first elevator and floor digest with meetings, wayfinding and traffic widgets",
         color = "#334155",
         bgImages = listOf(
             "https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1280&q=80",
@@ -218,7 +218,7 @@ val DEMO_CHANNELS = mapOf(
             "https://images.unsplash.com/photo-1497215842964-222b430dc094?w=1280&q=80"
         ),
         overlayWidgets = listOf(
-            DemoWidget("floor-brief", """<div class="ov-bc"><div class="ov-bc-title">Sunkar Towers • Floor 12</div><div class="ov-bc-row"><span>11:00</span><span>Kaspi Team • Hall B</span></div><div class="ov-bc-row"><span>Visitor</span><span>Adapto demo group</span></div><div class="ov-bc-row"><span>Traffic</span><span>Абая +12 мин</span></div></div>"""),
+            DemoWidget("floor-brief", """<div class="ov-bc-portrait"><div class="ov-bc-title">Sunkar Towers • Floor 12</div><div class="ov-bc-row"><span>11:00</span><span>Kaspi Team • Hall B</span></div><div class="ov-bc-row"><span>Visitor</span><span>Adapto demo group</span></div><div class="ov-bc-row"><span>Traffic</span><span>Абая +12 мин</span></div><div class="ov-bc-row"><span>Elevator C</span><span>Сервис до 23:00</span></div></div>"""),
             DemoWidget("clock", """<div class="ov-clock" id="demo-clock-bc">22:40:00</div>"""),
             DemoWidget("ticker", """<div class="ov-ticker"><div class="ov-ticker-label" style="background:#334155">BUSINESS</div><div class="ov-ticker-track"><span class="ov-ticker-text">Лифт C на сервисе до 23:00 • Welcome desk: гости компании на 8 этаже • Weather: +3°C</span></div></div>""")
         )
@@ -228,6 +228,7 @@ val DEMO_CHANNELS = mapOf(
 
 fun HTML.showcaseDemoView(demoId: String) {
     val demo = DEMO_CHANNELS[demoId]
+    val isPortraitDemo = demoId in setOf("roadside-portrait", "queue-hub", "hotel-tv", "business-center-flow")
     if (demo == null) {
         publicLayout("Demo Not Found", currentPath = "/showcase") {
             section("section") {
@@ -263,7 +264,7 @@ fun HTML.showcaseDemoView(demoId: String) {
                     +"LIVE DEMO"
                 }
                 span("demo-topbar-name") { +demo.name }
-                span("demo-topbar-cat") { +demo.category }
+                span("demo-topbar-cat") { +(if (isPortraitDemo) "${demo.category} • Portrait 1080×1920" else demo.category) }
             }
             div("demo-topbar-actions") {
                 a(href = "/contact", classes = "btn btn-primary btn-sm") { +"Запросить pilot" }
@@ -271,22 +272,23 @@ fun HTML.showcaseDemoView(demoId: String) {
         }
 
         // Main demo area
-        div("demo-container") {
+        div("demo-container${if (isPortraitDemo) " portrait-layout" else ""}") {
             // TV Screen
             div("demo-screen") {
                 id = "demo-screen"
-
-                // Background images (will cycle)
-                demo.bgImages.forEachIndexed { i, url ->
-                    div("demo-bg${if (i == 0) " active" else ""}") {
-                        style = "background-image: url('$url')"
+                div("demo-stage${if (isPortraitDemo) " portrait-stage" else ""}") {
+                    // Background images (will cycle)
+                    demo.bgImages.forEachIndexed { i, url ->
+                        div("demo-bg${if (i == 0) " active" else ""}") {
+                            style = "background-image: url('$url')"
+                        }
                     }
-                }
 
-                // Overlay widgets
-                div("demo-overlay") {
-                    demo.overlayWidgets.forEach { widget ->
-                        unsafe { +widget.html }
+                    // Overlay widgets
+                    div("demo-overlay") {
+                        demo.overlayWidgets.forEach { widget ->
+                            unsafe { +widget.html }
+                        }
                     }
                 }
             }
@@ -353,7 +355,14 @@ body.demo-page { background: var(--gray-900); color: #fff; font-family: var(--fo
 .demo-container { display: grid; grid-template-columns: 1fr 340px; gap: 0; height: calc(100vh - 49px); }
 @media (max-width: 900px) { .demo-container { grid-template-columns: 1fr; } .demo-info-panel { display: none; } }
 
-.demo-screen { position: relative; overflow: hidden; background: #000; }
+
+.demo-screen { position: relative; overflow: hidden; background: radial-gradient(circle at 30% 20%, rgba(59,130,246,.18), transparent 40%), #000; display:flex; align-items:center; justify-content:center; }
+.demo-stage { position: relative; width: 100%; height: 100%; overflow: hidden; }
+.portrait-layout .demo-screen { padding: 24px; }
+.portrait-stage { width: min(54vh, 36vw); max-width: 460px; height: min(96%, calc(100vh - 120px)); aspect-ratio: 9 / 16; border-radius: 24px; box-shadow: 0 24px 80px rgba(0,0,0,.55); border: 1px solid rgba(255,255,255,.22); }
+.portrait-stage::before { content: "PORTRAIT 1080×1920"; position: absolute; top: 10px; right: 10px; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; padding: 4px 8px; border-radius: 999px; background: rgba(0,0,0,.55); color: rgba(255,255,255,.88); z-index: 20; }
+@media (max-width: 900px) { .portrait-stage { width: min(92vw, 420px); } }
+
 .demo-bg { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0; transition: opacity 1.5s ease-in-out; }
 .demo-bg.active { opacity: 1; }
 .demo-overlay { position: absolute; inset: 0; z-index: 10; pointer-events: none; font-family: 'Segoe UI', Arial, sans-serif; }
@@ -443,13 +452,23 @@ body.demo-page { background: var(--gray-900); color: #fff; font-family: var(--fo
 .ov-ad-tag { position: absolute; top: 16px; left: 16px; font-size: 12px; font-weight: 700; padding: 6px 10px; border-radius: 6px; background: rgba(190,18,60,.85); }
 .ov-ad-banner { position: absolute; bottom: 52px; left: 16px; right: 16px; background: rgba(0,0,0,.78); border-left: 4px solid #be123c; border-radius: 8px; padding: 10px 12px; font-size: 15px; font-weight: 600; }
 
-.ov-hotel { position: absolute; top: 16px; right: 16px; min-width: 320px; background: rgba(0,0,0,.75); border-radius: 12px; padding: 14px; }
-.ov-hotel-title { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
-.ov-hotel-row { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,.08); font-size: 13px; }
+.ov-queue-portrait { position: absolute; top: 18px; left: 18px; right: 18px; background: rgba(4,20,46,.82); border: 1px solid rgba(96,165,250,.45); border-radius: 14px; padding: 14px; color: #fff; }
+.ov-qp-header { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; opacity: .75; margin-bottom: 10px; }
+.ov-qp-now { background: rgba(29,78,216,.42); border-radius: 10px; padding: 10px; margin-bottom: 10px; }
+.ov-qp-now-ticket { display: block; font-size: 42px; font-weight: 800; line-height: 1; }
+.ov-qp-now-desk { display: block; font-size: 13px; opacity: .9; margin-top: 4px; }
+.ov-qp-list { display: grid; gap: 6px; }
+.ov-qp-row { display: grid; grid-template-columns: 1fr 1.2fr auto; gap: 8px; font-size: 12px; padding: 6px 8px; background: rgba(255,255,255,.06); border-radius: 6px; }
+.ov-qp-foot { margin-top: 10px; font-size: 12px; opacity: .8; }
 
-.ov-bc { position: absolute; top: 16px; right: 16px; min-width: 340px; background: rgba(0,0,0,.75); border-radius: 12px; padding: 14px; }
+.ov-hotel-portrait { position: absolute; top: 18px; left: 16px; right: 16px; background: linear-gradient(180deg, rgba(30,18,64,.88), rgba(12,10,25,.86)); border: 1px solid rgba(167,139,250,.38); border-radius: 14px; padding: 14px; }
+.ov-hp-title { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+.ov-hp-highlight { font-size: 13px; color: #ddd6fe; margin-bottom: 10px; padding: 8px 10px; background: rgba(124,58,237,.28); border-radius: 8px; }
+.ov-hp-row { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.1); font-size: 13px; }
+
+.ov-bc-portrait { position: absolute; top: 18px; left: 16px; right: 16px; background: rgba(15,23,42,.85); border: 1px solid rgba(148,163,184,.35); border-radius: 14px; padding: 14px; }
 .ov-bc-title { font-size: 15px; font-weight: 700; margin-bottom: 10px; }
-.ov-bc-row { display: grid; grid-template-columns: 80px 1fr; gap: 10px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,.08); font-size: 13px; }
+.ov-bc-row { display: grid; grid-template-columns: 86px 1fr; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.08); font-size: 12px; }
 
 """
 

@@ -161,6 +161,16 @@
     font-family: 'DM Sans', 'Segoe UI', Arial, sans-serif;
     color: #fff;
 }
+.demo-channel-card-portrait .demo-channel-preview {
+    background: radial-gradient(circle at 30% 20%, rgba(59,130,246,.15), transparent 48%);
+}
+.demo-channel-screen-portrait {
+    width: min(54%, 160px);
+    height: 100%;
+    margin: 0 auto;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,.2);
+}
 .demo-screen-live-bar {
     position: absolute; top: 8px; left: 8px; z-index: 2;
     display: flex; align-items: center; gap: 6px;
