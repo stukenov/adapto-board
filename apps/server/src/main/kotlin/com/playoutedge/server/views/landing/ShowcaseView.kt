@@ -4,33 +4,31 @@ import kotlinx.html.*
 
 fun HTML.showcaseView() {
     publicLayout("Product Showcase", currentPath = "/showcase") {
-        // Hero
         section("showcase-hero") {
-            // Floating widget ghosts in background
             div("showcase-hero-widgets") {
                 unsafe {
                     +"""
                     <div class="hero-float-widget hfw-1" style="top:15%;left:8%"><div style="background:rgba(0,0,0,.4);border-radius:6px;padding:6px 10px;font-size:11px;color:rgba(255,255,255,.6);backdrop-filter:blur(8px)">📰 Breaking News Ticker</div></div>
                     <div class="hero-float-widget hfw-2" style="top:25%;right:10%"><div style="background:rgba(0,0,0,.4);border-radius:6px;padding:6px 10px;font-size:11px;color:rgba(255,255,255,.6);backdrop-filter:blur(8px)">🏆 2 : 1 &nbsp;67'</div></div>
-                    <div class="hero-float-widget hfw-3" style="bottom:20%;left:12%"><div style="background:rgba(0,0,0,.4);border-radius:6px;padding:6px 10px;font-size:11px;color:rgba(255,255,255,.6);backdrop-filter:blur(8px)">📊 KPI: $2.4M</div></div>
-                    <div class="hero-float-widget hfw-4" style="bottom:30%;right:8%"><div style="background:rgba(0,0,0,.4);border-radius:6px;padding:6px 10px;font-size:11px;color:rgba(255,255,255,.6);backdrop-filter:blur(8px)">⏱ 02:45:30</div></div>
+                    <div class="hero-float-widget hfw-3" style="bottom:20%;left:12%"><div style="background:rgba(0,0,0,.4);border-radius:6px;padding:6px 10px;font-size:11px;color:rgba(255,255,255,.6);backdrop-filter:blur(8px)">📊 KPI: ₸2.4B</div></div>
+                    <div class="hero-float-widget hfw-4" style="bottom:30%;right:8%"><div style="background:rgba(0,0,0,.4);border-radius:6px;padding:6px 10px;font-size:11px;color:rgba(255,255,255,.6);backdrop-filter:blur(8px)">🏨 Hotel TV / Queue / DOOH</div></div>
                     """
                 }
             }
             div("showcase-hero-content") {
                 div("showcase-hero-badge") { +"Product Showcase" }
-                h1 { +"See Playout Edge in Action" }
+                h1 { +"See Adapto Board in Real Scenarios" }
                 p("showcase-hero-subtitle") {
-                    +"Посмотрите live-демо каналов и типовые overlay-сценарии для TV, ритейла, банков и корпоративных экранов."
+                    +"Готовые демо-каналы под 16:9, portrait, video wall, queue board, hotel TV и экраны бизнес-центров."
                 }
                 div("showcase-hero-stats") {
                     div("hero-stat") {
-                        span("hero-stat-num") { +"6" }
+                        span("hero-stat-num") { +"12" }
                         span("hero-stat-label") { +"Demo Channels" }
                     }
                     div("hero-stat") {
-                        span("hero-stat-num") { +"6+" }
-                        span("hero-stat-label") { +"Template families" }
+                        span("hero-stat-num") { +"18" }
+                        span("hero-stat-label") { +"Template Scenarios" }
                     }
                     div("hero-stat") {
                         span("hero-stat-num") { +"24/7" }
@@ -44,79 +42,41 @@ fun HTML.showcaseView() {
             }
         }
 
-        // Demo Channels Section
         section("section showcase-section") {
             id = "demo-channels"
             div("section-inner") {
                 div("section-header") {
                     h2 { +"Live Demo Channels" }
-                    p { +"Click any channel to see a live preview with overlays, scheduling, and real-time updates." }
+                    p { +"Каждый канал открывается сразу с контентом и активными overlay-сценариями без пустых экранов." }
                 }
                 div("demo-channels-grid") {
-                    demoChannelCard(
-                        id = "news-24",
-                        name = "News 24",
-                        description = "Breaking news with live ticker, weather widget, and clock overlay",
-                        category = "News & Media",
-                        overlays = listOf("Ticker", "Weather", "Clock", "Breaking News"),
-                        color = "#dc2626"
-                    )
-                    demoChannelCard(
-                        id = "sports-live",
-                        name = "Sports Live",
-                        description = "Live sports broadcast with scoreboard, reactions, and KPI stats",
-                        category = "Sports",
-                        overlays = listOf("Score", "Reactions", "KPI Tiles", "Ticker"),
-                        color = "#059669"
-                    )
-                    demoChannelCard(
-                        id = "corporate-lobby",
-                        name = "Corporate Lobby",
-                        description = "Corporate display with KPI dashboard, QR code, and branded lower thirds",
-                        category = "Corporate",
-                        overlays = listOf("KPI Tiles", "QR Card", "Lower Third", "Clock"),
-                        color = "#2563eb"
-                    )
-                    demoChannelCard(
-                        id = "retail-signage",
-                        name = "Retail Signage",
-                        description = "Retail digital signage with polls, countdown timers, and promotional tickers",
-                        category = "Retail",
-                        overlays = listOf("Poll", "Countdown", "Ticker", "QR Card"),
-                        color = "#d97706"
-                    )
-                    demoChannelCard(
-                        id = "event-stream",
-                        name = "Event Stream",
-                        description = "Live event broadcasting with audience reactions, Q&A queue, and schedule",
-                        category = "Events",
-                        overlays = listOf("Reactions", "Queue Table", "Lower Third", "Countdown"),
-                        color = "#7c3aed"
-                    )
-                    demoChannelCard(
-                        id = "education-tv",
-                        name = "Education TV",
-                        description = "Educational broadcast with timetable, news ticker, and animated branding",
-                        category = "Education",
-                        overlays = listOf("Queue Table", "News Ticker", "Animated Logo", "Clock"),
-                        color = "#0891b2"
-                    )
+                    demoChannelCard("news-24", "News 24", "Breaking news: ticker, weather, clock, alert layers", "News & Media", listOf("Ticker", "Weather", "Clock", "Breaking"), "#dc2626")
+                    demoChannelCard("sports-live", "Sports Live", "Live match overlays: score, reactions, stats", "Sports", listOf("Score", "Reactions", "Stats", "Ticker"), "#059669")
+                    demoChannelCard("corporate-lobby", "Corporate Lobby", "KPI dashboard and branded welcome composition", "Corporate", listOf("KPI Tiles", "QR Card", "Lower Third", "Clock"), "#2563eb")
+                    demoChannelCard("retail-signage", "Retail Signage", "Promo timers, engagement poll, CTA overlays", "Retail", listOf("Poll", "Countdown", "Ticker", "QR"), "#d97706")
+                    demoChannelCard("event-stream", "Event Stream", "Speaker cards, Q&A prompts, session countdown", "Events", listOf("Lower Third", "Q&A", "Countdown", "Ticker"), "#7c3aed")
+                    demoChannelCard("education-tv", "Education TV", "Campus schedule and announcements", "Education", listOf("Schedule", "News", "Clock", "Logo"), "#0891b2")
+                    demoChannelCard("roadside-portrait", "Roadside Portrait", "Vertical outdoor stack for fast offers and CTA", "Portrait DOOH", listOf("Vertical Promo", "Weather", "QR"), "#ea580c")
+                    demoChannelCard("led-wall-prime", "LED Wall Prime", "Ultra-wide video wall composition for event/lobby", "LED / Video Wall", listOf("Hero", "Sponsor", "Program"), "#0f766e")
+                    demoChannelCard("queue-hub", "Queue Hub", "ЦОН/банк табло: вызов, ETA, приоритеты", "Queue Board", listOf("Queue Table", "Priority", "Service Alerts"), "#1d4ed8")
+                    demoChannelCard("ad-live-hybrid", "Ad Live Hybrid", "Live stream + ad overlays for DOOH", "Ad Overlay", listOf("Sponsor", "CTA", "Ticker"), "#be123c")
+                    demoChannelCard("hotel-tv", "Hotel TV", "Lobby and room channel with concierge blocks", "Hotel TV", listOf("Welcome", "Services", "Clock"), "#7c3aed")
+                    demoChannelCard("business-center-flow", "Business Center Flow", "Лифтовые/этажные дайджест-экраны", "Business Center", listOf("Meetings", "Wayfinding", "Traffic"), "#334155")
                 }
             }
         }
 
-        // Template catalog CTA
         section("section showcase-section showcase-templates-section") {
             id = "templates"
             div("section-inner") {
                 div("section-header") {
                     h2 { +"Template Catalog" }
-                    p { +"Отдельный каталог и detail-страницы: что делает шаблон, как подключается, какой payload нужен." }
+                    p { +"Детальные template pages по каждому сценарию экрана: payload, интеграции, visual preview." }
                 }
                 div("card") {
                     div("card-body") {
                         h3 { +"Нужны premium шаблоны под бренд клиента?" }
-                        p { +"Сделаем showroom/service/welcome пакеты и внедрим как готовый контент-слой — даже без замены текущего подрядчика." }
+                        p { +"Сделаем showroom/service/welcome пакеты и внедрим как готовый контент-слой, даже без смены текущего подрядчика." }
                         div("showcase-cta-actions") {
                             a(href = "/templates", classes = "btn btn-primary") { +"Открыть template catalog" }
                             a(href = "/contact", classes = "btn btn-ghost") { +"Запросить кастомный пакет" }
@@ -126,7 +86,6 @@ fun HTML.showcaseView() {
             }
         }
 
-        // Interactive Demos / Product Walkthrough
         section("section showcase-section") {
             id = "demos"
             div("section-inner") {
@@ -135,64 +94,36 @@ fun HTML.showcaseView() {
                     p { +"See the complete workflow from channel creation to live broadcast." }
                 }
                 div("walkthrough-grid") {
-                    walkthroughStep(
-                        step = "1",
-                        title = "Create a Channel",
-                        description = "Set up a broadcast channel with a name, schedule, and default overlay profile. One click to go live.",
-                        demoId = "create-channel"
-                    )
-                    walkthroughStep(
-                        step = "2",
-                        title = "Upload & Schedule Content",
-                        description = "Drag & drop images and videos. Build playlists with drag-and-drop timeline editor. Set start/end times.",
-                        demoId = "schedule-content"
-                    )
-                    walkthroughStep(
-                        step = "3",
-                        title = "Configure Overlays",
-                        description = "Pick from 15+ overlay templates. Connect data via webhooks, REST polling, or manual control panel.",
-                        demoId = "configure-overlays"
-                    )
-                    walkthroughStep(
-                        step = "4",
-                        title = "Go Live & Monitor",
-                        description = "Embed on any screen or website. Monitor device fleet in real-time. Get alerts and audit logs.",
-                        demoId = "go-live"
-                    )
+                    walkthroughStep("1", "Create a Channel", "Set up a broadcast channel with a name, schedule, and default overlay profile. One click to go live.", "create-channel")
+                    walkthroughStep("2", "Upload & Schedule Content", "Drag & drop images and videos. Build playlists with timeline editor. Set start/end windows.", "schedule-content")
+                    walkthroughStep("3", "Configure Overlays", "Pick overlay templates and connect data via webhooks, REST polling, or manual control panel.", "configure-overlays")
+                    walkthroughStep("4", "Go Live & Monitor", "Embed on screens, monitor fleet status, and track changes in audit logs.", "go-live")
                 }
             }
         }
 
-        // Use Cases
         section("section showcase-section showcase-usecases") {
             div("section-inner") {
                 div("section-header") {
                     h2 { +"Built For Every Industry" }
-                    p { +"From breaking news to corporate lobbies — one platform, endless possibilities." }
+                    p { +"От TV и DOOH до госуслуг, банков, отелей и бизнес-центров." }
                 }
                 div("usecases-grid") {
-                    useCaseCard("📺", "Broadcast & TV",
-                        "Run 24/7 TV channels with automated scheduling, live overlays, and as-run logging for compliance.")
-                    useCaseCard("🏢", "Corporate Displays",
-                        "KPI dashboards, meeting room signage, and branded welcome screens with real-time data feeds.")
-                    useCaseCard("🏟", "Sports & Events",
-                        "Live scoreboards, audience reactions, countdown timers, and dynamic sponsor rotations.")
-                    useCaseCard("🏥", "Healthcare",
-                        "Waiting room queues, appointment displays, and wayfinding with live data integration.")
-                    useCaseCard("🎓", "Education",
-                        "Campus announcements, class schedules, event promotion, and emergency alerts.")
-                    useCaseCard("🛍", "Retail",
-                        "Promotional content, QR engagement, poll-driven campaigns, and menu boards.")
+                    useCaseCard("📺", "Broadcast & TV", "Run 24/7 TV channels with scheduling, live overlays, and as-run logging.")
+                    useCaseCard("🏢", "Corporate Displays", "KPI dashboards, meeting signage, and branded welcome screens.")
+                    useCaseCard("🧾", "Queue Boards", "ЦОН, банк и сервисные табло с realtime вызовами и ETA.")
+                    useCaseCard("🏨", "Hotel TV", "Lobby/in-room channels with concierge and service blocks.")
+                    useCaseCard("🏙️", "Business Centers", "Elevator/lobby/floor digest screens with wayfinding and tenant info.")
+                    useCaseCard("🛍", "Retail & DOOH", "Promotional content, QR engagement, and ad overlays over live stream.")
                 }
             }
         }
 
-        // CTA
         section("cta-section showcase-cta") {
             div("section-inner") {
                 div("section-header") {
                     h2 { +"Готовы запустить пилот?" }
-                    p { +"Соберём pilot passport, согласуем KPI и покажем первые branded шаблоны за 1–2 дня." }
+                    p { +"Соберём pilot passport, согласуем KPI и покажем branded шаблоны за 1–2 дня до старта пилота." }
                 }
                 div("showcase-cta-actions") {
                     a(href = "/contact", classes = "btn btn-primary btn-lg") { +"Запустить pilot" }
@@ -201,12 +132,7 @@ fun HTML.showcaseView() {
             }
         }
 
-        // Showcase JS
-        script {
-            unsafe {
-                +showcaseScript()
-            }
-        }
+        script { unsafe { +showcaseScript() } }
     }
 }
 
@@ -219,149 +145,103 @@ private fun FlowContent.demoChannelCard(
             style = "background: linear-gradient(135deg, ${color}11, ${color}22); position: relative"
             div("demo-channel-screen") {
                 style = "position: relative; overflow: hidden"
-                // Mini TV with actual overlay widgets
-                div("demo-screen-bg") {
-                    style = "background: linear-gradient(160deg, #0f0f1a, #1a1a2e); width: 100%; height: 100%; position: absolute; inset: 0"
-                }
-                // Live badge
+                div("demo-screen-bg") { style = "background: linear-gradient(160deg, #0f0f1a, #1a1a2e); width: 100%; height: 100%; position: absolute; inset: 0" }
                 div("demo-screen-live-bar") {
                     style = "position: absolute; top: 8px; left: 8px; z-index: 2; display: flex; align-items: center; gap: 6px"
-                    span("demo-screen-badge") {
-                        style = "background: $color"
-                        +"LIVE"
-                    }
+                    span("demo-screen-badge") { style = "background: $color"; +"LIVE" }
                     span("demo-screen-name") { +name }
                 }
-                // Mini overlays based on channel type
-                unsafe {
-                    +demoChannelMiniOverlays(id, color)
-                }
+                unsafe { +demoChannelMiniOverlays(id, color) }
             }
         }
         div("demo-channel-info") {
             div("demo-channel-meta") {
-                span("demo-channel-category") {
-                    style = "color: $color"
-                    +category
-                }
-                span("demo-channel-arrow") { +"\u2192" }
+                span("demo-channel-category") { style = "color: $color"; +category }
+                span("demo-channel-arrow") { +"→" }
             }
             h3("demo-channel-name") { +name }
             p("demo-channel-desc") { +description }
-            div("demo-channel-overlays") {
-                overlays.forEach { overlay ->
-                    span("badge badge-neutral") { +overlay }
-                }
-            }
+            div("demo-channel-overlays") { overlays.forEach { overlay -> span("badge badge-neutral") { +overlay } } }
         }
     }
 }
 
 private fun demoChannelMiniOverlays(id: String, color: String): String = when (id) {
-    "news-24" -> """
-        <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.6);border-radius:4px;padding:3px 8px;font-size:11px;color:#fff;font-weight:600;font-variant-numeric:tabular-nums;z-index:2">14:30</div>
-        <div style="position:absolute;top:8px;right:60px;background:rgba(0,0,0,.6);border-radius:4px;padding:3px 8px;font-size:10px;color:#fff;display:flex;align-items:center;gap:4px;z-index:2"><span style="font-size:14px">☀️</span>+24°C</div>
-        <div style="position:absolute;top:8px;left:54px;background:$color;border-radius:3px;padding:2px 6px;font-size:7px;font-weight:700;color:#fff;z-index:2">N24</div>
-        <div style="position:absolute;bottom:0;left:0;right:0;height:24px;background:rgba(0,0,0,.85);display:flex;align-items:center;z-index:2"><span style="background:#e50914;color:#fff;font-size:7px;font-weight:700;padding:0 6px;height:100%;display:flex;align-items:center">BREAKING</span><span style="font-size:9px;color:#fff;white-space:nowrap;padding-left:8px">GDP growth exceeds expectations at 5.2% in Q4...</span></div>
-    """
-    "sports-live" -> """
-        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.7);border-radius:6px;padding:6px 12px;display:flex;align-items:center;gap:8px;z-index:2">
-            <span style="font-size:10px;font-weight:600;color:#fff">AST</span>
-            <span style="font-size:16px;font-weight:700;color:#fff">2 : 1</span>
-            <span style="font-size:10px;font-weight:600;color:#fff">KRT</span>
+    "roadside-portrait" -> """
+        <div style="position:absolute;inset:12px auto 12px 12px;width:42%;background:rgba(0,0,0,.5);border-radius:8px;padding:8px;z-index:2;display:flex;flex-direction:column;justify-content:space-between">
+            <div style="font-size:8px;color:rgba(255,255,255,.7)">ALMATY • +3°C</div>
+            <div style="font-size:20px;font-weight:800;color:#fff">-35%</div>
+            <div style="font-size:8px;color:#fff">QR купон</div>
         </div>
-        <div style="position:absolute;top:8px;right:8px;font-size:9px;color:rgba(255,255,255,.5);z-index:2">67'</div>
-        <div style="position:absolute;bottom:0;left:0;right:0;height:20px;background:rgba(0,0,0,.85);display:flex;align-items:center;z-index:2"><span style="background:$color;color:#fff;font-size:7px;font-weight:700;padding:0 6px;height:100%;display:flex;align-items:center">STATS</span><span style="font-size:8px;color:#fff;padding-left:6px">Possession: 58% - 42% | Shots: 12 - 8</span></div>
+        <div style="position:absolute;bottom:0;left:0;right:0;height:20px;background:rgba(0,0,0,.85);display:flex;align-items:center;z-index:2"><span style="background:$color;color:#fff;font-size:7px;font-weight:700;padding:0 6px;height:100%;display:flex;align-items:center">PORTRAIT</span><span style="font-size:8px;color:#fff;padding-left:6px">Roadside offer stack</span></div>
     """
-    "corporate-lobby" -> """
-        <div style="position:absolute;top:10px;right:8px;display:grid;grid-template-columns:1fr 1fr;gap:3px;z-index:2">
-            <div style="background:rgba(0,0,0,.6);border-radius:3px;padding:4px 8px;text-align:center"><div style="font-size:12px;font-weight:700;color:#3b82f6">$2.4M</div><div style="font-size:6px;color:rgba(255,255,255,.4);text-transform:uppercase">Revenue</div></div>
-            <div style="background:rgba(0,0,0,.6);border-radius:3px;padding:4px 8px;text-align:center"><div style="font-size:12px;font-weight:700;color:#22c55e">+18%</div><div style="font-size:6px;color:rgba(255,255,255,.4);text-transform:uppercase">Growth</div></div>
+    "led-wall-prime" -> """
+        <div style="position:absolute;top:34%;left:8px;right:8px;background:rgba(0,0,0,.55);border-radius:8px;padding:8px;text-align:center;z-index:2">
+            <div style="font-size:8px;color:$color">LIVE FORUM</div><div style="font-size:14px;color:#fff;font-weight:700">Digital Signage Future 2026</div>
         </div>
-        <div style="position:absolute;bottom:20px;left:0;z-index:2"><div style="background:#fff;color:#000;font-weight:700;font-size:9px;padding:3px 10px">Sarah Chen</div><div style="background:rgba(0,0,0,.8);color:#fff;font-size:7px;padding:2px 10px">VP Operations</div></div>
-        <div style="position:absolute;top:10px;left:8px;background:rgba(0,0,0,.6);border-radius:3px;padding:3px 6px;font-size:10px;font-weight:600;color:#fff;font-variant-numeric:tabular-nums;z-index:2">09:45</div>
     """
-    "retail-signage" -> """
-        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.7);border-radius:6px;padding:8px 14px;text-align:center;z-index:2">
-            <div style="font-size:7px;text-transform:uppercase;color:$color;font-weight:700;letter-spacing:1px">Flash Sale Ends In</div>
-            <div style="font-size:18px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;margin-top:2px">02:45:30</div>
+    "queue-hub" -> """
+        <div style="position:absolute;top:36px;left:10px;right:10px;background:rgba(0,0,0,.68);border-radius:6px;padding:6px;z-index:2">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;font-size:8px;color:rgba(255,255,255,.6);margin-bottom:4px"><span>Ticket</span><span>Desk</span><span>ETA</span></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;font-size:9px;color:#fff"><span>A-204</span><span>7</span><span>Now</span></div>
         </div>
-        <div style="position:absolute;bottom:0;left:0;right:0;height:20px;background:rgba(0,0,0,.85);display:flex;align-items:center;z-index:2"><span style="background:$color;color:#fff;font-size:7px;font-weight:700;padding:0 6px;height:100%;display:flex;align-items:center">DEALS</span><span style="font-size:8px;color:#fff;padding-left:6px">Electronics 40% OFF | Fashion BOGO | Home 25% OFF</span></div>
     """
-    "event-stream" -> """
-        <div style="position:absolute;bottom:24px;left:0;z-index:2"><div style="background:#fff;color:#000;font-weight:700;font-size:9px;padding:3px 10px">Dr. Sarah Chen</div><div style="background:rgba(0,0,0,.8);color:#fff;font-size:7px;padding:2px 10px">Keynote Speaker</div></div>
-        <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.6);border-radius:4px;padding:4px 8px;text-align:center;z-index:2"><div style="font-size:6px;color:$color;text-transform:uppercase;font-weight:600">Next Session</div><div style="font-size:12px;font-weight:700;color:#fff">15:00</div></div>
-        <div style="position:absolute;bottom:0;left:0;right:0;height:20px;background:rgba(0,0,0,.85);display:flex;align-items:center;z-index:2"><span style="background:$color;color:#fff;font-size:7px;font-weight:700;padding:0 6px;height:100%;display:flex;align-items:center">Q&A</span><span style="font-size:8px;color:#fff;padding-left:6px">Submit questions via app or scan QR code</span></div>
+    "ad-live-hybrid" -> """
+        <div style="position:absolute;bottom:24px;left:0;right:0;height:24px;background:rgba(0,0,0,.78);display:flex;align-items:center;z-index:2"><span style="background:$color;color:#fff;font-size:7px;font-weight:700;padding:0 6px;height:100%;display:flex;align-items:center">AD</span><span style="font-size:8px;color:#fff;padding-left:6px">Партнёр эфира: бонус 5 000 ₸ по QR</span></div>
     """
-    "education-tv" -> """
-        <div style="position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:2px;z-index:2">
-            <div style="background:rgba(0,0,0,.6);border-radius:3px;padding:2px 6px;font-size:8px;color:#fff;display:flex;align-items:center;gap:4px"><span style="width:5px;height:5px;border-radius:50%;background:#22c55e;display:inline-block"></span>Math 101 — Now</div>
-            <div style="background:rgba(0,0,0,.4);border-radius:3px;padding:2px 6px;font-size:8px;color:rgba(255,255,255,.5)">Physics — 10:30</div>
-            <div style="background:rgba(0,0,0,.4);border-radius:3px;padding:2px 6px;font-size:8px;color:rgba(255,255,255,.5)">History — 11:15</div>
-        </div>
-        <div style="position:absolute;top:8px;left:8px;background:$color;border-radius:3px;padding:2px 6px;font-size:7px;font-weight:700;color:#fff;z-index:2">EDU</div>
-        <div style="position:absolute;bottom:0;left:0;right:0;height:20px;background:rgba(0,0,0,.85);display:flex;align-items:center;z-index:2"><span style="background:$color;color:#fff;font-size:7px;font-weight:700;padding:0 6px;height:100%;display:flex;align-items:center">NEWS</span><span style="font-size:8px;color:#fff;padding-left:6px">Campus library closes early at 5PM today</span></div>
+    "hotel-tv" -> """
+        <div style="position:absolute;top:38px;right:8px;background:rgba(0,0,0,.62);border-radius:6px;padding:6px;z-index:2;color:#fff;font-size:8px;min-width:120px"><div style="font-weight:700;margin-bottom:4px">Altyn Hotel</div><div>Check-in 14:00</div><div>Breakfast 07:00</div></div>
     """
-    else -> ""
+    "business-center-flow" -> """
+        <div style="position:absolute;top:36px;left:8px;right:8px;background:rgba(0,0,0,.62);border-radius:6px;padding:6px;color:#fff;font-size:8px;z-index:2"><div>Sunkar Towers • Floor 12</div><div style="opacity:.8">11:00 Kaspi Team • Hall B</div></div>
+    """
+    else -> when (id) {
+        "news-24" -> """
+            <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.6);border-radius:4px;padding:3px 8px;font-size:11px;color:#fff;font-weight:600;font-variant-numeric:tabular-nums;z-index:2">14:30</div>
+            <div style="position:absolute;top:8px;right:60px;background:rgba(0,0,0,.6);border-radius:4px;padding:3px 8px;font-size:10px;color:#fff;display:flex;align-items:center;gap:4px;z-index:2"><span style="font-size:14px">☀️</span>+24°C</div>
+            <div style="position:absolute;top:8px;left:54px;background:$color;border-radius:3px;padding:2px 6px;font-size:7px;font-weight:700;color:#fff;z-index:2">N24</div>
+            <div style="position:absolute;bottom:0;left:0;right:0;height:24px;background:rgba(0,0,0,.85);display:flex;align-items:center;z-index:2"><span style="background:#e50914;color:#fff;font-size:7px;font-weight:700;padding:0 6px;height:100%;display:flex;align-items:center">BREAKING</span><span style="font-size:9px;color:#fff;white-space:nowrap;padding-left:8px">GDP growth exceeds expectations at 5.2% in Q4...</span></div>
+        """
+        "sports-live" -> """
+            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.7);border-radius:6px;padding:6px 12px;display:flex;align-items:center;gap:8px;z-index:2">
+                <span style="font-size:10px;font-weight:600;color:#fff">AST</span>
+                <span style="font-size:16px;font-weight:700;color:#fff">2 : 1</span>
+                <span style="font-size:10px;font-weight:600;color:#fff">KRT</span>
+            </div>
+            <div style="position:absolute;top:8px;right:8px;font-size:9px;color:rgba(255,255,255,.5);z-index:2">67'</div>
+            <div style="position:absolute;bottom:0;left:0;right:0;height:20px;background:rgba(0,0,0,.85);display:flex;align-items:center;z-index:2"><span style="background:$color;color:#fff;font-size:7px;font-weight:700;padding:0 6px;height:100%;display:flex;align-items:center">STATS</span><span style="font-size:8px;color:#fff;padding-left:6px">Possession: 58% - 42% | Shots: 12 - 8</span></div>
+        """
+        else -> """
+            <div style="position:absolute;bottom:0;left:0;right:0;height:20px;background:rgba(0,0,0,.85);display:flex;align-items:center;z-index:2"><span style="background:$color;color:#fff;font-size:7px;font-weight:700;padding:0 6px;height:100%;display:flex;align-items:center">LIVE</span><span style="font-size:8px;color:#fff;padding-left:6px">Realtime overlays active</span></div>
+        """
+    }
 }
 
 private fun FlowContent.walkthroughStep(step: String, title: String, description: String, demoId: String) {
     div("walkthrough-step") {
         div("walkthrough-step-num") { +step }
-        div("walkthrough-step-content") {
-            h3 { +title }
-            p { +description }
-        }
+        div("walkthrough-step-content") { h3 { +title }; p { +description } }
         div("walkthrough-demo") {
             id = "demo-$demoId"
-            // Interactive demo placeholder with animated simulation
             when (demoId) {
                 "create-channel" -> {
                     div("mini-demo") {
-                        div("mini-demo-toolbar") {
-                            span("mini-demo-dot red") {}
-                            span("mini-demo-dot yellow") {}
-                            span("mini-demo-dot green") {}
-                            span("mini-demo-title") { +"New Channel" }
-                        }
+                        div("mini-demo-toolbar") { span("mini-demo-dot red") {}; span("mini-demo-dot yellow") {}; span("mini-demo-dot green") {}; span("mini-demo-title") { +"New Channel" } }
                         div("mini-demo-body") {
-                            div("mini-demo-field") {
-                                span("mini-demo-label") { +"Channel Name" }
-                                div("mini-demo-input") {
-                                    id = "demo-typing-channel"
-                                    +"News 24|"
-                                }
-                            }
-                            div("mini-demo-field") {
-                                span("mini-demo-label") { +"Status" }
-                                div("mini-demo-select") { +"Active ✓" }
-                            }
+                            div("mini-demo-field") { span("mini-demo-label") { +"Channel Name" }; div("mini-demo-input") { id = "demo-typing-channel"; +"News 24|" } }
+                            div("mini-demo-field") { span("mini-demo-label") { +"Status" }; div("mini-demo-select") { +"Active ✓" } }
                             div("mini-demo-btn") { +"Create Channel →" }
                         }
                     }
                 }
                 "schedule-content" -> {
                     div("mini-demo") {
-                        div("mini-demo-toolbar") {
-                            span("mini-demo-dot red") {}
-                            span("mini-demo-dot yellow") {}
-                            span("mini-demo-dot green") {}
-                            span("mini-demo-title") { +"Schedule Editor" }
-                        }
+                        div("mini-demo-toolbar") { span("mini-demo-dot red") {}; span("mini-demo-dot yellow") {}; span("mini-demo-dot green") {}; span("mini-demo-title") { +"Schedule Editor" } }
                         div("mini-demo-body mini-demo-timeline") {
                             div("timeline-track") {
-                                div("timeline-item ti-1") {
-                                    style = "width: 30%; background: #3b82f6"
-                                    +"intro.mp4"
-                                }
-                                div("timeline-item ti-2") {
-                                    style = "width: 45%; background: #8b5cf6"
-                                    +"slides.jpg"
-                                }
-                                div("timeline-item ti-3") {
-                                    style = "width: 25%; background: #f59e0b"
-                                    +"promo.mp4"
-                                }
+                                div("timeline-item ti-1") { style = "width: 30%; background: #3b82f6"; +"intro.mp4" }
+                                div("timeline-item ti-2") { style = "width: 45%; background: #8b5cf6"; +"slides.jpg" }
+                                div("timeline-item ti-3") { style = "width: 25%; background: #f59e0b"; +"promo.mp4" }
                             }
                             div("timeline-cursor") {}
                         }
@@ -369,55 +249,21 @@ private fun FlowContent.walkthroughStep(step: String, title: String, description
                 }
                 "configure-overlays" -> {
                     div("mini-demo") {
-                        div("mini-demo-toolbar") {
-                            span("mini-demo-dot red") {}
-                            span("mini-demo-dot yellow") {}
-                            span("mini-demo-dot green") {}
-                            span("mini-demo-title") { +"Overlay Config" }
-                        }
+                        div("mini-demo-toolbar") { span("mini-demo-dot red") {}; span("mini-demo-dot yellow") {}; span("mini-demo-dot green") {}; span("mini-demo-title") { +"Overlay Config" } }
                         div("mini-demo-body mini-demo-overlay-cfg") {
-                            div("overlay-cfg-widget") {
-                                span("overlay-cfg-icon") { +"📰" }
-                                span { +"Ticker" }
-                                span("overlay-cfg-toggle on") { +"ON" }
-                            }
-                            div("overlay-cfg-widget") {
-                                span("overlay-cfg-icon") { +"🌤" }
-                                span { +"Weather" }
-                                span("overlay-cfg-toggle on") { +"ON" }
-                            }
-                            div("overlay-cfg-widget") {
-                                span("overlay-cfg-icon") { +"🕐" }
-                                span { +"Clock" }
-                                span("overlay-cfg-toggle") { +"OFF" }
-                            }
+                            div("overlay-cfg-widget") { span("overlay-cfg-icon") { +"📰" }; span { +"Ticker" }; span("overlay-cfg-toggle on") { +"ON" } }
+                            div("overlay-cfg-widget") { span("overlay-cfg-icon") { +"🧾" }; span { +"Queue" }; span("overlay-cfg-toggle on") { +"ON" } }
+                            div("overlay-cfg-widget") { span("overlay-cfg-icon") { +"🏨" }; span { +"Hotel Info" }; span("overlay-cfg-toggle on") { +"ON" } }
                         }
                     }
                 }
                 "go-live" -> {
                     div("mini-demo") {
-                        div("mini-demo-toolbar") {
-                            span("mini-demo-dot red") {}
-                            span("mini-demo-dot yellow") {}
-                            span("mini-demo-dot green") {}
-                            span("mini-demo-title") { +"Live Monitor" }
-                        }
+                        div("mini-demo-toolbar") { span("mini-demo-dot red") {}; span("mini-demo-dot yellow") {}; span("mini-demo-dot green") {}; span("mini-demo-title") { +"Live Monitor" } }
                         div("mini-demo-body mini-demo-monitor") {
-                            div("monitor-device") {
-                                div("monitor-status online") {}
-                                span { +"Lobby Screen #1" }
-                                span("monitor-badge") { +"Online" }
-                            }
-                            div("monitor-device") {
-                                div("monitor-status online") {}
-                                span { +"Conference Room" }
-                                span("monitor-badge") { +"Online" }
-                            }
-                            div("monitor-device") {
-                                div("monitor-status offline") {}
-                                span { +"Reception TV" }
-                                span("monitor-badge warn") { +"Offline" }
-                            }
+                            div("monitor-device") { div("monitor-status online") {}; span { +"Lobby Screen #1" }; span("monitor-badge") { +"Online" } }
+                            div("monitor-device") { div("monitor-status online") {}; span { +"Outdoor Portrait #3" }; span("monitor-badge") { +"Online" } }
+                            div("monitor-device") { div("monitor-status offline") {}; span { +"Floor TV #12" }; span("monitor-badge warn") { +"Offline" } }
                         }
                     }
                 }
@@ -427,19 +273,14 @@ private fun FlowContent.walkthroughStep(step: String, title: String, description
 }
 
 private fun FlowContent.useCaseCard(emoji: String, title: String, description: String) {
-    div("usecase-card") {
-        div("usecase-icon") { +emoji }
-        h3 { +title }
-        p { +description }
-    }
+    div("usecase-card") { div("usecase-icon") { +emoji }; h3 { +title }; p { +description } }
 }
 
 private fun showcaseScript(): String = """
-// Typing animation for demo
 (function() {
     var el = document.getElementById('demo-typing-channel');
     if (!el) return;
-    var texts = ['News 24', 'Sports Live', 'Corporate TV', 'Retail Display'];
+    var texts = ['News 24', 'Queue Hub', 'Hotel TV', 'Roadside Portrait'];
     var ti = 0, ci = 0, deleting = false;
     function type() {
         var txt = texts[ti];
@@ -457,7 +298,6 @@ private fun showcaseScript(): String = """
     type();
 })();
 
-// Smooth scroll for anchor links
 document.querySelectorAll('a[href^="#"]').forEach(function(a) {
     a.addEventListener('click', function(e) {
         var target = document.querySelector(this.getAttribute('href'));
@@ -465,7 +305,6 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
     });
 });
 
-// Timeline cursor animation
 (function() {
     var cursor = document.querySelector('.timeline-cursor');
     if (!cursor) return;

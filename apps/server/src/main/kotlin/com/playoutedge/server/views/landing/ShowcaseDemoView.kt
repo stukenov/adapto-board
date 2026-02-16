@@ -33,7 +33,7 @@ val DEMO_CHANNELS = mapOf(
         overlayWidgets = listOf(
             DemoWidget("ticker", """<div class="ov-ticker"><div class="ov-ticker-label">BREAKING</div><div class="ov-ticker-track"><span class="ov-ticker-text">Kazakh GDP growth exceeds expectations at 5.2% in Q4 2025 • Oil prices stabilize at $78/barrel • Tech sector sees 12% increase in investment • Weather: sunny, 24°C in Almaty</span></div></div>"""),
             DemoWidget("weather", """<div class="ov-weather"><span class="ov-w-icon">☀️</span><div><div class="ov-w-temp">+24°C</div><div class="ov-w-city">Almaty</div></div></div>"""),
-            DemoWidget("clock", """<div class="ov-clock" id="demo-clock-news"></div>"""),
+            DemoWidget("clock", """<div class="ov-clock" id="demo-clock-news">22:40:00</div>"""),
             DemoWidget("logo", """<div class="ov-logo-bug" style="background:#dc2626">N24</div>""")
         )
     ),
@@ -68,7 +68,7 @@ val DEMO_CHANNELS = mapOf(
         overlayWidgets = listOf(
             DemoWidget("kpi", """<div class="ov-kpi-grid"><div class="ov-kpi"><div class="ov-kpi-val" style="color:#3b82f6">${'$'}2.4M</div><div class="ov-kpi-lbl">Revenue</div></div><div class="ov-kpi"><div class="ov-kpi-val" style="color:#10b981">+18%</div><div class="ov-kpi-lbl">Growth</div></div><div class="ov-kpi"><div class="ov-kpi-val" style="color:#f59e0b">847</div><div class="ov-kpi-lbl">Clients</div></div><div class="ov-kpi"><div class="ov-kpi-val" style="color:#8b5cf6">99.9%</div><div class="ov-kpi-lbl">SLA</div></div></div>"""),
             DemoWidget("lower-third", """<div class="ov-lower-third"><div class="ov-lt-name">Welcome to Adapto HQ</div><div class="ov-lt-title">Innovation Center — Building the Future of Broadcast</div></div>"""),
-            DemoWidget("clock", """<div class="ov-clock" id="demo-clock-corp"></div>"""),
+            DemoWidget("clock", """<div class="ov-clock" id="demo-clock-corp">22:40:00</div>"""),
             DemoWidget("qr", """<div class="ov-qr"><div class="ov-qr-grid"><div class="ov-qr-c"></div><div class="ov-qr-c"></div><div class="ov-qr-c"></div><div class="ov-qr-c"></div><div class="ov-qr-c ov-qr-w"></div><div class="ov-qr-c"></div><div class="ov-qr-c"></div><div class="ov-qr-c"></div><div class="ov-qr-c"></div></div><div class="ov-qr-txt">Wi-Fi: Connect</div></div>""")
         )
     ),
@@ -121,10 +121,111 @@ val DEMO_CHANNELS = mapOf(
         overlayWidgets = listOf(
             DemoWidget("table", """<div class="ov-table"><div class="ov-table-title">Today's Schedule</div><div class="ov-table-hdr"><span>Time</span><span>Subject</span><span>Room</span></div><div class="ov-table-row"><span>09:00</span><span>Mathematics</span><span>A-101</span></div><div class="ov-table-row ov-table-active"><span>10:30</span><span>Physics Lab</span><span>B-204</span></div><div class="ov-table-row"><span>12:00</span><span>Lunch Break</span><span>Cafeteria</span></div><div class="ov-table-row"><span>13:30</span><span>CS Workshop</span><span>C-301</span></div></div>"""),
             DemoWidget("ticker", """<div class="ov-ticker"><div class="ov-ticker-label" style="background:#0891b2">CAMPUS</div><div class="ov-ticker-track"><span class="ov-ticker-text">📚 Library hours extended to 22:00 this week • 🏆 Congratulations to the robotics team! • 📅 Registration for spring semester opens Monday • 🎭 Drama club performance Friday at 18:00</span></div></div>"""),
-            DemoWidget("clock", """<div class="ov-clock" id="demo-clock-edu"></div>"""),
+            DemoWidget("clock", """<div class="ov-clock" id="demo-clock-edu">22:40:00</div>"""),
             DemoWidget("logo", """<div class="ov-logo-bug" style="background:#0891b2">EDU</div>""")
         )
     )
+    ,"roadside-portrait" to DemoChannel(
+        id = "roadside-portrait",
+        name = "Roadside Portrait",
+        category = "Portrait DOOH",
+        description = "Vertical roadside/outdoor composition with instant offer stack, weather and QR CTA",
+        color = "#ea580c",
+        bgImages = listOf(
+            "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=1280&q=80",
+            "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=1280&q=80",
+            "https://images.unsplash.com/photo-1482192505345-5655af888cc4?w=1280&q=80"
+        ),
+        overlayWidgets = listOf(
+            DemoWidget("portrait-offer", """<div class="ov-portrait"><div class="ov-portrait-top">Алматы • +3°C • 22:40</div><div class="ov-portrait-main">-35%</div><div class="ov-portrait-sub">на зимние шины до 23:00</div><div class="ov-portrait-cta">Сканируйте QR для купона</div></div>"""),
+            DemoWidget("ticker", """<div class="ov-ticker"><div class="ov-ticker-label" style="background:#ea580c">ROADSIDE</div><div class="ov-ticker-track"><span class="ov-ticker-text">Успейте до конца дня • Пилот DOOH-экрана за 2–4 недели • KPI: fill-rate, CTR по QR, uptime</span></div></div>""")
+        )
+    )
+    ,"led-wall-prime" to DemoChannel(
+        id = "led-wall-prime",
+        name = "LED Wall Prime",
+        category = "LED / Video Wall",
+        description = "Ultra-wide hero composition for lobby/forum with sponsor and next-session blocks",
+        color = "#0f766e",
+        bgImages = listOf(
+            "https://images.unsplash.com/photo-1511578314322-379afb476865?w=1280&q=80",
+            "https://images.unsplash.com/photo-1503428593586-e225b39bddfe?w=1280&q=80",
+            "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1280&q=80"
+        ),
+        overlayWidgets = listOf(
+            DemoWidget("hero", """<div class="ov-wall"><div class="ov-wall-chip">LIVE FORUM • ASTANA</div><div class="ov-wall-title">Digital Signage Future 2026</div><div class="ov-wall-sub">Поток: 8 420 зрителей • Latency p95: 1.6s</div></div>"""),
+            DemoWidget("program", """<div class="ov-wall-program"><span>14:30 • Panel Hall C</span><span>15:10 • Sponsor Talk</span><span>16:00 • Q&A</span></div>"""),
+            DemoWidget("ticker", """<div class="ov-ticker"><div class="ov-ticker-label" style="background:#0f766e">PROGRAM</div><div class="ov-ticker-track"><span class="ov-ticker-text">Main sponsor: Adapto • Next stream sync in 00:20 • LED wall pack synced across 3 zones</span></div></div>""")
+        )
+    )
+    ,"queue-hub" to DemoChannel(
+        id = "queue-hub",
+        name = "Queue Hub",
+        category = "Queue Board",
+        description = "Queue scenario for ЦОН/bank/autoservice with live calls, ETA and priority windows",
+        color = "#1d4ed8",
+        bgImages = listOf(
+            "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1280&q=80",
+            "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1280&q=80",
+            "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=1280&q=80"
+        ),
+        overlayWidgets = listOf(
+            DemoWidget("queue", """<div class="ov-table ov-queue-board"><div class="ov-table-title">ЦОН Алматы • Живая очередь</div><div class="ov-table-hdr"><span>Ticket</span><span>Window</span><span>Status</span></div><div class="ov-table-row ov-table-active"><span>A-204</span><span>7</span><span>Вызов</span></div><div class="ov-table-row"><span>B-015</span><span>2</span><span>ETA 4м</span></div><div class="ov-table-row"><span>P-031</span><span>VIP</span><span>Сейчас</span></div><div class="ov-table-row"><span>C-442</span><span>4</span><span>ETA 6м</span></div></div>"""),
+            DemoWidget("ticker", """<div class="ov-ticker"><div class="ov-ticker-label" style="background:#1d4ed8">QUEUE</div><div class="ov-ticker-track"><span class="ov-ticker-text">Услуга 008: окно 7 • Приоритетные клиенты обслуживаются в зоне B • Среднее ожидание: 5 мин</span></div></div>""")
+        )
+    )
+    ,"ad-live-hybrid" to DemoChannel(
+        id = "ad-live-hybrid",
+        name = "Ad Live Hybrid",
+        category = "Ad Overlay",
+        description = "Current live stream with sponsor banner, CTA and ad ticker overlays",
+        color = "#be123c",
+        bgImages = listOf(
+            "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1280&q=80",
+            "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1280&q=80",
+            "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=1280&q=80"
+        ),
+        overlayWidgets = listOf(
+            DemoWidget("ad-tag", """<div class="ov-ad-tag">Реклама / Sponsor Overlay</div>"""),
+            DemoWidget("ad-banner", """<div class="ov-ad-banner">Партнёр трансляции: Qazaq Oil • Бонус 5 000 ₸ по QR • Код: LIVE5000</div>"""),
+            DemoWidget("ticker", """<div class="ov-ticker"><div class="ov-ticker-label" style="background:#be123c">AD LIVE</div><div class="ov-ticker-track"><span class="ov-ticker-text">Текущая трансляция продолжается • Overlay обновился без перезапуска эфира • CTR по QR: 4.8%</span></div></div>""")
+        )
+    )
+    ,"hotel-tv" to DemoChannel(
+        id = "hotel-tv",
+        name = "Hotel TV",
+        category = "Hotel TV",
+        description = "Corporate hotel channel for lobby and rooms with concierge and service data",
+        color = "#7c3aed",
+        bgImages = listOf(
+            "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1280&q=80",
+            "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=1280&q=80",
+            "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1280&q=80"
+        ),
+        overlayWidgets = listOf(
+            DemoWidget("hotel-panel", """<div class="ov-hotel"><div class="ov-hotel-title">Welcome to Altyn Hotel</div><div class="ov-hotel-row"><span>Check-in</span><span>14:00</span></div><div class="ov-hotel-row"><span>Breakfast</span><span>07:00–10:30</span></div><div class="ov-hotel-row"><span>Room Service</span><span>24/7 • Dial 303</span></div></div>"""),
+            DemoWidget("clock", """<div class="ov-clock" id="demo-clock-hotel">22:40:00</div>"""),
+            DemoWidget("ticker", """<div class="ov-ticker"><div class="ov-ticker-label" style="background:#7c3aed">CONCIERGE</div><div class="ov-ticker-track"><span class="ov-ticker-text">Shuttle to airport at 06:30 • SPA promo -20% for guests • Late checkout on request</span></div></div>""")
+        )
+    )
+    ,"business-center-flow" to DemoChannel(
+        id = "business-center-flow",
+        name = "Business Center Flow",
+        category = "Business Center",
+        description = "Elevator/lobby/floor digest screens with meetings, wayfinding and tenant updates",
+        color = "#334155",
+        bgImages = listOf(
+            "https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1280&q=80",
+            "https://images.unsplash.com/photo-1460472178825-e5240623afd5?w=1280&q=80",
+            "https://images.unsplash.com/photo-1497215842964-222b430dc094?w=1280&q=80"
+        ),
+        overlayWidgets = listOf(
+            DemoWidget("floor-brief", """<div class="ov-bc"><div class="ov-bc-title">Sunkar Towers • Floor 12</div><div class="ov-bc-row"><span>11:00</span><span>Kaspi Team • Hall B</span></div><div class="ov-bc-row"><span>Visitor</span><span>Adapto demo group</span></div><div class="ov-bc-row"><span>Traffic</span><span>Абая +12 мин</span></div></div>"""),
+            DemoWidget("clock", """<div class="ov-clock" id="demo-clock-bc">22:40:00</div>"""),
+            DemoWidget("ticker", """<div class="ov-ticker"><div class="ov-ticker-label" style="background:#334155">BUSINESS</div><div class="ov-ticker-track"><span class="ov-ticker-text">Лифт C на сервисе до 23:00 • Welcome desk: гости компании на 8 этаже • Weather: +3°C</span></div></div>""")
+        )
+    )
+
 )
 
 fun HTML.showcaseDemoView(demoId: String) {
@@ -332,6 +433,30 @@ body.demo-page { background: var(--gray-900); color: #fff; font-family: var(--fo
 .ov-table-hdr { display: grid; grid-template-columns: 60px 1fr 60px; gap: 8px; font-size: 10px; text-transform: uppercase; opacity: 0.5; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.15); margin-bottom: 6px; }
 .ov-table-row { display: grid; grid-template-columns: 60px 1fr 60px; gap: 8px; font-size: 12px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
 .ov-table-active { background: rgba(255,255,255,0.08); border-radius: 4px; padding: 5px 4px; border-bottom: none; }
+
+.ov-portrait { position: absolute; top: 16px; left: 16px; width: 300px; background: rgba(0,0,0,0.78); border-radius: 12px; padding: 14px; color: #fff; }
+.ov-portrait-top { font-size: 11px; opacity: .75; margin-bottom: 10px; }
+.ov-portrait-main { font-size: 68px; font-weight: 800; line-height: .9; }
+.ov-portrait-sub { font-size: 18px; margin-top: 4px; }
+.ov-portrait-cta { margin-top: 12px; font-size: 13px; background: rgba(234,88,12,.25); border: 1px solid rgba(234,88,12,.5); border-radius: 8px; padding: 8px 10px; }
+
+.ov-wall { position: absolute; top: 12%; left: 5%; right: 5%; background: rgba(0,0,0,0.55); border-radius: 12px; padding: 18px 24px; text-align: center; }
+.ov-wall-chip { display: inline-block; padding: 5px 10px; border-radius: 999px; background: rgba(15,118,110,.3); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+.ov-wall-title { font-size: 42px; font-weight: 800; margin-top: 10px; }
+.ov-wall-sub { font-size: 15px; opacity: .8; margin-top: 6px; }
+.ov-wall-program { position: absolute; right: 16px; top: 16px; background: rgba(0,0,0,.7); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; font-size: 12px; }
+
+.ov-ad-tag { position: absolute; top: 16px; left: 16px; font-size: 12px; font-weight: 700; padding: 6px 10px; border-radius: 6px; background: rgba(190,18,60,.85); }
+.ov-ad-banner { position: absolute; bottom: 52px; left: 16px; right: 16px; background: rgba(0,0,0,.78); border-left: 4px solid #be123c; border-radius: 8px; padding: 10px 12px; font-size: 15px; font-weight: 600; }
+
+.ov-hotel { position: absolute; top: 16px; right: 16px; min-width: 320px; background: rgba(0,0,0,.75); border-radius: 12px; padding: 14px; }
+.ov-hotel-title { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+.ov-hotel-row { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,.08); font-size: 13px; }
+
+.ov-bc { position: absolute; top: 16px; right: 16px; min-width: 340px; background: rgba(0,0,0,.75); border-radius: 12px; padding: 14px; }
+.ov-bc-title { font-size: 15px; font-weight: 700; margin-bottom: 10px; }
+.ov-bc-row { display: grid; grid-template-columns: 80px 1fr; gap: 10px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,.08); font-size: 13px; }
+
 """
 
 private fun demoScript(demo: DemoChannel): String = """
@@ -351,7 +476,7 @@ private fun demoScript(demo: DemoChannel): String = """
     function tickClocks() {
         var now = new Date();
         var time = now.toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
-        ['demo-clock-news','demo-clock-corp','demo-clock-edu'].forEach(function(id) {
+        ['demo-clock-news','demo-clock-corp','demo-clock-edu','demo-clock-hotel','demo-clock-bc'].forEach(function(id) {
             var el = document.getElementById(id);
             if (el) el.textContent = time;
         });
