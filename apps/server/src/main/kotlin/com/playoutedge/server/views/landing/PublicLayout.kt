@@ -12,6 +12,7 @@ fun HTML.publicLayout(
         meta(name = "viewport", content = "width=device-width, initial-scale=1.0")
         title { +"$title - Playout Edge" }
         link(rel = "stylesheet", href = "/admin/static/styles.css")
+        link(rel = "stylesheet", href = "/admin/static/showcase.css")
         link(rel = "icon", type = "image/svg+xml", href = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23d97706' rx='20' width='100' height='100'/><text y='.9em' x='50%' text-anchor='middle' font-size='60' fill='white'>P</text></svg>")
     }
     body {
