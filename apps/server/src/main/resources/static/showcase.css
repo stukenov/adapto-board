@@ -2,6 +2,17 @@
    SHOWCASE PAGES
    ======================================== */
 
+:root {
+    --dooh-ink: #080b12;
+    --dooh-surface: #0f1724;
+    --dooh-surface-soft: #131f31;
+    --dooh-line: rgba(148, 163, 184, 0.24);
+    --dooh-text: #eaf1ff;
+    --dooh-muted: #95a4bf;
+    --dooh-accent: #38bdf8;
+    --dooh-accent-warm: #f59e0b;
+}
+
 /* Showcase Hero */
 .showcase-hero {
     background: linear-gradient(135deg, var(--gray-900) 0%, #1a1a2e 50%, #16213e 100%);
@@ -761,4 +772,142 @@
     display: flex;
     gap: 6px;
     flex-wrap: wrap;
+}
+
+/* ========================================
+   CITIХ-INSPIRED DOOH STYLE PASS (original assets only)
+   ======================================== */
+.showcase-hero {
+    background:
+        radial-gradient(1100px 460px at 12% 8%, rgba(56,189,248,.18), transparent 60%),
+        radial-gradient(900px 420px at 90% 0%, rgba(245,158,11,.14), transparent 64%),
+        linear-gradient(165deg, #06090f 0%, #0c1320 45%, #0f1a2d 100%);
+}
+.showcase-hero::before { opacity: .65; }
+.showcase-hero-content { max-width: 860px; }
+.showcase-hero-badge {
+    background: rgba(15,23,42,.55);
+    color: #dbeafe;
+    border: 1px solid rgba(148,163,184,.35);
+    backdrop-filter: blur(10px);
+}
+.showcase-hero h1 {
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    font-size: clamp(2rem, 4.8vw, 3.7rem);
+}
+.showcase-hero-subtitle {
+    max-width: 760px;
+    margin-inline: auto;
+    color: rgba(226,232,240,.84);
+}
+.hero-stat {
+    background: rgba(8,11,18,.45);
+    border: 1px solid var(--dooh-line);
+    border-radius: 12px;
+    padding: 10px 16px;
+    min-width: 132px;
+}
+.hero-stat-num { color: #f8fafc; font-size: 24px; }
+.hero-chip {
+    background: rgba(8,11,18,.78);
+    border-color: rgba(148,163,184,.32);
+    border-radius: 999px;
+}
+
+.showcase-section { background: #f6f8fc; }
+.showcase-templates-section { background: linear-gradient(180deg, #f8fafc, #eef2f8); }
+
+.demo-channel-card,
+.template-card,
+.usecase-card,
+.walkthrough-step,
+.template-detail-preview,
+.template-detail-meta {
+    border-radius: 14px;
+    border-color: #d6deea;
+    box-shadow: 0 8px 20px rgba(15,23,42,.06);
+}
+.demo-channel-card:hover,
+.template-card:hover,
+.usecase-card:hover,
+.walkthrough-step:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(15,23,42,.14);
+}
+
+.demo-channel-preview {
+    background: linear-gradient(180deg, #dbe6f6 0%, #f2f6fc 100%);
+    border-bottom: 1px solid #d6deea;
+}
+.demo-channel-screen {
+    border-radius: 12px;
+    border: 1px solid rgba(148,163,184,.35);
+    box-shadow: 0 16px 34px rgba(2,6,23,.28);
+}
+.demo-channel-screen::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(0,0,0,.08));
+    pointer-events: none;
+}
+.demo-channel-screen-portrait {
+    width: min(52%, 156px);
+    border-radius: 22px;
+}
+.demo-channel-name { font-size: 1.16rem; }
+.demo-channel-desc { color: #5d6c84; }
+
+.template-categories { justify-content: flex-start; }
+.template-pill {
+    background: #f8fbff;
+    border-color: #d4ddeb;
+    color: #46556f;
+}
+.template-pill.active {
+    background: #0f172a;
+    color: #f8fafc;
+    border-color: #0f172a;
+}
+.templates-grid { grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); }
+.template-preview {
+    height: 174px;
+    background: radial-gradient(circle at 20% 10%, rgba(56,189,248,.18), transparent 48%), linear-gradient(170deg, #0b1220, #111c2f);
+}
+.template-preview::before {
+    content: "";
+    position: absolute;
+    inset: 9px;
+    border-radius: 10px;
+    border: 1px solid rgba(148,163,184,.28);
+    pointer-events: none;
+}
+.template-preview-inner { transform: scale(.88); }
+.template-code {
+    background: #f1f5fb;
+    border-radius: 999px;
+    display: inline-block;
+    padding: 3px 8px;
+    color: #66758f;
+}
+
+.template-detail-canvas {
+    height: 340px;
+    background: radial-gradient(circle at 50% 8%, rgba(56,189,248,.12), transparent 42%), linear-gradient(165deg, #090f1a, #121f33);
+    border: 1px solid rgba(148,163,184,.28);
+}
+.template-detail-block h3 {
+    color: #64748b;
+    font-weight: 700;
+    letter-spacing: .08em;
+}
+
+.tp-portrait,
+.tp-hotel,
+.tp-bc,
+.tp-queue,
+.tp-wall,
+.tp-ad {
+    border: 1px solid rgba(148,163,184,.26);
 }

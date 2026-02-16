@@ -470,6 +470,72 @@ body.demo-page { background: var(--gray-900); color: #fff; font-family: var(--fo
 .ov-bc-title { font-size: 15px; font-weight: 700; margin-bottom: 10px; }
 .ov-bc-row { display: grid; grid-template-columns: 86px 1fr; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.08); font-size: 12px; }
 
+/* Premium DOOH polish */
+body.demo-page {
+    background:
+        radial-gradient(1100px 580px at 15% -10%, rgba(56,189,248,.16), transparent 64%),
+        radial-gradient(900px 500px at 95% 0%, rgba(245,158,11,.12), transparent 66%),
+        #060a11;
+}
+.demo-topbar {
+    background: rgba(4,10,20,.78);
+    border-bottom-color: rgba(148,163,184,.24);
+}
+.demo-topbar-name { letter-spacing: -.01em; font-weight: 700; }
+.demo-topbar-cat { color: #93a4bf; }
+.demo-container { grid-template-columns: 1fr 360px; }
+.demo-screen {
+    background: radial-gradient(circle at 22% 10%, rgba(56,189,248,.18), transparent 48%), #04070d;
+    padding: 18px;
+}
+.demo-stage {
+    border-radius: 20px;
+    border: 1px solid rgba(148,163,184,.28);
+    box-shadow: 0 30px 70px rgba(2,6,23,.5);
+}
+.demo-stage::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(0,0,0,.14));
+}
+.portrait-stage {
+    border-radius: 30px;
+    border-color: rgba(148,163,184,.4);
+    width: min(58vh, 38vw);
+}
+.ov-ticker {
+    height: 52px;
+    background: rgba(3,8,16,.9);
+    border-top: 1px solid rgba(148,163,184,.28);
+}
+.ov-ticker-label {
+    font-size: 11px;
+    letter-spacing: .08em;
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+}
+.ov-ticker-text { font-size: 15px; font-weight: 600; color: #f8fafc; }
+.ov-clock, .ov-weather, .ov-score, .ov-kpi, .ov-poll, .ov-table, .ov-wall-program, .ov-ad-banner {
+    border: 1px solid rgba(148,163,184,.32);
+}
+.ov-clock { background: rgba(4,10,20,.82); font-size: 22px; }
+.ov-weather { background: rgba(4,10,20,.82); }
+.ov-lower-third { bottom: 66px; }
+.ov-lt-name { font-size: 18px; border-top-right-radius: 6px; }
+.ov-lt-title { font-size: 14px; border-bottom-right-radius: 6px; }
+.ov-qp-now-ticket { font-size: 54px; }
+.ov-hp-title { font-size: 24px; }
+.demo-info-panel {
+    background: rgba(4,10,20,.74);
+    border-left-color: rgba(148,163,184,.24);
+}
+.demo-info-desc, .demo-info-section h4 { color: #9aa9c2; }
+.demo-widget-item {
+    background: rgba(148,163,184,.09);
+    border: 1px solid rgba(148,163,184,.18);
+}
+
 """
 
 private fun demoScript(demo: DemoChannel): String = """
