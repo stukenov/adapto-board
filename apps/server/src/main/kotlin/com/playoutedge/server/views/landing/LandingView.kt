@@ -13,7 +13,7 @@ fun HTML.landingView() {
                 }
                 div("hero-actions") {
                     a(href = "/signup", classes = "btn btn-primary btn-lg") { +"Get Started Free" }
-                    a(href = "/features", classes = "btn btn-ghost btn-lg") { +"Learn More" }
+                    a(href = "/showcase", classes = "btn btn-ghost btn-lg") { +"See It In Action →" }
                 }
             }
         }

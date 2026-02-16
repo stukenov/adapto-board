@@ -21,6 +21,7 @@ import com.playoutedge.server.services.PlaylistService
 import com.playoutedge.server.services.ScheduleService
 import com.playoutedge.server.services.ScheduleTemplateService
 import com.playoutedge.server.services.TtsService
+import com.playoutedge.server.services.WidgetTemplateService
 import com.playoutedge.persistence.config.DatabaseConfig
 import com.playoutedge.persistence.config.DatabaseFactory
 import com.playoutedge.persistence.repositories.impl.AlertRepositoryImpl
@@ -41,6 +42,7 @@ import com.playoutedge.persistence.repositories.impl.RefreshTokenRepositoryImpl
 import com.playoutedge.persistence.repositories.impl.ApiKeyRepositoryImpl
 import com.playoutedge.persistence.repositories.impl.DeviceLogRepositoryImpl
 import com.playoutedge.persistence.repositories.impl.OnboardingStateRepositoryImpl
+import com.playoutedge.persistence.repositories.impl.WidgetTemplateRepositoryImpl
 import com.playoutedge.server.jobs.AsrunCleanupJobHandler
 import com.playoutedge.server.jobs.CleanupJobHandler
 import com.playoutedge.server.jobs.JobScheduler
@@ -58,6 +60,7 @@ import com.playoutedge.server.routes.admin.adminDeviceRoutes
 import com.playoutedge.server.routes.admin.adminHomeRoutes
 import com.playoutedge.server.routes.admin.adminOnboardingRoutes
 import com.playoutedge.server.routes.admin.adminOverlayRoutes
+import com.playoutedge.server.routes.admin.adminWidgetTemplateRoutes
 import com.playoutedge.server.routes.admin.adminReportsRoutes
 import com.playoutedge.server.routes.admin.adminScheduleRoutes
 import com.playoutedge.server.routes.admin.adminSettingsRoutes
@@ -83,6 +86,7 @@ import com.playoutedge.server.routes.player.playerAsrunRoutes
 import com.playoutedge.server.routes.player.playlistRoutes
 import com.playoutedge.server.routes.landing.publicLandingRoutes
 import com.playoutedge.server.routes.landing.publicSignupRoutes
+import com.playoutedge.server.routes.landing.showcaseRoutes
 import com.playoutedge.server.routes.embedRoutes
 import com.playoutedge.server.routes.publicPollRoutes
 import com.playoutedge.server.routes.docsRoutes
@@ -142,6 +146,7 @@ fun Application.module() {
     val apiKeyRepository = ApiKeyRepositoryImpl()
     val onboardingStateRepository = OnboardingStateRepositoryImpl()
     val deviceLogRepository = DeviceLogRepositoryImpl()
+    val widgetTemplateRepository = WidgetTemplateRepositoryImpl()
 
     // Domain services
     val channelService = ChannelService(channelRepository)
@@ -160,8 +165,9 @@ fun Application.module() {
     val maintenanceService = MaintenanceService()
     val ttsService = TtsService(storageService)
     val scheduleTemplateService = ScheduleTemplateService()
-    val overlayPollService = OverlayPollService(overlayRepository, overlaySubscribers)
+    val overlayPollService = OverlayPollService(overlayRepository, overlaySubscribers, overlayService)
     val deviceHealthCheckService = DeviceHealthCheckService(deviceRepository, alertService)
+    val widgetTemplateService = WidgetTemplateService(widgetTemplateRepository)
 
     // Install plugins
     install(RequestIdPlugin)
@@ -225,8 +231,9 @@ fun Application.module() {
     routing {
         // Public routes (before admin to avoid auth)
         publicLandingRoutes()
+        showcaseRoutes()
         publicSignupRoutes(registrationService, jwtService)
-        embedRoutes(channelRepository, playlistService, overlayRepository)
+        embedRoutes(channelRepository, playlistService, overlayRepository, widgetTemplateService)
         publicPollRoutes(overlayRepository, overlaySubscribers)
         docsRoutes()
         llmsTxtRoutes()
@@ -234,10 +241,11 @@ fun Application.module() {
         // Admin web routes (SSR)
         adminAuthRoutes(userRepository, jwtService, passwordService, tenantRepository, emailService)
         adminHomeRoutes(deviceRepository, alertRepository, channelRepository, assetRepository, auditRepository)
-        adminChannelRoutes(channelRepository, deviceRepository, scheduleRepository, storageService, scheduleService)
+        adminChannelRoutes(channelRepository, deviceRepository, scheduleRepository, storageService, scheduleService, overlayRepository)
         adminDeviceRoutes(deviceRepository, channelRepository, deviceLogRepository)
         adminAssetRoutes(assetRepository, quotaService, assetUploadService)
-        adminOverlayRoutes(overlayRepository, channelRepository, webhookLogRepository, webhookService)
+        adminOverlayRoutes(overlayRepository, channelRepository, webhookLogRepository, overlayService, webhookService, widgetTemplateService)
+        adminWidgetTemplateRoutes(widgetTemplateRepository, widgetTemplateService)
         adminReportsRoutes(asrunRepository, auditRepository, deviceRepository, channelRepository)
         adminSettingsRoutes(userRepository, assetRepository, deviceRepository, passwordService, tenantRepository, apiKeyRepository)
         adminOnboardingRoutes(assetRepository, channelRepository, deviceRepository, tenantRepository, assetUploadService, scheduleRepository, onboardingStateRepository)
