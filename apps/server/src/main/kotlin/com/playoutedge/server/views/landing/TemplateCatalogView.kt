@@ -290,7 +290,7 @@ fun HTML.templateDetailView(templateCode: String) {
                         h1 { +template.name }
                         p("template-detail-subtitle") { +template.description }
                         div("template-detail-canvas") {
-                            unsafe { +template.previewHtml }
+                            templatePreviewScene(template)
                         }
                     }
                     div("template-detail-meta") {
@@ -327,7 +327,7 @@ private fun FlowContent.templateCatalogPill(category: String, label: String, act
 private fun FlowContent.templateCatalogCard(item: TemplateCatalogItem) {
     a(href = "/templates/${item.code}", classes = "template-card template-catalog-card") {
         attributes["data-category"] = item.category
-        div("template-preview") { div("template-preview-inner") { unsafe { +item.previewHtml } } }
+        div("template-preview") { templatePreviewScene(item) }
         div("template-info") {
             div("template-meta") {
                 span("badge badge-neutral") { +item.category }
@@ -337,6 +337,29 @@ private fun FlowContent.templateCatalogCard(item: TemplateCatalogItem) {
             p("template-desc") { +item.description }
             p("template-usecase") { +"Use case: ${item.useCase}" }
             p("template-code") { +item.code }
+        }
+    }
+}
+
+private fun String.toTemplateToken(): String =
+    lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-')
+
+private fun FlowContent.templatePreviewScene(item: TemplateCatalogItem) {
+    val categoryToken = item.category.toTemplateToken()
+    val screenToken = item.screenType.toTemplateToken()
+    div("template-preview-inner tp-scene tp-cat-$categoryToken tp-screen-$screenToken") {
+        div("tp-scene-glow")
+        div("tp-scene-grid")
+        div("tp-frame") {
+            div("tp-frame-top") {
+                span("tp-frame-dot")
+                span("tp-frame-dot")
+                span("tp-frame-dot")
+                span("tp-frame-title") { +item.screenType }
+            }
+            div("tp-screen") {
+                unsafe { +item.previewHtml }
+            }
         }
     }
 }
