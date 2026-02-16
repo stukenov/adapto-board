@@ -7,56 +7,66 @@ fun HTML.pricingView() {
         section("section") {
             div("section-inner") {
                 div("section-header") {
-                    h1 { +"Simple, Transparent Pricing" }
-                    p { +"Choose the plan that fits your signage network." }
+                    h1 { +"Прозрачные тарифы для Казахстана (KZT)" }
+                    p { +"Лист-прайс и правила соответствуют docs/24-kz-pricebook.md. Без хаотичных скидок." }
                 }
                 div("pricing-grid") {
                     pricingCard(
-                        name = "Basic",
-                        price = "$29",
-                        period = "/month",
-                        description = "For small businesses getting started with digital signage.",
+                        name = "Starter",
+                        price = "4 000 ₸",
+                        period = "/экран/мес",
+                        description = "1–200 экранов. Annual prepaid: 3 000 ₸/экран. Минимальный чек 150 000 ₸/мес.",
                         features = listOf(
-                            "Up to 5 screens",
-                            "1 GB storage",
-                            "Basic scheduling",
-                            "Email support"
+                            "Overlay manual mode",
+                            "Audit + as-run (30 дней)",
+                            "REST pull connector",
+                            "Поддержка 8×5",
+                            "Fair use: 10 GB/экран/мес"
                         ),
-                        cta = "Get Started",
+                        cta = "Запросить расчёт",
                         highlighted = false
                     )
                     pricingCard(
-                        name = "Premium",
-                        price = "$79",
-                        period = "/month",
-                        description = "For growing businesses that need more power and flexibility.",
+                        name = "Business",
+                        price = "3 000 ₸",
+                        period = "/экран/мес",
+                        description = "201–1000 экранов. Annual prepaid: 2 200 ₸/экран. Минимальный чек 600 000 ₸/мес.",
                         features = listOf(
-                            "Up to 25 screens",
-                            "10 GB storage",
-                            "Advanced scheduling",
-                            "Overlay system",
-                            "Priority support",
-                            "Analytics & reports"
+                            "Webhook overlay (R1)",
+                            "Device groups",
+                            "Audit + as-run (90 дней)",
+                            "Расширенная поддержка 8×5",
+                            "Fair use: 15 GB/экран/мес"
                         ),
-                        cta = "Get Started",
+                        cta = "Запустить pilot",
                         highlighted = true
                     )
                     pricingCard(
                         name = "Enterprise",
-                        price = "Custom",
-                        period = "",
-                        description = "For large organizations with custom requirements.",
+                        price = "2 200 ₸",
+                        period = "/экран/мес",
+                        description = "1000+ экранов. Annual prepaid: 1 800 ₸/экран. Минимальный чек 1 800 000 ₸/мес.",
                         features = listOf(
-                            "Unlimited screens",
-                            "Unlimited storage",
-                            "Custom integrations",
-                            "Dedicated support",
-                            "SLA guarantee",
-                            "On-premise option"
+                            "SSO/OIDC (R1)",
+                            "Audit + as-run (365 дней)",
+                            "SLA и приоритетная поддержка",
+                            "Isolated / on-prem опционально",
+                            "Fair use: 20 GB/экран/мес"
                         ),
-                        cta = "Contact Us",
+                        cta = "Обсудить enterprise",
                         highlighted = false
                     )
+                }
+
+                div("mt-5") {
+                    div("card") {
+                        div("card-body") {
+                            h3 { +"Pilot / POC" }
+                            p { +"Self-serve POC: 750 000 ₸ (до 20 экранов, 2 недели). Pilot: 3 000 000 ₸ (до 200 экранов, 2–4 недели)." }
+                            p { +"Пилот может быть зачтён в первый годовой контракт (до 100%) при подписании в течение 30 дней после отчёта." }
+                            a(href = "/contact", classes = "btn btn-primary") { +"Получить pilot passport" }
+                        }
+                    }
                 }
             }
         }
@@ -74,14 +84,12 @@ private fun FlowContent.pricingCard(
 ) {
     div("pricing-card${if (highlighted) " pricing-card-highlighted" else ""}") {
         if (highlighted) {
-            div("pricing-badge") { +"Most Popular" }
+            div("pricing-badge") { +"Most requested" }
         }
         h3("pricing-name") { +name }
         div("pricing-price") {
             span("pricing-amount") { +price }
-            if (period.isNotEmpty()) {
-                span("pricing-period") { +period }
-            }
+            span("pricing-period") { +period }
         }
         p("pricing-description") { +description }
         ul("pricing-features") {
@@ -92,7 +100,6 @@ private fun FlowContent.pricingCard(
                 }
             }
         }
-        val href = if (name == "Enterprise") "/contact" else "/signup"
-        a(href = href, classes = "btn ${if (highlighted) "btn-primary" else "btn-ghost"} btn-block") { +cta }
+        a(href = "/contact", classes = "btn ${if (highlighted) "btn-primary" else "btn-ghost"} btn-block") { +cta }
     }
 }

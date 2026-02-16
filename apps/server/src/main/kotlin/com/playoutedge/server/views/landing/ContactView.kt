@@ -7,24 +7,24 @@ fun HTML.contactView() {
         section("section") {
             div("section-inner") {
                 div("section-header") {
-                    h1 { +"Contact Us" }
-                    p { +"We'd love to hear from you. Reach out to our team." }
+                    h1 { +"Контакты" }
+                    p { +"Соберём discovery, зафиксируем KPI пилота и дадим план внедрения." }
                 }
                 div("contact-grid") {
                     div("contact-card") {
-                        h3 { +"Sales" }
-                        p { +"Interested in Playout Edge for your business? Our sales team can help you find the right plan." }
-                        p { a(href = "mailto:sales@playoutedge.com") { +"sales@playoutedge.com" } }
+                        h3 { +"Sales / Pilot" }
+                        p { +"Discovery 20–30 минут: scope, сети, устройства, KPI и pilot passport." }
+                        p { a(href = "mailto:sales@adapto.kz") { +"sales@adapto.kz" } }
                     }
                     div("contact-card") {
-                        h3 { +"Support" }
-                        p { +"Need help with your account or have a technical question? Our support team is here to help." }
-                        p { a(href = "mailto:support@playoutedge.com") { +"support@playoutedge.com" } }
+                        h3 { +"Template Studio" }
+                        p { +"Кастомные шаблоны под брендбук (showroom/service/welcome), включая быстрый демо-пакет." }
+                        p { a(href = "mailto:templates@adapto.kz") { +"templates@adapto.kz" } }
                     }
                     div("contact-card") {
-                        h3 { +"Enterprise" }
-                        p { +"Looking for custom solutions, on-premise deployment, or volume licensing? Let's talk." }
-                        p { a(href = "mailto:enterprise@playoutedge.com") { +"enterprise@playoutedge.com" } }
+                        h3 { +"Enterprise / Partners" }
+                        p { +"Isolated/on-prem, интеграторы, крупные сети 1000+ экранов, SLA и security requirements." }
+                        p { a(href = "mailto:enterprise@adapto.kz") { +"enterprise@adapto.kz" } }
                     }
                 }
             }

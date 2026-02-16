@@ -27,7 +27,7 @@ fun HTML.signupView(
 
                     div("signup-brand-text") {
                         h1 { +"Power your screens with intelligent signage" }
-                        p { +"Join thousands of businesses managing their digital displays effortlessly." }
+                        p { +"Создайте рабочее пространство для пилота и получите доступ к демо/онбордингу команды." }
                     }
 
                     ul("signup-trust-list") {
@@ -35,19 +35,19 @@ fun HTML.signupView(
                             unsafe {
                                 +"""<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="10" fill="rgba(255,255,255,0.2)"/><path d="M6 10l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>"""
                             }
-                            span { +"Free 14-day trial" }
+                            span { +"Paid POC/Pilot onboarding" }
                         }
                         li("signup-trust-item") {
                             unsafe {
                                 +"""<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="10" fill="rgba(255,255,255,0.2)"/><path d="M6 10l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>"""
                             }
-                            span { +"No credit card required" }
+                            span { +"Pilot scope and KPI aligned upfront" }
                         }
                         li("signup-trust-item") {
                             unsafe {
                                 +"""<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="10" fill="rgba(255,255,255,0.2)"/><path d="M6 10l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>"""
                             }
-                            span { +"Setup in under 2 minutes" }
+                            span { +"Template demo pack in 1–2 days" }
                         }
                     }
                 }

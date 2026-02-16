@@ -167,7 +167,7 @@ fun HTML.showcaseDemoView(demoId: String) {
                 span("demo-topbar-cat") { +demo.category }
             }
             div("demo-topbar-actions") {
-                a(href = "/signup", classes = "btn btn-primary btn-sm") { +"Create Your Own" }
+                a(href = "/contact", classes = "btn btn-primary btn-sm") { +"Запросить pilot" }
             }
         }
 
@@ -221,9 +221,9 @@ fun HTML.showcaseDemoView(demoId: String) {
                 }
 
                 div("demo-info-section") {
-                    h4 { +"Try It Yourself" }
-                    p { +"Create a free account to set up your own channels with these overlay templates." }
-                    a(href = "/signup", classes = "btn btn-primary") { +"Get Started Free" }
+                    h4 { +"Следующий шаг" }
+                    p { +"Покажем как эти шаблоны адаптируются под ваш брендбук и текущую инфраструктуру." }
+                    a(href = "/contact", classes = "btn btn-primary") { +"Обсудить внедрение" }
                 }
             }
         }

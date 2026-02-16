@@ -7,38 +7,17 @@ fun HTML.faqView() {
         section("section") {
             div("section-inner") {
                 div("section-header") {
-                    h1 { +"Frequently Asked Questions" }
-                    p { +"Find answers to common questions about Playout Edge." }
+                    h1 { +"FAQ" }
+                    p { +"Коротко про пилот, цены и внедрение." }
                 }
                 div("faq-list") {
-                    faqItem(
-                        "What is Playout Edge?",
-                        "Playout Edge is a cloud-based digital signage platform that lets you manage screens, schedule content, and engage your audience from anywhere."
-                    )
-                    faqItem(
-                        "How do I get started?",
-                        "Simply create an account, set up your first channel, upload your content, and connect your devices. Our onboarding wizard will guide you through each step."
-                    )
-                    faqItem(
-                        "What devices are supported?",
-                        "Playout Edge works with Android-based media players, smart TVs, and any device with a modern web browser. We provide a dedicated Android player app for the best experience."
-                    )
-                    faqItem(
-                        "Can I try it for free?",
-                        "Yes! You can sign up and start using Playout Edge immediately. The Basic plan includes a free trial period so you can evaluate the platform."
-                    )
-                    faqItem(
-                        "How does billing work?",
-                        "Plans are billed monthly. You can upgrade or downgrade at any time. Enterprise customers can arrange annual billing with custom terms."
-                    )
-                    faqItem(
-                        "Is my content secure?",
-                        "Absolutely. All data is encrypted in transit and at rest. Each tenant's data is fully isolated, and we follow industry best practices for security."
-                    )
-                    faqItem(
-                        "Can I cancel anytime?",
-                        "Yes, you can cancel your subscription at any time. Your data will be retained for 30 days after cancellation in case you change your mind."
-                    )
+                    faqItem("Какой минимальный формат старта?", "Self-serve POC: 750 000 ₸ на 2 недели (до 20 экранов, 1 локация).")
+                    faqItem("Что входит в основной pilot?", "Pilot: 3 000 000 ₸, 2–4 недели, до 200 экранов и до 3 локаций, 1 data-source + manual mode.")
+                    faqItem("Какие тарифы в production?", "Starter 4 000 ₸, Business 3 000 ₸, Enterprise 2 200 ₸ за экран в месяц. Annual prepaid дешевле — см. Pricing.")
+                    faqItem("Есть ли free trial / self-serve SaaS тариф?", "Нет. Мы работаем через платный POC/Pilot и далее production-контракт с понятным scope.")
+                    faqItem("Можно сделать кастомные шаблоны под брендбук?", "Да. Это обязательная часть нашего sales-подхода: premium шаблоны под клиента с быстрым демо за 1–2 дня.")
+                    faqItem("Нужно ли менять текущего подрядчика/платформу?", "Не обязательно. Контент-пакет и шаблоны можно внедрять поверх текущего стека, как отдельную поставку.")
+                    faqItem("Поддерживается on-prem / isolated?", "Да, для Enterprise и по отдельному проекту/SOW.")
                 }
             }
         }
