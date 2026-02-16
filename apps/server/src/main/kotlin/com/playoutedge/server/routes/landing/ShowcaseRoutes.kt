@@ -1,8 +1,9 @@
 package com.playoutedge.server.routes.landing
 
-import com.playoutedge.server.views.landing.DEMO_CHANNELS
 import com.playoutedge.server.views.landing.showcaseDemoView
 import com.playoutedge.server.views.landing.showcaseView
+import com.playoutedge.server.views.landing.templateCatalogView
+import com.playoutedge.server.views.landing.templateDetailView
 import io.ktor.server.application.*
 import io.ktor.server.html.*
 import io.ktor.server.routing.*
@@ -14,5 +15,12 @@ fun Route.showcaseRoutes() {
     get("/showcase/demo/{id}") {
         val id = call.parameters["id"] ?: ""
         call.respondHtml { showcaseDemoView(id) }
+    }
+    get("/templates") {
+        call.respondHtml { templateCatalogView() }
+    }
+    get("/templates/{code}") {
+        val code = call.parameters["code"] ?: ""
+        call.respondHtml { templateDetailView(code) }
     }
 }

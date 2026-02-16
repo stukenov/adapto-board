@@ -21,7 +21,7 @@ fun HTML.showcaseView() {
                 div("showcase-hero-badge") { +"Product Showcase" }
                 h1 { +"See Playout Edge in Action" }
                 p("showcase-hero-subtitle") {
-                    +"Explore live demo channels, overlay templates, and interactive walkthroughs. No signup required."
+                    +"Посмотрите live-демо каналов и типовые overlay-сценарии для TV, ритейла, банков и корпоративных экранов."
                 }
                 div("showcase-hero-stats") {
                     div("hero-stat") {
@@ -29,8 +29,8 @@ fun HTML.showcaseView() {
                         span("hero-stat-label") { +"Demo Channels" }
                     }
                     div("hero-stat") {
-                        span("hero-stat-num") { +"15+" }
-                        span("hero-stat-label") { +"Templates" }
+                        span("hero-stat-num") { +"6+" }
+                        span("hero-stat-label") { +"Template families" }
                     }
                     div("hero-stat") {
                         span("hero-stat-num") { +"24/7" }
@@ -39,7 +39,7 @@ fun HTML.showcaseView() {
                 }
                 div("showcase-hero-actions") {
                     a(href = "#demo-channels", classes = "btn btn-primary btn-lg") { +"View Demo Channels" }
-                    a(href = "#templates", classes = "btn btn-ghost btn-lg") { +"Browse Templates" }
+                    a(href = "/templates", classes = "btn btn-ghost btn-lg") { +"Browse Templates" }
                 }
             }
         }
@@ -105,71 +105,23 @@ fun HTML.showcaseView() {
             }
         }
 
-        // Widget Templates Gallery
+        // Template catalog CTA
         section("section showcase-section showcase-templates-section") {
             id = "templates"
             div("section-inner") {
                 div("section-header") {
-                    h2 { +"Overlay Template Gallery" }
-                    p { +"15 production-ready templates. Customize via API or admin panel — no code required." }
+                    h2 { +"Template Catalog" }
+                    p { +"Отдельный каталог и detail-страницы: что делает шаблон, как подключается, какой payload нужен." }
                 }
-                div("template-categories") {
-                    templateCategoryPill("all", "All", true)
-                    templateCategoryPill("text", "Text")
-                    templateCategoryPill("data", "Data")
-                    templateCategoryPill("media", "Media")
-                    templateCategoryPill("info", "Info")
-                    templateCategoryPill("time", "Time")
-                    templateCategoryPill("interactive", "Interactive")
-                    templateCategoryPill("sports", "Sports")
-                }
-                div("templates-grid") {
-                    id = "templates-grid"
-                    templateCard("ticker", "Ticker", "text",
-                        "Scrolling text ticker at bottom of screen",
-                        """<div class="tp-ticker"><div class="tp-ticker-label">BREAKING</div><div class="tp-ticker-track"><span class="tp-ticker-text">Breaking news: live updates scrolling across the screen in real-time...</span></div></div>""")
-                    templateCard("news-ticker", "News Ticker", "text",
-                        "Scrolling news feed from RSS/URL",
-                        """<div class="tp-ticker"><div class="tp-ticker-label">NEWS</div><div class="tp-ticker-track"><span class="tp-ticker-text">Top stories: Technology, Finance, Sports — updated every 5 minutes</span></div></div>""")
-                    templateCard("breaking-news", "Breaking News", "text",
-                        "Full-width breaking news alert bar",
-                        """<div class="tp-breaking"><span class="tp-breaking-flash">●</span> BREAKING NEWS: Major announcement expected at 15:00 UTC</div>""")
-                    templateCard("kpi-tiles", "KPI Tiles", "data",
-                        "Grid of key performance indicators",
-                        """<div class="tp-kpi-grid"><div class="tp-kpi"><span class="tp-kpi-val">1,247</span><span class="tp-kpi-lbl">Viewers</span></div><div class="tp-kpi"><span class="tp-kpi-val">89%</span><span class="tp-kpi-lbl">Uptime</span></div><div class="tp-kpi"><span class="tp-kpi-val">42</span><span class="tp-kpi-lbl">Active</span></div><div class="tp-kpi"><span class="tp-kpi-val">3.2k</span><span class="tp-kpi-lbl">Total</span></div></div>""")
-                    templateCard("queue-table", "Queue Table", "data",
-                        "Dynamic table showing queue data",
-                        """<div class="tp-table"><div class="tp-table-hdr"><span>Name</span><span>Status</span><span>Wait</span></div><div class="tp-table-row"><span>Alice K.</span><span class="tp-dot tp-green"></span><span>2m</span></div><div class="tp-table-row"><span>Bob M.</span><span class="tp-dot tp-yellow"></span><span>5m</span></div><div class="tp-table-row"><span>Carol D.</span><span class="tp-dot tp-red"></span><span>12m</span></div></div>""")
-                    templateCard("poll", "Poll", "data",
-                        "Interactive poll with voting",
-                        """<div class="tp-poll"><div class="tp-poll-q">What do you prefer?</div><div class="tp-poll-opt"><div class="tp-poll-bar" style="width:65%">Option A — 65%</div></div><div class="tp-poll-opt"><div class="tp-poll-bar tp-poll-bar-alt" style="width:35%">Option B — 35%</div></div></div>""")
-                    templateCard("qr-card", "QR Card", "media",
-                        "Card with QR code and call to action",
-                        """<div class="tp-qr"><div class="tp-qr-grid"><div class="tp-qr-c"></div><div class="tp-qr-c"></div><div class="tp-qr-c"></div><div class="tp-qr-c"></div><div class="tp-qr-c tp-qr-w"></div><div class="tp-qr-c"></div><div class="tp-qr-c"></div><div class="tp-qr-c"></div><div class="tp-qr-c"></div></div><div class="tp-qr-txt">Scan to join</div></div>""")
-                    templateCard("logo", "Logo", "media",
-                        "Channel logo watermark (bug)",
-                        """<div class="tp-logo">P<span>EDGE</span></div>""")
-                    templateCard("animated-logo", "Animated Logo", "media",
-                        "Logo with CSS animation (pulse, bounce, spin)",
-                        """<div class="tp-logo tp-logo-pulse">P<span>EDGE</span></div>""")
-                    templateCard("weather", "Weather", "info",
-                        "Live weather widget",
-                        """<div class="tp-weather"><span class="tp-weather-icon">☀️</span><div><div class="tp-weather-temp">+24°C</div><div class="tp-weather-city">Almaty</div></div></div>""")
-                    templateCard("lower-third", "Lower Third", "info",
-                        "Name + title bar with slide-in animation",
-                        """<div class="tp-lower-third"><div class="tp-lt-name">John Smith</div><div class="tp-lt-title">Chief Technology Officer</div></div>""")
-                    templateCard("clock", "Clock", "time",
-                        "Current time display",
-                        """<div class="tp-clock" id="showcase-clock">14:30:05</div>""")
-                    templateCard("countdown", "Countdown", "time",
-                        "Countdown timer to a target time",
-                        """<div class="tp-countdown"><span class="tp-cd-num">02</span><span class="tp-cd-sep">:</span><span class="tp-cd-num">45</span><span class="tp-cd-sep">:</span><span class="tp-cd-num">30</span></div>""")
-                    templateCard("score", "Score", "sports",
-                        "Sports scoreboard with teams, score and period",
-                        """<div class="tp-score"><div class="tp-score-team"><span class="tp-team-flag">🔵</span>Team A</div><div class="tp-score-nums"><span>2</span><span class="tp-score-sep">:</span><span>1</span></div><div class="tp-score-team">Team B<span class="tp-team-flag">🔴</span></div><div class="tp-score-period">2nd Half — 67'</div></div>""")
-                    templateCard("reactions", "Reactions", "interactive",
-                        "Emoji reaction overlay",
-                        """<div class="tp-reactions"><span class="tp-react">👍</span><span class="tp-react tp-react-2">❤️</span><span class="tp-react tp-react-3">😂</span><span class="tp-react tp-react-4">🎉</span><span class="tp-react tp-react-5">👏</span></div>""")
+                div("card") {
+                    div("card-body") {
+                        h3 { +"Нужны premium шаблоны под бренд клиента?" }
+                        p { +"Сделаем showroom/service/welcome пакеты и внедрим как готовый контент-слой — даже без замены текущего подрядчика." }
+                        div("showcase-cta-actions") {
+                            a(href = "/templates", classes = "btn btn-primary") { +"Открыть template catalog" }
+                            a(href = "/contact", classes = "btn btn-ghost") { +"Запросить кастомный пакет" }
+                        }
+                    }
                 }
             }
         }
@@ -239,12 +191,12 @@ fun HTML.showcaseView() {
         section("cta-section showcase-cta") {
             div("section-inner") {
                 div("section-header") {
-                    h2 { +"Ready to Transform Your Screens?" }
-                    p { +"Start free. Deploy in minutes. Scale to thousands of screens." }
+                    h2 { +"Готовы запустить пилот?" }
+                    p { +"Соберём pilot passport, согласуем KPI и покажем первые branded шаблоны за 1–2 дня." }
                 }
                 div("showcase-cta-actions") {
-                    a(href = "/signup", classes = "btn btn-primary btn-lg") { +"Start Free Trial" }
-                    a(href = "/contact", classes = "btn btn-ghost btn-lg") { +"Talk to Sales" }
+                    a(href = "/contact", classes = "btn btn-primary btn-lg") { +"Запустить pilot" }
+                    a(href = "/templates", classes = "btn btn-ghost btn-lg") { +"Выбрать шаблоны" }
                 }
             }
         }
@@ -351,33 +303,6 @@ private fun demoChannelMiniOverlays(id: String, color: String): String = when (i
         <div style="position:absolute;bottom:0;left:0;right:0;height:20px;background:rgba(0,0,0,.85);display:flex;align-items:center;z-index:2"><span style="background:$color;color:#fff;font-size:7px;font-weight:700;padding:0 6px;height:100%;display:flex;align-items:center">NEWS</span><span style="font-size:8px;color:#fff;padding-left:6px">Campus library closes early at 5PM today</span></div>
     """
     else -> ""
-}
-
-private fun FlowContent.templateCategoryPill(category: String, label: String, active: Boolean = false) {
-    button(classes = "template-pill${if (active) " active" else ""}") {
-        attributes["data-category"] = category
-        attributes["onclick"] = "filterTemplates('$category')"
-        +label
-    }
-}
-
-private fun FlowContent.templateCard(code: String, name: String, category: String, description: String, previewHtml: String) {
-    div("template-card") {
-        attributes["data-category"] = category
-        div("template-preview") {
-            div("template-preview-inner") {
-                unsafe { +previewHtml }
-            }
-        }
-        div("template-info") {
-            div("template-meta") {
-                span("badge badge-neutral") { +category }
-                span("template-code") { +code }
-            }
-            h4("template-name") { +name }
-            p("template-desc") { +description }
-        }
-    }
 }
 
 private fun FlowContent.walkthroughStep(step: String, title: String, description: String, demoId: String) {
@@ -510,32 +435,6 @@ private fun FlowContent.useCaseCard(emoji: String, title: String, description: S
 }
 
 private fun showcaseScript(): String = """
-// Template category filter
-function filterTemplates(category) {
-    document.querySelectorAll('.template-pill').forEach(function(p) {
-        p.classList.toggle('active', p.dataset.category === category);
-    });
-    document.querySelectorAll('.template-card').forEach(function(c) {
-        if (category === 'all' || c.dataset.category === category) {
-            c.style.display = '';
-        } else {
-            c.style.display = 'none';
-        }
-    });
-}
-
-// Live clock in showcase
-(function() {
-    var el = document.getElementById('showcase-clock');
-    if (!el) return;
-    function tick() {
-        var now = new Date();
-        el.textContent = now.toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
-    }
-    tick();
-    setInterval(tick, 1000);
-})();
-
 // Typing animation for demo
 (function() {
     var el = document.getElementById('demo-typing-channel');

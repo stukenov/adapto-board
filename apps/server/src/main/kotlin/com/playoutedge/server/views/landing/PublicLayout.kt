@@ -24,6 +24,7 @@ fun HTML.publicLayout(
                 }
                 div("public-nav-links") {
                     a(href = "/showcase", classes = if (currentPath == "/showcase") "active" else "") { +"Showcase" }
+                    a(href = "/templates", classes = if (currentPath == "/templates") "active" else "") { +"Templates" }
                     a(href = "/features", classes = if (currentPath == "/features") "active" else "") { +"Features" }
                     a(href = "/pricing", classes = if (currentPath == "/pricing") "active" else "") { +"Pricing" }
                     a(href = "/faq", classes = if (currentPath == "/faq") "active" else "") { +"FAQ" }
@@ -47,6 +48,7 @@ fun HTML.publicLayout(
                         h4 { +"Product" }
                         ul {
                             li { a(href = "/showcase") { +"Showcase" } }
+                            li { a(href = "/templates") { +"Templates" } }
                             li { a(href = "/features") { +"Features" } }
                             li { a(href = "/pricing") { +"Pricing" } }
                             li { a(href = "/faq") { +"FAQ" } }
