@@ -17,9 +17,10 @@ fun HTML.assetsListView(
     pagination: PaginationInfo? = null
 ) {
     adminLayout(title = "Assets", userName = session.displayName, currentPath = "/admin/assets") {
+        // Compact header: title + quota bar + actions in one row
         pageHeader(
             title = "Assets",
-            subtitle = "Manage your media library"
+            subtitle = "${quota.usedFormatted} / ${quota.limitFormatted}"
         ) {
             a(href = "/admin/assets/upload", classes = "btn btn-primary") {
                 +"+ Upload"
@@ -29,22 +30,88 @@ fun HTML.assetsListView(
             }
         }
 
-        // Tabs
-        pageTabs(listOf(
-            TabDef("All", "/admin/assets"),
-            TabDef("Video", "/admin/assets?type=VIDEO"),
-            TabDef("Image", "/admin/assets?type=IMAGE"),
-            TabDef("Audio", "/admin/assets?type=AUDIO"),
-            TabDef("Slideshow", "/admin/assets?type=SLIDESHOW")
-        ), "/admin/assets${if (filters.type != null) "?type=${filters.type.name}" else ""}")
+        // Storage quota bar (compact, no card wrapper)
+        if (quota.usedPercent > 0) {
+            div("quota-bar-compact") {
+                val barClass = when {
+                    quota.usedPercent >= 90 -> "danger"
+                    quota.usedPercent >= 70 -> "warning"
+                    else -> ""
+                }
+                div("quota-fill $barClass") {
+                    style = "width: ${quota.usedPercent}%"
+                }
+            }
+        }
 
-        // Storage quota warning
-        if (quota.usedPercent >= 80) {
-            div("alert alert-warning mb-4") {
-                if (quota.usedPercent >= 90) {
-                    +"Storage usage is critically high (${quota.usedPercent}%). Consider archiving or deleting unused assets."
-                } else {
-                    +"Storage usage is above 80% (${quota.usedPercent}%). Consider cleaning up unused assets."
+        // Compact toolbar: tabs + filters + view toggle all in one row
+        div("assets-toolbar") {
+            // Type tabs (inline)
+            div("assets-type-tabs") {
+                val currentType = filters.type?.name
+                a(href = "/admin/assets", classes = "tab-pill${if (currentType == null) " active" else ""}") { +"All" }
+                AssetType.entries.forEach { type ->
+                    val typeName = type.name
+                    a(href = "/admin/assets?type=$typeName", classes = "tab-pill${if (currentType == typeName) " active" else ""}") {
+                        +typeName.lowercase().replaceFirstChar { it.uppercase() }
+                    }
+                }
+            }
+
+            // Filters inline
+            form(action = "/admin/assets", method = FormMethod.get, classes = "assets-inline-filters") {
+                // Preserve type filter from tabs
+                filters.type?.let {
+                    input(type = InputType.hidden, name = "type") { value = it.name }
+                }
+                select("form-control form-control-sm") {
+                    id = "filter-status"
+                    name = "status"
+                    option {
+                        value = ""
+                        if (filters.status == null) selected = true
+                        +"All Statuses"
+                    }
+                    AssetStatus.entries.forEach { status ->
+                        option {
+                            value = status.name
+                            if (filters.status == status) selected = true
+                            +status.name.lowercase().replaceFirstChar { it.uppercase() }
+                        }
+                    }
+                }
+                input(type = InputType.text, classes = "form-control form-control-sm") {
+                    id = "filter-search"
+                    name = "search"
+                    placeholder = "Search..."
+                    value = filters.search ?: ""
+                }
+                button(type = ButtonType.submit, classes = "btn btn-secondary btn-sm") { +"Filter" }
+                if (filters.hasActiveFilters()) {
+                    a(href = "/admin/assets", classes = "btn btn-ghost btn-sm") { +"Clear" }
+                }
+            }
+
+            // View toggle + sort (right side)
+            if (assets.isNotEmpty()) {
+                div("assets-view-controls") {
+                    button(classes = "btn btn-sm btn-secondary active") {
+                        id = "view-list-btn"
+                        +"List"
+                    }
+                    button(classes = "btn btn-sm btn-ghost") {
+                        id = "view-grid-btn"
+                        +"Grid"
+                    }
+                    select("form-control form-control-sm") {
+                        id = "sort-select"
+                        option { value = "date-desc"; +"Newest" }
+                        option { value = "date-asc"; +"Oldest" }
+                        option { value = "name-asc"; +"A-Z" }
+                        option { value = "name-desc"; +"Z-A" }
+                        option { value = "size-desc"; +"Largest" }
+                        option { value = "size-asc"; +"Smallest" }
+                    }
                 }
             }
         }
@@ -68,130 +135,6 @@ fun HTML.assetsListView(
                 button(type = ButtonType.submit, classes = "btn btn-danger btn-sm") {
                     attributes["onclick"] = "return confirm('Are you sure you want to delete the selected assets?')"
                     +"Delete Selected"
-                }
-            }
-        }
-
-        // Storage quota
-        div("card mb-4") {
-            div("card-body") {
-                div("quota-info") {
-                    div("quota-label") {
-                        span { +"Storage Usage" }
-                        span { +"${quota.usedFormatted} / ${quota.limitFormatted}" }
-                    }
-                    div("quota-bar") {
-                        val barClass = when {
-                            quota.usedPercent >= 90 -> "danger"
-                            quota.usedPercent >= 70 -> "warning"
-                            else -> ""
-                        }
-                        div("quota-fill $barClass") {
-                            style = "width: ${quota.usedPercent}%"
-                        }
-                    }
-                }
-            }
-        }
-
-        // Filters
-        div("card mb-4") {
-            form(action = "/admin/assets", method = FormMethod.get, classes = "filter-form") {
-                div("filter-row") {
-                    div("form-group") {
-                        label {
-                            htmlFor = "filter-type"
-                            +"Type"
-                        }
-                        select("form-control") {
-                            id = "filter-type"
-                            name = "type"
-                            option {
-                                value = ""
-                                if (filters.type == null) selected = true
-                                +"All Types"
-                            }
-                            AssetType.entries.forEach { type ->
-                                option {
-                                    value = type.name
-                                    if (filters.type == type) selected = true
-                                    +type.name.lowercase().replaceFirstChar { it.uppercase() }
-                                }
-                            }
-                        }
-                    }
-                    div("form-group") {
-                        label {
-                            htmlFor = "filter-status"
-                            +"Status"
-                        }
-                        select("form-control") {
-                            id = "filter-status"
-                            name = "status"
-                            option {
-                                value = ""
-                                if (filters.status == null) selected = true
-                                +"All Statuses"
-                            }
-                            AssetStatus.entries.forEach { status ->
-                                option {
-                                    value = status.name
-                                    if (filters.status == status) selected = true
-                                    +status.name.lowercase().replaceFirstChar { it.uppercase() }
-                                }
-                            }
-                        }
-                    }
-                    div("form-group") {
-                        label {
-                            htmlFor = "filter-search"
-                            +"Search"
-                        }
-                        input(type = InputType.text, classes = "form-control") {
-                            id = "filter-search"
-                            name = "search"
-                            placeholder = "Search assets..."
-                            value = filters.search ?: ""
-                        }
-                    }
-                    div("filter-actions") {
-                        button(type = ButtonType.submit, classes = "btn btn-secondary") {
-                            +"Apply"
-                        }
-                        if (filters.hasActiveFilters()) {
-                            a(href = "/admin/assets", classes = "btn btn-ghost") {
-                                +"Clear"
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // View toggle + sort controls
-        if (assets.isNotEmpty()) {
-            div("assets-controls mb-4") {
-                div("assets-view-toggle") {
-                    button(classes = "btn btn-sm btn-secondary active") {
-                        id = "view-list-btn"
-                        +"☰ List"
-                    }
-                    button(classes = "btn btn-sm btn-ghost") {
-                        id = "view-grid-btn"
-                        +"⊞ Grid"
-                    }
-                }
-                div("assets-sort") {
-                    label { +"Sort:" }
-                    select("form-control form-control-sm") {
-                        id = "sort-select"
-                        option { value = "date-desc"; +"Newest first" }
-                        option { value = "date-asc"; +"Oldest first" }
-                        option { value = "name-asc"; +"Name A-Z" }
-                        option { value = "name-desc"; +"Name Z-A" }
-                        option { value = "size-desc"; +"Largest first" }
-                        option { value = "size-asc"; +"Smallest first" }
-                    }
                 }
             }
         }

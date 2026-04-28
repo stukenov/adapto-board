@@ -559,6 +559,159 @@ if (bellBtn) {
 }
 
 // ========================================
+// OVERLAY VISUAL EDITOR
+// ========================================
+
+// Toggle between visual and JSON editor
+window.toggleOverlayEditorMode = function() {
+    var visual = document.getElementById('visual-editor-section');
+    var json = document.getElementById('json-editor-section');
+    var btn = document.getElementById('toggle-json-editor');
+    if (!visual || !json) return;
+
+    if (json.style.display === 'none') {
+        // Switching to JSON: build JSON from form first
+        var built = buildOverlayJson();
+        var textarea = document.getElementById('jsonEditorTextarea');
+        if (textarea) textarea.value = JSON.stringify(built, null, 2);
+        visual.style.display = 'none';
+        json.style.display = 'block';
+        if (btn) btn.textContent = 'Switch to Visual';
+    } else {
+        // Switching to visual: copy JSON into hidden field (visual fields show server-rendered data)
+        var textarea = document.getElementById('jsonEditorTextarea');
+        if (textarea) {
+            document.getElementById('stateJson').value = textarea.value;
+        }
+        json.style.display = 'none';
+        visual.style.display = 'block';
+        if (btn) btn.textContent = 'Switch to JSON';
+        Toast.show('Visual editor shows last saved state. JSON changes will be submitted on save.', 'info', 3000);
+    }
+};
+
+// Build JSON from visual form fields
+function buildOverlayJson() {
+    var form = document.getElementById('overlay-visual-form');
+    if (!form) return {};
+
+    var cards = form.querySelectorAll('.widget-editor-card');
+    var widgets = [];
+
+    cards.forEach(function(card) {
+        var type = card.getAttribute('data-widget-type');
+        var idx = card.getAttribute('data-widget-index');
+        var prefix = 'widget_' + idx + '_';
+        var widget = { type: type };
+
+        // Position
+        var posEl = form.querySelector('[name="' + prefix + 'position"]');
+        if (posEl) widget.position = posEl.value;
+
+        // Schema-driven field extraction
+        var schemaAttr = card.getAttribute('data-schema');
+        if (schemaAttr) {
+            try {
+                var schema = JSON.parse(schemaAttr);
+                var props = schema.properties || {};
+                Object.keys(props).forEach(function(key) {
+                    var propDef = props[key];
+                    var propType = propDef.type || 'string';
+                    var val = getVal(form, prefix + key);
+                    if (val === null || val === undefined || val === '') {
+                        // Use default if available
+                        if (propDef.default !== undefined) {
+                            widget[key] = propDef.default;
+                        }
+                        return;
+                    }
+                    if (propType === 'number' || propType === 'integer') {
+                        widget[key] = parseFloat(val) || 0;
+                    } else if (propType === 'boolean') {
+                        var cb = form.querySelector('[name="' + prefix + key + '"]');
+                        widget[key] = cb ? cb.checked : false;
+                    } else {
+                        widget[key] = val;
+                    }
+                });
+            } catch(e) {
+                console.error('Schema parse error:', e);
+            }
+        }
+
+        widgets.push(widget);
+    });
+
+    return { widgets: widgets };
+}
+
+function getVal(form, name) {
+    var el = form.querySelector('[name="' + name + '"]');
+    return el ? el.value : '';
+}
+
+// Intercept form submit to assemble JSON
+document.addEventListener('submit', function(e) {
+    var form = e.target;
+    if (form.id !== 'overlay-visual-form') return;
+
+    var jsonSection = document.getElementById('json-editor-section');
+    var hidden = document.getElementById('stateJson');
+    if (!hidden) return;
+
+    if (jsonSection && jsonSection.style.display !== 'none') {
+        // JSON mode active: use JSON textarea content directly
+        var textarea = document.getElementById('jsonEditorTextarea');
+        if (textarea) hidden.value = textarea.value;
+    } else if (document.querySelector('.widget-editor-card')) {
+        // Visual mode with widget forms: build JSON from fields
+        hidden.value = JSON.stringify(buildOverlayJson());
+    }
+    // else: keep existing hidden value (fallback)
+}, true);
+
+// Dynamic add functions
+window.addKpiTile = function(prefix) {
+    var container = document.querySelector('#' + prefix + 'kpis_container');
+    if (!container) return;
+    var idx = container.querySelectorAll('.kpi-row').length;
+    var html = '<div class="form-row kpi-row mb-1">' +
+        '<div class="form-group col-4"><input type="text" class="form-control form-control-sm" name="' + prefix + 'kpi_' + idx + '_label" placeholder="Label"></div>' +
+        '<div class="form-group col-4"><input type="text" class="form-control form-control-sm" name="' + prefix + 'kpi_' + idx + '_value" placeholder="Value"></div>' +
+        '<div class="form-group col-3"><input type="color" class="form-control form-control-sm" name="' + prefix + 'kpi_' + idx + '_color" value="#3b82f6"></div>' +
+        '<div class="form-group col-1"><button type="button" class="btn btn-danger btn-sm" onclick="this.closest(\'.kpi-row\').remove()">×</button></div>' +
+        '</div>';
+    container.insertAdjacentHTML('beforeend', html);
+};
+
+window.addTableRow = function(prefix) {
+    var container = document.querySelector('#' + prefix + 'rows_container');
+    if (!container) return;
+    var idx = container.querySelectorAll('.table-data-row').length;
+    // Detect column count from first row or default to 3
+    var firstRow = container.querySelector('.table-data-row');
+    var colCount = firstRow ? firstRow.querySelectorAll('input[type="text"]').length : 3;
+    var html = '<div class="form-row table-data-row mb-1">';
+    for (var c = 0; c < colCount; c++) {
+        html += '<div class="form-group col"><input type="text" class="form-control form-control-sm" name="' + prefix + 'row_' + idx + '_col_' + c + '"></div>';
+    }
+    html += '<div class="form-group" style="flex:0 0 40px"><button type="button" class="btn btn-danger btn-sm" onclick="this.closest(\'.table-data-row\').remove()">×</button></div></div>';
+    container.insertAdjacentHTML('beforeend', html);
+};
+
+window.addPollOption = function(prefix) {
+    var container = document.querySelector('#' + prefix + 'options_container');
+    if (!container) return;
+    var idx = container.querySelectorAll('.poll-option-row').length;
+    var html = '<div class="form-row poll-option-row mb-1">' +
+        '<div class="form-group col-8"><input type="text" class="form-control form-control-sm" name="' + prefix + 'option_' + idx + '" placeholder="Option ' + (idx + 1) + '"></div>' +
+        '<div class="form-group col-3"><input type="number" class="form-control form-control-sm" name="' + prefix + 'votes_' + idx + '" value="0" readonly title="Votes (read-only)"></div>' +
+        '<div class="form-group col-1"><button type="button" class="btn btn-danger btn-sm" onclick="this.closest(\'.poll-option-row\').remove()">×</button></div>' +
+        '</div>';
+    container.insertAdjacentHTML('beforeend', html);
+};
+
+// ========================================
 // HTMX INTEGRATION
 // ========================================
 

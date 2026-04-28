@@ -6,6 +6,7 @@ import com.playoutedge.persistence.repositories.ChannelRepository
 import com.playoutedge.persistence.repositories.CreateChannelRequest
 import com.playoutedge.persistence.repositories.UpdateChannelRequest
 import com.playoutedge.persistence.repositories.DeviceRepository
+import com.playoutedge.persistence.repositories.OverlayRepository
 import com.playoutedge.persistence.repositories.ScheduleRepository
 import com.playoutedge.server.plugins.adminSession
 import com.playoutedge.server.services.ScheduleService
@@ -39,7 +40,8 @@ fun Route.adminChannelRoutes(
     deviceRepository: DeviceRepository,
     scheduleRepository: ScheduleRepository,
     storageService: StorageService,
-    scheduleService: ScheduleService? = null
+    scheduleService: ScheduleService? = null,
+    overlayRepository: OverlayRepository? = null
 ) {
     route("/admin/channels") {
         // GET /admin/channels - List channels
@@ -239,7 +241,14 @@ fun Route.adminChannelRoutes(
             // Get devices assigned to this channel — wrap in transaction for lazy entity access
             val now = Clock.System.now()
             val onlineThreshold = now - 5.minutes
-            val (devices, scheduleItems, channelDetail) = newSuspendedTransaction {
+            data class ChannelDetailData(
+                val devices: List<DeviceListItem>,
+                val scheduleItems: List<ScheduleItemView>,
+                val channelDetail: ChannelDetail,
+                val overlayBinding: OverlayBindingInfo?
+            )
+
+            val detailData = newSuspendedTransaction {
                 val devices = deviceRepository.findByChannel(tenantId, channelId).map { device ->
                     DeviceListItem(
                         id = device.id.value,
@@ -271,8 +280,21 @@ fun Route.adminChannelRoutes(
                     createdAt = channel.createdAt
                 )
 
-                Triple(devices, scheduleItems, channelDetail)
+                val overlayBinding = overlayRepository?.findBindingsByChannel(tenantId, channelId)
+                    ?.firstOrNull()?.let { binding ->
+                        OverlayBindingInfo(
+                            bindingId = binding.id.value,
+                            profileName = binding.overlayProfile.name,
+                            status = binding.status
+                        )
+                    }
+
+                ChannelDetailData(devices, scheduleItems, channelDetail, overlayBinding)
             }
+
+            val devices = detailData.devices
+            val scheduleItems = detailData.scheduleItems
+            val channelDetail = detailData.channelDetail
 
             // Validate active schedule if service available
             val validationWarnings = if (scheduleService != null) {
@@ -294,7 +316,8 @@ fun Route.adminChannelRoutes(
                     scheduleItems = scheduleItems,
                     devices = devices,
                     validationWarnings = validationWarnings,
-                    embedHost = embedHost
+                    embedHost = embedHost,
+                    overlayBindingInfo = detailData.overlayBinding
                 )
             }
         }

@@ -36,8 +36,9 @@ val AdminSessionPlugin = createApplicationPlugin(name = "AdminSessionPlugin", ::
     onCall { call ->
         val path = call.request.local.uri
 
-        // Only check admin routes (except login, logout, static)
-        if (!path.startsWith("/admin")) return@onCall
+        // Check admin routes and storage routes (except login, logout, static)
+        val isStoragePath = path.startsWith("/storage")
+        if (!path.startsWith("/admin") && !isStoragePath) return@onCall
         if (path.startsWith("/admin/login")) return@onCall
         if (path.startsWith("/admin/logout")) return@onCall
         if (path.startsWith("/admin/forgot-password")) return@onCall
@@ -49,6 +50,8 @@ val AdminSessionPlugin = createApplicationPlugin(name = "AdminSessionPlugin", ::
         val sessionCookie = call.request.cookies[ADMIN_SESSION_COOKIE]
 
         if (sessionCookie == null) {
+            // For storage paths, don't redirect — let route handler return 401
+            if (isStoragePath) return@onCall
             val next = path.encodeURLParameter()
             call.respondRedirect("/admin/login?next=$next")
             return@onCall
@@ -58,6 +61,7 @@ val AdminSessionPlugin = createApplicationPlugin(name = "AdminSessionPlugin", ::
         val tokenClaims = try {
             jwtService.validateToken(sessionCookie)
         } catch (e: Exception) {
+            if (isStoragePath) return@onCall
             val next = path.encodeURLParameter()
             call.respondRedirect("/admin/login?error=expired&next=$next")
             return@onCall
@@ -65,6 +69,7 @@ val AdminSessionPlugin = createApplicationPlugin(name = "AdminSessionPlugin", ::
 
         val claims = tokenClaims as? AdminClaims
         if (claims == null) {
+            if (isStoragePath) return@onCall
             val next = path.encodeURLParameter()
             call.respondRedirect("/admin/login?error=expired&next=$next")
             return@onCall

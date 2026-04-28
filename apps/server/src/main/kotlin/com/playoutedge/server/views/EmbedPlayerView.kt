@@ -20,6 +20,10 @@ fun HTML.embedPlayerView(
                 +embedPlayerStyles(bgColor)
             }
         }
+        link {
+            rel = "stylesheet"
+            href = "/embed/$channelId/templates.css"
+        }
     }
     body {
         div("embed-container") {
@@ -72,6 +76,10 @@ fun HTML.embedPlayerView(
         audio {
             id = "voiceover-audio"
             attributes["preload"] = "auto"
+        }
+
+        script {
+            src = "/embed/$channelId/templates.js"
         }
 
         script {
@@ -186,129 +194,9 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: $bg; }
 
 .embed-image.fading-out { opacity: 0; }
 
-/* === Overlay Widget Styles === */
+/* === Overlay Widget Base === */
 .embed-overlay { font-family: 'Segoe UI', Arial, sans-serif; }
-
-/* Ticker */
-.overlay-ticker {
-    position: absolute; bottom: 0; left: 0; width: 100%;
-    height: 48px; background: rgba(0,0,0,0.85); color: #fff;
-    display: flex; align-items: center; overflow: hidden;
-    pointer-events: auto;
-}
-.overlay-ticker .ticker-label {
-    background: #e50914; color: #fff; font-weight: 700; font-size: 14px;
-    padding: 0 16px; height: 100%; display: flex; align-items: center;
-    white-space: nowrap; flex-shrink: 0; text-transform: uppercase;
-}
-.overlay-ticker .ticker-track {
-    flex: 1; overflow: hidden; position: relative; height: 100%;
-    display: flex; align-items: center;
-}
-.overlay-ticker .ticker-text {
-    white-space: nowrap; font-size: 16px; font-weight: 500;
-    animation: ticker-scroll linear infinite;
-    padding-left: 100%;
-}
-@keyframes ticker-scroll {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-100%); }
-}
-
-/* KPI Tiles */
-.overlay-kpi-grid {
-    position: absolute; display: grid; gap: 8px; padding: 12px;
-}
-.overlay-kpi-tile {
-    background: rgba(0,0,0,0.8); border-radius: 8px; padding: 12px 16px;
-    color: #fff; text-align: center; backdrop-filter: blur(8px);
-    border: 1px solid rgba(255,255,255,0.1);
-}
-.overlay-kpi-tile .kpi-value {
-    font-size: 28px; font-weight: 700; line-height: 1.2;
-}
-.overlay-kpi-tile .kpi-label {
-    font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
-    opacity: 0.7; margin-top: 4px;
-}
-
-/* Clock */
-.overlay-clock {
-    position: absolute; background: rgba(0,0,0,0.75); color: #fff;
-    border-radius: 8px; padding: 8px 16px; backdrop-filter: blur(8px);
-    font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums;
-}
-
-/* QR Card */
-.overlay-qr-card {
-    position: absolute; background: #fff; border-radius: 12px;
-    padding: 16px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-}
-.overlay-qr-card canvas { display: block; margin: 0 auto; }
-.overlay-qr-card .qr-text {
-    margin-top: 8px; font-size: 12px; color: #333; font-weight: 600;
-}
-
-/* Table */
-.overlay-table {
-    position: absolute; background: rgba(0,0,0,0.85); color: #fff;
-    border-radius: 8px; padding: 12px; backdrop-filter: blur(8px);
-    max-width: 500px;
-}
-.overlay-table table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.overlay-table th {
-    text-align: left; padding: 6px 8px; border-bottom: 1px solid rgba(255,255,255,0.2);
-    font-weight: 600; text-transform: uppercase; font-size: 11px; opacity: 0.7;
-}
-.overlay-table td { padding: 6px 8px; border-bottom: 1px solid rgba(255,255,255,0.08); }
-
-/* Poll */
-.overlay-poll {
-    position: absolute; background: rgba(0,0,0,0.85); color: #fff;
-    border-radius: 12px; padding: 16px; backdrop-filter: blur(8px);
-    min-width: 280px;
-}
-.overlay-poll .poll-question { font-size: 16px; font-weight: 700; margin-bottom: 12px; }
-.overlay-poll .poll-option { margin-bottom: 8px; }
-.overlay-poll .poll-bar-bg {
-    background: rgba(255,255,255,0.15); border-radius: 4px; height: 28px;
-    position: relative; overflow: hidden;
-}
-.overlay-poll .poll-bar-fill {
-    height: 100%; border-radius: 4px; transition: width 0.5s ease;
-    background: linear-gradient(90deg, #667eea, #764ba2);
-}
-.overlay-poll .poll-bar-label {
-    position: absolute; top: 0; left: 8px; right: 8px; height: 28px;
-    display: flex; align-items: center; justify-content: space-between;
-    font-size: 13px; font-weight: 500;
-}
-
-/* Reactions */
-.overlay-reactions {
-    position: absolute; pointer-events: auto;
-}
-.overlay-reaction-emoji {
-    position: absolute; font-size: 32px; animation: reaction-float 3s ease-out forwards;
-    opacity: 0;
-}
-@keyframes reaction-float {
-    0% { opacity: 1; transform: translateY(0) scale(1); }
-    100% { opacity: 0; transform: translateY(-120px) scale(0.5); }
-}
-
-/* Weather */
-.overlay-weather {
-    position: absolute; background: rgba(0,0,0,0.75); color: #fff;
-    border-radius: 8px; padding: 12px 16px; backdrop-filter: blur(8px);
-    display: flex; align-items: center; gap: 12px;
-}
-.overlay-weather .weather-icon { font-size: 32px; }
-.overlay-weather .weather-temp { font-size: 24px; font-weight: 700; }
-.overlay-weather .weather-desc { font-size: 12px; opacity: 0.7; }
-
-/* News Ticker - same as ticker but with alternating items */
-.overlay-news-ticker { composes: overlay-ticker; }
+.overlay-widget { position: absolute; }
 
 /* Position helpers */
 .pos-top-left { top: 16px; left: 16px; }
@@ -470,7 +358,8 @@ private fun embedPlayerScript(channelId: String): String = """
             const res = await fetch(OVERLAY_URL);
             if (!res.ok) return;
             const text = await res.text();
-            if (text === lastOverlayJson || text === '{}') return;
+            if (text === lastOverlayJson) return;
+            if (text === '{}') { while(overlayContainer.firstChild) overlayContainer.removeChild(overlayContainer.firstChild); return; }
             lastOverlayJson = text;
             const state = JSON.parse(text);
             renderOverlay(state);
@@ -500,162 +389,30 @@ private fun embedPlayerScript(channelId: String): String = """
 
     function createWidget(w, state) {
         var type = (w.type || '').toLowerCase();
-
-        if (type === 'ticker' || type === 'news-ticker') return createTicker(w, state);
-        if (type === 'kpi-grid' || type === 'kpi' || type === 'kpi_tiles') return createKpiGrid(w, state);
-        if (type === 'clock') return createClock(w);
-        if (type === 'table' || type === 'queue-table' || type === 'queue_table') return createTable(w, state);
-        if (type === 'qr-card' || type === 'qr_card') return createQrCard(w);
-        if (type === 'poll') return createPoll(w, state);
-        if (type === 'reactions') return createReactions(w, state);
-        if (type === 'weather') return createWeather(w, state);
-        return null;
+        if (typeof WIDGET_TEMPLATES === 'undefined' || !WIDGET_TEMPLATES[type]) return null;
+        return createFromTemplate(w, type, state);
     }
 
-    function createTicker(w, state) {
+    function createFromTemplate(w, type, state) {
+        var tmpl = WIDGET_TEMPLATES[type];
+        if (!tmpl || !tmpl.html) return null;
         var el = document.createElement('div');
-        el.className = 'overlay-ticker';
-        var text = w.text || state.ticker_text || state.tickerText || '';
-        var items = w.items || state.ticker_items || [];
-        if (items.length > 0) text = items.join('  ●  ');
-        if (!text) return null;
-
-        var label = w.label || state.ticker_label || '';
-        var speed = w.scrollSpeed || 60;
-        var dur = Math.max(text.length * 0.15, 10);
-
-        if (label) el.innerHTML = '<div class="ticker-label">' + esc(label) + '</div>';
-        el.innerHTML += '<div class="ticker-track"><span class="ticker-text" style="animation-duration:' + dur + 's">' + esc(text) + '</span></div>';
-        return el;
-    }
-
-    function createKpiGrid(w, state) {
-        var kpis = w.kpis || w.tiles || state.kpis || [];
-        if (!kpis.length) return null;
-        var cols = w.columns || 2;
-        var el = document.createElement('div');
-        el.className = 'overlay-kpi-grid ' + posClass(w.position);
-        el.style.gridTemplateColumns = 'repeat(' + cols + ', 140px)';
-        kpis.forEach(function(kpi) {
-            var tile = document.createElement('div');
-            tile.className = 'overlay-kpi-tile';
-            var color = kpi.color ? 'color:' + kpi.color : '';
-            tile.innerHTML = '<div class="kpi-value" style="' + color + '">' + esc(String(kpi.value || '0')) + '</div>'
-                + '<div class="kpi-label">' + esc(kpi.label || '') + '</div>';
-            el.appendChild(tile);
-        });
-        return el;
-    }
-
-    function createClock(w) {
-        var el = document.createElement('div');
-        el.className = 'overlay-clock ' + posClass(w.position || 'top-right');
-        var tz = w.timezone || 'Asia/Almaty';
-        var fmt = w.format || '24h';
-        function tick() {
-            try {
-                var opts = { timeZone: tz, hour: '2-digit', minute: '2-digit', second: '2-digit' };
-                if (fmt === '12h') opts.hour12 = true;
-                else opts.hour12 = false;
-                el.textContent = new Date().toLocaleTimeString('en-GB', opts);
-            } catch(e) { el.textContent = new Date().toLocaleTimeString(); }
-        }
-        tick();
-        setInterval(tick, 1000);
-        return el;
-    }
-
-    function createTable(w, state) {
-        var rows = w.rows || state.rows || state.queue || [];
-        var columns = w.columns || [];
-        if (!rows.length) return null;
-        var el = document.createElement('div');
-        el.className = 'overlay-table ' + posClass(w.position || 'center');
-        var html = '<table>';
-        if (columns.length) {
-            html += '<thead><tr>';
-            columns.forEach(function(c) { html += '<th>' + esc(String(c)) + '</th>'; });
-            html += '</tr></thead>';
-        }
-        html += '<tbody>';
-        rows.forEach(function(row) {
-            html += '<tr>';
-            if (Array.isArray(row)) {
-                row.forEach(function(cell) { html += '<td>' + esc(String(cell)) + '</td>'; });
-            } else if (columns.length) {
-                columns.forEach(function(c) { html += '<td>' + esc(String(row[c] || '')) + '</td>'; });
-            } else {
-                Object.values(row).forEach(function(v) { html += '<td>' + esc(String(v)) + '</td>'; });
-            }
-            html += '</tr>';
-        });
-        html += '</tbody></table>';
-        el.innerHTML = html;
-        return el;
-    }
-
-    function createQrCard(w) {
-        var url = w.url || w.data || '';
-        var text = w.text || w.cta || '';
-        var size = w.size || 120;
-        if (!url) return null;
-        var el = document.createElement('div');
-        el.className = 'overlay-qr-card ' + posClass(w.position || 'bottom-right');
-        // Simple QR using a public API (no external lib needed)
-        el.innerHTML = '<img src="https://api.qrserver.com/v1/create-qr-code/?size=' + size + 'x' + size + '&data=' + encodeURIComponent(url) + '" width="' + size + '" height="' + size + '">'
-            + (text ? '<div class="qr-text">' + esc(text) + '</div>' : '');
-        return el;
-    }
-
-    function createPoll(w, state) {
-        var question = w.question || state.poll?.question || '';
-        var options = w.options || state.poll?.options || [];
-        var votes = w.votes || state.poll?.votes || [];
-        if (!options.length) return null;
-        var total = votes.reduce(function(a,b) { return a + (b||0); }, 0) || 1;
-        var el = document.createElement('div');
-        el.className = 'overlay-poll ' + posClass(w.position || 'center');
-        var html = '<div class="poll-question">' + esc(question) + '</div>';
-        options.forEach(function(opt, i) {
-            var pct = Math.round(((votes[i]||0) / total) * 100);
-            html += '<div class="poll-option"><div class="poll-bar-bg">'
-                + '<div class="poll-bar-fill" style="width:' + pct + '%"></div>'
-                + '<div class="poll-bar-label"><span>' + esc(String(opt)) + '</span><span>' + pct + '%</span></div>'
-                + '</div></div>';
+        el.className = 'overlay-widget overlay-' + type + ' ' + posClass(w.position);
+        // Merge state into widget data for template access
+        var data = Object.assign({}, state, w);
+        // Simple mustache render
+        var html = tmpl.html.replace(/\{\{([^}]+)\}\}/g, function(_, key) {
+            key = key.trim();
+            var val = data[key];
+            if (val == null) return '';
+            if (typeof val === 'object') return JSON.stringify(val);
+            return val;
         });
         el.innerHTML = html;
-        return el;
-    }
-
-    function createReactions(w, state) {
-        var emojis = w.emojis || ['👍','❤️','😂','🎉','👏'];
-        var recent = state.reactions || [];
-        if (!recent.length) return null;
-        var el = document.createElement('div');
-        el.className = 'overlay-reactions ' + posClass(w.position || 'bottom-right');
-        el.style.width = '200px'; el.style.height = '150px';
-        recent.slice(-10).forEach(function(r, i) {
-            var span = document.createElement('span');
-            span.className = 'overlay-reaction-emoji';
-            span.textContent = r.emoji || emojis[0];
-            span.style.left = (Math.random() * 160) + 'px';
-            span.style.bottom = '0';
-            span.style.animationDelay = (i * 0.2) + 's';
-            el.appendChild(span);
-        });
-        return el;
-    }
-
-    function createWeather(w, state) {
-        var temp = w.temp || state.weather?.temp || '';
-        var desc = w.description || state.weather?.description || '';
-        var icon = w.icon || state.weather?.icon || '🌤';
-        if (!temp) return null;
-        var el = document.createElement('div');
-        el.className = 'overlay-weather ' + posClass(w.position || 'top-right');
-        el.innerHTML = '<span class="weather-icon">' + esc(icon) + '</span>'
-            + '<div><div class="weather-temp">' + esc(String(temp)) + '°</div>'
-            + '<div class="weather-desc">' + esc(desc) + '</div></div>';
+        // Execute template JS if present (trusted: admin-authored from server DB)
+        if (tmpl.js) {
+            try { var fn = new Function('el', 'w', 'state', tmpl.js); fn(el, w, state); } catch(e) { console.error('Template JS error:', e); }
+        }
         return el;
     }
 

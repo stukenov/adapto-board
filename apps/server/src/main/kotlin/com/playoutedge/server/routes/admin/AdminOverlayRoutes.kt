@@ -18,10 +18,11 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import com.playoutedge.persistence.entities.OverlayBindingEntity
 import com.playoutedge.persistence.tables.OverlayBindings
+import com.playoutedge.server.services.OverlayService
 import com.playoutedge.server.services.WebhookService
+import com.playoutedge.server.services.WidgetTemplateService
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.update
@@ -39,7 +40,9 @@ fun Route.adminOverlayRoutes(
     overlayRepository: OverlayRepository,
     channelRepository: ChannelRepository,
     webhookLogRepository: WebhookLogRepository,
-    webhookService: WebhookService? = null
+    overlayService: OverlayService,
+    webhookService: WebhookService? = null,
+    widgetTemplateService: WidgetTemplateService
 ) {
     route("/admin/overlay") {
         // Main overlay page - redirect to profiles
@@ -60,6 +63,19 @@ fun Route.adminOverlayRoutes(
                 }
             }
             call.respondRedirect("/admin/overlay")
+        }
+
+        // === Template Catalog ===
+        get("/templates") {
+            val session = call.adminSession ?: run {
+                call.respondRedirect("/admin/login")
+                return@get
+            }
+            val tenantId = TenantId(session.tenantId)
+            val templates = widgetTemplateService.getTemplates(tenantId)
+            call.respondHtml {
+                overlayTemplateCatalogView(session, templates)
+            }
         }
 
         // === Profile Routes ===
@@ -109,8 +125,11 @@ fun Route.adminOverlayRoutes(
                     return@get
                 }
 
+                val tenantId = TenantId(session.tenantId)
+                val templates = widgetTemplateService.getTemplates(tenantId)
+
                 call.respondHtml {
-                    newOverlayProfileView(session)
+                    newOverlayProfileView(session, templates = templates)
                 }
             }
 
@@ -124,7 +143,7 @@ fun Route.adminOverlayRoutes(
                 val tenantId = TenantId(session.tenantId)
                 val params = call.receiveParameters()
                 val name = params["name"] ?: ""
-                val template = params["template"]?.let { runCatching { OverlayTemplate.valueOf(it) }.getOrNull() }
+                val templateCode = params["template"]
                 val customJson = params["definitionJson"]?.takeIf { it.isNotBlank() }
 
                 if (name.isBlank()) {
@@ -134,7 +153,11 @@ fun Route.adminOverlayRoutes(
                     return@post
                 }
 
-                val definitionJson = customJson ?: getTemplateDefinition(template ?: OverlayTemplate.TICKER)
+                val definitionJson = customJson ?: if (templateCode != null) {
+                    widgetTemplateService.getTemplateDefinition(tenantId, templateCode)
+                } else {
+                    """{"widgets":[]}"""
+                }
 
                 try {
                     overlayRepository.createProfile(tenantId, name, definitionJson)
@@ -379,8 +402,12 @@ fun Route.adminOverlayRoutes(
                     Pair(pi, co)
                 }
 
+                val preselectedChannelId = call.request.queryParameters["channel"]?.let {
+                    runCatching { UUID.fromString(it) }.getOrNull()
+                }
+
                 call.respondHtml {
-                    newOverlayBindingView(session, profileItems, channelOptions)
+                    newOverlayBindingView(session, profileItems, channelOptions, preselectedChannelId = preselectedChannelId)
                 }
             }
 
@@ -415,6 +442,16 @@ fun Route.adminOverlayRoutes(
                     sourceConfigJson = "{}",
                     webhookSecret = webhookSecret
                 )
+
+                // Auto-populate overlay state from profile definition with initial data
+                val definitionJson = newSuspendedTransaction {
+                    overlayRepository.findProfileById(tenantId, profileId)?.definitionJson?.toString()
+                }
+                if (definitionJson != null) {
+                    val initialState = widgetTemplateService.buildInitialState(tenantId, definitionJson)
+                    val stateObj = Json.decodeFromString<JsonObject>(initialState)
+                    overlayService.setBindingState(tenantId, channelId, binding.id.value, stateObj)
+                }
 
                 call.respondRedirect("/admin/overlay/bindings/${binding.id.value}")
             }
@@ -451,18 +488,27 @@ fun Route.adminOverlayRoutes(
                         }
                     } else emptyList()
 
+                    val profileDefJson = binding.overlayProfile.definitionJson.toString()
+                    val channelId = binding.channel.id.value
+                    val fullState = overlayRepository.getState(tenantId, channelId)?.stateJson
+                    val currentState = if (fullState != null) {
+                        overlayService.filterStateForBinding(fullState, bindingId)
+                    } else null
+
                     val bindingDetail = OverlayBindingDetail(
                         id = binding.id.value,
                         profileId = binding.overlayProfile.id.value,
                         profileName = binding.overlayProfile.name,
-                        channelId = binding.channel.id.value,
+                        channelId = channelId,
                         channelName = binding.channel.name,
                         sourceType = binding.sourceType,
                         sourceConfigJson = formatJson(binding.sourceConfigJson.toString()),
                         status = binding.status,
                         webhookSecret = binding.webhookSecret,
                         webhookUrl = binding.webhookSecret?.let { "${getWebhookBaseUrl()}/api/webhook/${binding.id.value}" },
-                        createdAt = binding.createdAt
+                        createdAt = binding.createdAt,
+                        profileDefinitionJson = formatJson(profileDefJson),
+                        currentStateJson = formatJson(currentState?.toString() ?: "{}")
                     )
 
                     Pair(bindingDetail, webhookLogs)
@@ -489,7 +535,13 @@ fun Route.adminOverlayRoutes(
                 val bindingId = call.parameters["id"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
 
                 if (bindingId != null) {
+                    val channelId = newSuspendedTransaction {
+                        overlayRepository.findBindingById(tenantId, bindingId)?.channel?.id?.value
+                    }
                     overlayRepository.updateBindingStatus(tenantId, bindingId, BindingStatus.PAUSED)
+                    if (channelId != null) {
+                        overlayService.removeBindingWidgets(tenantId, channelId, bindingId)
+                    }
                 }
 
                 call.respondRedirect("/admin/overlay/bindings/$bindingId")
@@ -507,6 +559,18 @@ fun Route.adminOverlayRoutes(
 
                 if (bindingId != null) {
                     overlayRepository.updateBindingStatus(tenantId, bindingId, BindingStatus.ACTIVE)
+                    // Re-populate state from profile definition
+                    val info = newSuspendedTransaction {
+                        val binding = overlayRepository.findBindingById(tenantId, bindingId)
+                            ?: return@newSuspendedTransaction null
+                        Pair(binding.channel.id.value, binding.overlayProfile.definitionJson.toString())
+                    }
+                    if (info != null) {
+                        val (channelId, defJson) = info
+                        val initialState = widgetTemplateService.buildInitialState(tenantId, defJson)
+                        val stateObj = Json.decodeFromString<JsonObject>(initialState)
+                        overlayService.setBindingState(tenantId, channelId, bindingId, stateObj)
+                    }
                 }
 
                 call.respondRedirect("/admin/overlay/bindings/$bindingId")
@@ -538,9 +602,13 @@ fun Route.adminOverlayRoutes(
                 }
 
                 val params = call.receiveParameters()
-                val stateJson = params["stateJson"] ?: "{}"
+                val rawStateJson = params["stateJson"] ?: "{}"
 
-                overlayRepository.setState(tenantId, channelId, stateJson)
+                // Auto-migrate: wrap in widgets[] if missing
+                val stateJson = migrateOverlayState(rawStateJson)
+                val stateObj = Json.decodeFromString<JsonObject>(stateJson)
+
+                overlayService.setBindingState(tenantId, channelId, bindingId, stateObj)
                 call.respondRedirect("/admin/overlay/bindings/$bindingId")
             }
 
@@ -626,7 +694,8 @@ fun Route.adminOverlayRoutes(
                 }
                 if (channelId == null) { call.respondRedirect("/admin/overlay/bindings"); return@post }
 
-                overlayRepository.setState(tenantId, channelId, testPayload)
+                val testStateObj = Json.decodeFromString<JsonObject>(testPayload)
+                overlayService.setBindingState(tenantId, channelId, bindingId, testStateObj)
                 call.respondRedirect("/admin/overlay/bindings/$bindingId?success=Test+payload+sent")
             }
 
@@ -657,8 +726,10 @@ fun Route.adminOverlayRoutes(
                 val bindingId = call.parameters["id"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
                 if (bindingId == null) { call.respondRedirect("/admin/overlay/bindings"); return@post }
 
-                val binding = overlayRepository.findBindingById(tenantId, bindingId)
-                if (binding == null) { call.respondRedirect("/admin/overlay/bindings"); return@post }
+                val exists = newSuspendedTransaction {
+                    overlayRepository.findBindingById(tenantId, bindingId) != null
+                }
+                if (!exists) { call.respondRedirect("/admin/overlay/bindings"); return@post }
 
                 webhookService?.regenerateSecret(bindingId)
                 call.respondRedirect("/admin/overlay/bindings/$bindingId?success=Webhook+secret+regenerated")
@@ -675,6 +746,12 @@ fun Route.adminOverlayRoutes(
                 val bindingId = call.parameters["id"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
 
                 if (bindingId != null) {
+                    val channelId = newSuspendedTransaction {
+                        overlayRepository.findBindingById(tenantId, bindingId)?.channel?.id?.value
+                    }
+                    if (channelId != null) {
+                        overlayService.removeBindingWidgets(tenantId, channelId, bindingId)
+                    }
                     overlayRepository.deleteBinding(tenantId, bindingId)
                 }
 
@@ -698,16 +775,39 @@ private fun extractWidgetTypes(definitionJson: String): List<String> {
     }
 }
 
-private fun getTemplateDefinition(template: OverlayTemplate): String = when (template) {
-    OverlayTemplate.TICKER -> """{"widgets":[{"type":"ticker","position":"bottom","height":48}]}"""
-    OverlayTemplate.KPI_TILES -> """{"widgets":[{"type":"kpi-grid","position":"top-right","columns":2}]}"""
-    OverlayTemplate.QUEUE_TABLE -> """{"widgets":[{"type":"table","position":"center","columns":["name","status","wait"]}]}"""
-    OverlayTemplate.QR_CARD -> """{"widgets":[{"type":"qr-card","position":"bottom-right","size":120}]}"""
-    OverlayTemplate.POLL -> """{"widgets":[{"type":"poll","position":"center","question":"","options":["Option 1","Option 2","Option 3"]}],"poll":{"question":"","options":["Option 1","Option 2","Option 3"],"votes":[0,0,0]}}"""
-    OverlayTemplate.REACTION -> """{"widgets":[{"type":"reactions","position":"bottom-right","emojis":["👍","❤️","😂","🎉","👏"]}]}"""
-    OverlayTemplate.WEATHER -> """{"widgets":[{"type":"weather","position":"top-right","city":"Almaty","units":"metric","apiKey":""}]}"""
-    OverlayTemplate.CLOCK -> """{"widgets":[{"type":"clock","position":"top-right","format":"24h","timezone":"Asia/Almaty"}]}"""
-    OverlayTemplate.NEWS_TICKER -> """{"widgets":[{"type":"news-ticker","position":"bottom","feedUrl":"","scrollSpeed":60}]}"""
+/**
+ * Migrate old overlay state format: if JSON doesn't contain "widgets",
+ * attempt to wrap known top-level keys as widgets.
+ */
+internal fun migrateOverlayState(json: String): String {
+    return try {
+        val obj = Json.decodeFromString<JsonObject>(json)
+        if (obj.containsKey("widgets")) return json
+
+        // Old format: top-level keys like {"ticker": {"text": "..."}}
+        // Convert to {"widgets": [{"type": "ticker", "text": "..."}]}
+        val widgetTypes = setOf("ticker", "kpi-grid", "kpi", "table", "qr-card", "clock",
+            "poll", "weather", "reactions", "news-ticker", "queue-table",
+            "logo", "animated-logo", "lower-third", "score", "breaking-news", "countdown")
+        val widgets = kotlinx.serialization.json.buildJsonArray {
+            obj.forEach { (key, value) ->
+                if (key in widgetTypes && value is JsonObject) {
+                    add(kotlinx.serialization.json.buildJsonObject {
+                        put("type", kotlinx.serialization.json.JsonPrimitive(key))
+                        value.forEach { (k, v) -> put(k, v) }
+                    })
+                }
+            }
+        }
+        if (widgets.isEmpty()) return json
+
+        val result = kotlinx.serialization.json.buildJsonObject {
+            put("widgets", widgets)
+        }
+        Json.encodeToString(JsonObject.serializer(), result)
+    } catch (_: Exception) {
+        json
+    }
 }
 
 private fun formatJson(json: String): String {

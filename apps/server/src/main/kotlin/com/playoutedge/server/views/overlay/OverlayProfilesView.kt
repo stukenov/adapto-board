@@ -1,6 +1,7 @@
 package com.playoutedge.server.views.overlay
 
 import com.playoutedge.auth.AdminClaims
+import com.playoutedge.server.services.WidgetTemplateDTO
 import com.playoutedge.server.views.*
 import kotlinx.html.*
 
@@ -17,6 +18,9 @@ fun HTML.overlayProfilesListView(
             title = "Overlay Profiles",
             subtitle = "Manage dynamic content templates for your displays"
         ) {
+            a(href = "/admin/overlay/templates", classes = "btn btn-secondary") {
+                +"Browse Templates"
+            }
             a(href = "/admin/overlay/profiles/new", classes = "btn btn-primary") {
                 +"+ New Profile"
             }
@@ -41,45 +45,12 @@ fun HTML.overlayProfilesListView(
         } else {
             div("template-gallery") {
                 profiles.forEach { profile ->
-                    val templateClass = when {
-                        profile.widgetTypes.any { it.contains("ticker", ignoreCase = true) } -> "template-ticker"
-                        profile.widgetTypes.any { it.contains("kpi", ignoreCase = true) } -> "template-kpi"
-                        profile.widgetTypes.any { it.contains("table", ignoreCase = true) || it.contains("queue", ignoreCase = true) } -> "template-table"
-                        profile.widgetTypes.any { it.contains("qr", ignoreCase = true) } -> "template-qr"
-                        profile.widgetTypes.any { it.contains("poll", ignoreCase = true) } -> "template-poll"
-                        profile.widgetTypes.any { it.contains("reaction", ignoreCase = true) } -> "template-reaction"
-                        profile.widgetTypes.any { it.contains("weather", ignoreCase = true) } -> "template-weather"
-                        profile.widgetTypes.any { it.contains("clock", ignoreCase = true) } -> "template-clock"
-                        else -> "template-default"
-                    }
+                    val primaryType = profile.widgetTypes.firstOrNull() ?: "custom"
+                    val templateClass = "template-${primaryType.lowercase().replace("_", "-")}"
                     a(href = "/admin/overlay/profiles/${profile.id}", classes = "template-card $templateClass") {
                         div("template-card-preview") {
-                            // Visual layout preview based on template type
-                            when {
-                                templateClass == "template-ticker" -> {
-                                    div("preview-bar preview-bar-bottom") {}
-                                }
-                                templateClass == "template-kpi" -> {
-                                    div("preview-grid-2x2") {
-                                        repeat(4) { div("preview-tile") {} }
-                                    }
-                                }
-                                templateClass == "template-table" -> {
-                                    div("preview-table-lines") {
-                                        repeat(3) { div("preview-line") {} }
-                                    }
-                                }
-                                templateClass == "template-qr" -> {
-                                    div("preview-qr-box") {}
-                                }
-                                templateClass == "template-poll" -> {
-                                    div("preview-bars-horizontal") {
-                                        repeat(3) { div("preview-hbar") {} }
-                                    }
-                                }
-                                else -> {
-                                    div("preview-generic") {}
-                                }
+                            div("template-tv-preview") {
+                                div("tv-clock") { +primaryType }
                             }
                         }
                         div("template-card-name") { +profile.name }
@@ -113,7 +84,8 @@ fun HTML.overlayProfilesListView(
  */
 fun HTML.newOverlayProfileView(
     session: AdminClaims,
-    error: String? = null
+    error: String? = null,
+    templates: List<WidgetTemplateDTO> = emptyList()
 ) {
     adminLayout(title = "New Overlay Profile", userName = session.displayName, currentPath = "/admin/overlay") {
         pageHeader(
@@ -151,30 +123,33 @@ fun HTML.newOverlayProfileView(
                         input(type = InputType.hidden) {
                             id = "template"
                             name = "template"
-                            value = OverlayTemplate.entries.first().name
+                            value = if (templates.isNotEmpty()) templates.first().code else ""
                         }
-                        div("template-gallery") {
-                            OverlayTemplate.entries.forEach { template ->
-                                val templateIcon = when (template) {
-                                    OverlayTemplate.TICKER -> "📰"
-                                    OverlayTemplate.KPI_TILES -> "📊"
-                                    OverlayTemplate.QUEUE_TABLE -> "📋"
-                                    OverlayTemplate.QR_CARD -> "📱"
-                                    OverlayTemplate.POLL -> "📊"
-                                    OverlayTemplate.REACTION -> "👍"
-                                    OverlayTemplate.WEATHER -> "🌤"
-                                    OverlayTemplate.CLOCK -> "🕐"
-                                    OverlayTemplate.NEWS_TICKER -> "📰"
-                                }
-                                div("template-card") {
-                                    attributes["data-template"] = template.name
-                                    if (template == OverlayTemplate.entries.first()) {
-                                        classes = classes + " selected"
+                        div("template-gallery template-gallery-3col") {
+                            if (templates.isNotEmpty()) {
+                                templates.forEachIndexed { index, template ->
+                                    div("template-card") {
+                                        attributes["data-template"] = template.code
+                                        if (index == 0) {
+                                            classes = classes + " selected"
+                                        }
+                                        div("template-card-preview") {
+                                            if (template.previewHtml != null) {
+                                                div("template-tv-preview") {
+                                                    unsafe { +template.previewHtml }
+                                                }
+                                            } else {
+                                                div("template-tv-preview") {
+                                                    div("tv-clock") { +template.code }
+                                                }
+                                            }
+                                        }
+                                        div("template-card-name") { +template.name }
+                                        div("template-card-desc") { +(template.description ?: "") }
                                     }
-                                    div("template-card-icon") { +templateIcon }
-                                    div("template-card-name") { +template.displayName }
-                                    div("template-card-desc") { +template.description }
                                 }
+                            } else {
+                                p("text-muted") { +"No templates available." }
                             }
                         }
                         small("form-helper") {

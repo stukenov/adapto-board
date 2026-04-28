@@ -99,6 +99,7 @@ fun HTML.newOverlayBindingView(
     profiles: List<OverlayProfileItem>,
     channels: List<ChannelOption>,
     preselectedProfileId: UUID? = null,
+    preselectedChannelId: UUID? = null,
     error: String? = null
 ) {
     adminLayout(title = "New Overlay Binding", userName = session.displayName, currentPath = "/admin/overlay") {
@@ -147,6 +148,7 @@ fun HTML.newOverlayBindingView(
                                 channels.forEach { channel ->
                                     option {
                                         value = channel.id.toString()
+                                        if (channel.id == preselectedChannelId) selected = true
                                         +channel.name
                                     }
                                 }
@@ -310,7 +312,7 @@ fun HTML.overlayBindingDetailView(
 
         // Source configuration
         when (binding.sourceType) {
-            OverlaySourceType.MANUAL -> manualEditorCard(binding)
+            OverlaySourceType.MANUAL -> widgetEditorCard(binding)
             OverlaySourceType.REST_PULL -> restConnectorCard(binding)
             OverlaySourceType.WEBHOOK -> webhookConfigCard(binding, webhookLogs)
         }
@@ -385,41 +387,6 @@ fun HTML.overlayBindingDetailView(
                         button(type = ButtonType.submit, classes = "btn btn-primary") {
                             +"Update Schedule"
                         }
-                    }
-                }
-            }
-        }
-    }
-}
-
-private fun MAIN.manualEditorCard(binding: OverlayBindingDetail) {
-    div("card") {
-        div("card-header") {
-            h3 { +"Manual Editor" }
-        }
-        div("card-body") {
-            form(action = "/admin/overlay/bindings/${binding.id}/state", method = FormMethod.post) {
-                div("form-group") {
-                    label {
-                        htmlFor = "stateJson"
-                        +"Overlay State JSON"
-                    }
-                    textArea(classes = "form-control code-editor json-editor") {
-                        id = "stateJson"
-                        name = "stateJson"
-                        rows = "12"
-                        placeholder = """{"ticker": {"text": "Breaking news..."}}"""
-                        +binding.sourceConfigJson
-                    }
-                    small("form-helper") {
-                        +"Edit the JSON data that will be displayed on the overlay. Changes are pushed to devices in real-time. "
-                        strong { +"Tip:" }
-                        +" The editor validates JSON syntax as you type — a green border means valid JSON, red means there is an error."
-                    }
-                }
-                div("form-actions") {
-                    button(type = ButtonType.submit, classes = "btn btn-primary") {
-                        +"Send to Devices"
                     }
                 }
             }

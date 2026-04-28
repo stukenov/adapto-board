@@ -4,6 +4,7 @@ import com.playoutedge.domain.tenant.TenantId
 import com.playoutedge.persistence.repositories.ChannelRepository
 import com.playoutedge.persistence.repositories.OverlayRepository
 import com.playoutedge.server.services.PlaylistService
+import com.playoutedge.server.services.WidgetTemplateService
 import com.playoutedge.server.views.embedPlayerView
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -36,9 +37,52 @@ private data class EmbedManifest(
 fun Route.embedRoutes(
     channelRepository: ChannelRepository,
     playlistService: PlaylistService,
-    overlayRepository: OverlayRepository? = null
+    overlayRepository: OverlayRepository? = null,
+    widgetTemplateService: WidgetTemplateService? = null
 ) {
     route("/embed") {
+        // Dynamic CSS for widget templates
+        get("/{channelId}/templates.css") {
+            val channelId = call.parameters["channelId"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+            if (channelId == null || widgetTemplateService == null) {
+                call.respondText("", contentType = ContentType.Text.CSS)
+                return@get
+            }
+            val channelData = newSuspendedTransaction {
+                val ch = channelRepository.findByIdAnyTenant(channelId) ?: return@newSuspendedTransaction null
+                if (!ch.embedEnabled) return@newSuspendedTransaction null
+                ch.tenant.id.value
+            }
+            if (channelData == null) {
+                call.respondText("", contentType = ContentType.Text.CSS)
+                return@get
+            }
+            val css = widgetTemplateService.getAggregatedCss(TenantId(channelData))
+            call.response.headers.append("Cache-Control", "public, max-age=300")
+            call.respondText(css, contentType = ContentType.Text.CSS)
+        }
+
+        // Dynamic JS for widget templates
+        get("/{channelId}/templates.js") {
+            val channelId = call.parameters["channelId"]?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+            if (channelId == null || widgetTemplateService == null) {
+                call.respondText("", contentType = ContentType.Text.JavaScript)
+                return@get
+            }
+            val channelData = newSuspendedTransaction {
+                val ch = channelRepository.findByIdAnyTenant(channelId) ?: return@newSuspendedTransaction null
+                if (!ch.embedEnabled) return@newSuspendedTransaction null
+                ch.tenant.id.value
+            }
+            if (channelData == null) {
+                call.respondText("", contentType = ContentType.Text.JavaScript)
+                return@get
+            }
+            val js = widgetTemplateService.getTemplatesJs(TenantId(channelData))
+            call.response.headers.append("Cache-Control", "public, max-age=300")
+            call.respondText(js, contentType = ContentType.Text.JavaScript)
+        }
+
         get("/{channelId}") {
             val channelId = call.parameters["channelId"]?.let {
                 runCatching { UUID.fromString(it) }.getOrNull()

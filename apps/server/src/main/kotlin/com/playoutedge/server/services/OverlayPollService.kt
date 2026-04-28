@@ -14,7 +14,8 @@ import java.util.UUID
 
 class OverlayPollService(
     private val overlayRepository: OverlayRepository,
-    private val overlaySubscribers: OverlaySubscribers
+    private val overlaySubscribers: OverlaySubscribers,
+    private val overlayService: OverlayService? = null
 ) {
     private val logger = LoggerFactory.getLogger(OverlayPollService::class.java)
     private val httpClient = HttpClient()
@@ -37,6 +38,7 @@ class OverlayPollService(
 
     private data class PollBinding(
         val id: String,
+        val bindingId: UUID,
         val configStr: String,
         val channelId: UUID,
         val tenantId: UUID
@@ -47,6 +49,7 @@ class OverlayPollService(
             overlayRepository.findAllRestPullBindings().map { binding ->
                 PollBinding(
                     id = binding.id.value.toString(),
+                    bindingId = binding.id.value,
                     configStr = binding.sourceConfigJson.toString(),
                     channelId = binding.channel.id.value,
                     tenantId = binding.tenant.id.value
@@ -88,17 +91,22 @@ class OverlayPollService(
                                 body
                             }
 
-                            overlayRepository.setState(
-                                com.playoutedge.domain.tenant.TenantId(tenantId),
-                                channelId,
-                                stateData
-                            )
-
-                            // Notify subscribers
-                            try {
-                                val stateObj = json.decodeFromString<JsonObject>(stateData)
+                            val stateObj = json.decodeFromString<JsonObject>(stateData)
+                            if (overlayService != null) {
+                                overlayService.setBindingState(
+                                    com.playoutedge.domain.tenant.TenantId(tenantId),
+                                    channelId,
+                                    binding.bindingId,
+                                    stateObj
+                                )
+                            } else {
+                                overlayRepository.setState(
+                                    com.playoutedge.domain.tenant.TenantId(tenantId),
+                                    channelId,
+                                    stateData
+                                )
                                 overlaySubscribers.broadcast(channelId, OverlayEvent.State(stateObj, System.currentTimeMillis()))
-                            } catch (_: Exception) {}
+                            }
                         } catch (e: Exception) {
                             logger.warn("REST pull failed for binding $id: ${e.message}")
                         }

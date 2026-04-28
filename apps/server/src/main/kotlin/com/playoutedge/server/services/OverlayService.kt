@@ -6,10 +6,14 @@ import com.playoutedge.persistence.entities.OverlayStateEntity
 import com.playoutedge.persistence.repositories.OverlayRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import java.util.UUID
 
@@ -77,6 +81,98 @@ class OverlayService(
         }
 
         return result
+    }
+
+    /**
+     * Merge-on-write: tag widgets with _bindingId, replace only this binding's widgets,
+     * keep widgets from other bindings intact.
+     */
+    suspend fun setBindingState(tenantId: TenantId, channelId: UUID, bindingId: UUID, newState: JsonObject): OverlayStateEntity {
+        val taggedWidgets = tagWidgets(newState["widgets"]?.jsonArray, bindingId)
+
+        val current = overlayRepo.getState(tenantId, channelId)
+        val existingWidgets = if (current != null) {
+            val stateObj = Json.decodeFromString<JsonObject>(
+                Json.encodeToString(JsonObject.serializer(), current.stateJson)
+            )
+            stateObj["widgets"]?.jsonArray?.filter { widget ->
+                val tag = (widget as? JsonObject)?.get("_bindingId")?.jsonPrimitive?.content
+                tag != bindingId.toString()
+            } ?: emptyList()
+        } else {
+            emptyList()
+        }
+
+        val mergedWidgets = buildJsonArray {
+            existingWidgets.forEach { add(it) }
+            taggedWidgets.forEach { add(it) }
+        }
+
+        val mergedState = buildJsonObject {
+            newState.forEach { (key, value) ->
+                if (key != "widgets") put(key, value)
+            }
+            put("widgets", mergedWidgets)
+        }
+
+        return setState(tenantId, channelId, mergedState)
+    }
+
+    /**
+     * Remove all widgets belonging to a specific binding from channel state.
+     */
+    suspend fun removeBindingWidgets(tenantId: TenantId, channelId: UUID, bindingId: UUID) {
+        val current = overlayRepo.getState(tenantId, channelId) ?: return
+        val stateObj = Json.decodeFromString<JsonObject>(
+            Json.encodeToString(JsonObject.serializer(), current.stateJson)
+        )
+        val widgets = stateObj["widgets"]?.jsonArray ?: return
+
+        val filtered = buildJsonArray {
+            widgets.forEach { widget ->
+                val tag = (widget as? JsonObject)?.get("_bindingId")?.jsonPrimitive?.content
+                if (tag != bindingId.toString()) add(widget)
+            }
+        }
+
+        val newState = buildJsonObject {
+            stateObj.forEach { (key, value) ->
+                if (key != "widgets") put(key, value)
+            }
+            put("widgets", filtered)
+        }
+
+        setState(tenantId, channelId, newState)
+    }
+
+    /**
+     * Filter channel state to only return widgets for a specific binding.
+     */
+    fun filterStateForBinding(stateJson: JsonObject, bindingId: UUID): JsonObject {
+        val widgets = stateJson["widgets"]?.jsonArray ?: return stateJson
+        val filtered = buildJsonArray {
+            widgets.forEach { widget ->
+                val tag = (widget as? JsonObject)?.get("_bindingId")?.jsonPrimitive?.content
+                if (tag == bindingId.toString()) add(widget)
+            }
+        }
+        return buildJsonObject {
+            stateJson.forEach { (key, value) ->
+                if (key != "widgets") put(key, value)
+            }
+            put("widgets", filtered)
+        }
+    }
+
+    private fun tagWidgets(widgets: JsonArray?, bindingId: UUID): List<JsonObject> {
+        if (widgets == null) return emptyList()
+        return widgets.map { element ->
+            val widget = element.jsonObject
+            buildJsonObject {
+                widget.forEach { (key, value) -> put(key, value) }
+                put("_bindingId", JsonPrimitive(bindingId.toString()))
+            }
+        }
     }
 
     // SSE subscription

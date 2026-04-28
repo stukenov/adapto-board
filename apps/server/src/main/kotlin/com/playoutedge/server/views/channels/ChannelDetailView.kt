@@ -1,9 +1,20 @@
 package com.playoutedge.server.views.channels
 
 import com.playoutedge.auth.AdminClaims
+import com.playoutedge.domain.enums.BindingStatus
 import com.playoutedge.domain.enums.ChannelStatus
 import com.playoutedge.server.views.*
 import kotlinx.html.*
+import java.util.UUID
+
+/**
+ * Overlay binding info for channel detail sidebar.
+ */
+data class OverlayBindingInfo(
+    val bindingId: UUID,
+    val profileName: String,
+    val status: BindingStatus
+)
 
 /**
  * Channel detail view with improved layout.
@@ -14,7 +25,8 @@ fun HTML.channelDetailView(
     scheduleItems: List<ScheduleItemView>,
     devices: List<DeviceListItem>,
     validationWarnings: List<String> = emptyList(),
-    embedHost: String = "tv.adapto.kz"
+    embedHost: String = "tv.adapto.kz",
+    overlayBindingInfo: OverlayBindingInfo? = null
 ) {
     adminLayout(title = channel.name, userName = session.displayName, currentPath = "/admin/channels") {
         // Page header with breadcrumb
@@ -141,6 +153,38 @@ fun HTML.channelDetailView(
                         dd { +"${scheduleItems.size}" }
                         dt { +"Total Duration" }
                         dd { +calculateTotalDuration(scheduleItems) }
+                    }
+                }
+
+                // Overlay
+                sectionCard("Overlay", actions = {
+                    if (overlayBindingInfo != null) {
+                        a(href = "/admin/overlay/bindings/${overlayBindingInfo.bindingId}", classes = "btn btn-secondary btn-sm") { +"Manage" }
+                    }
+                }) {
+                    if (overlayBindingInfo != null) {
+                        dl("info-list") {
+                            dt { +"Profile" }
+                            dd {
+                                a(href = "/admin/overlay/bindings/${overlayBindingInfo.bindingId}") {
+                                    +overlayBindingInfo.profileName
+                                }
+                            }
+                            dt { +"Status" }
+                            dd {
+                                span("badge badge-${if (overlayBindingInfo.status == BindingStatus.ACTIVE) "success" else "warning"}") {
+                                    +overlayBindingInfo.status.name.lowercase()
+                                }
+                            }
+                        }
+                    } else {
+                        emptyState(
+                            icon = "layers",
+                            title = "No overlay",
+                            description = "Add an overlay to display graphics on this channel.",
+                            actionHref = "/admin/overlay/bindings/new?channel=${channel.id}",
+                            actionLabel = "Add Overlay"
+                        )
                     }
                 }
 

@@ -121,9 +121,10 @@ class WebhookService(
         try {
             val tenantId = binding.tenant.id.value
             val channelId = binding.channel.id.value
-            overlayService.setState(
+            overlayService.setBindingState(
                 com.playoutedge.domain.tenant.TenantId(tenantId),
                 channelId,
+                bindingId,
                 payloadJson
             )
             logWebhook(bindingId, 200, startTime, payload.size, null)
